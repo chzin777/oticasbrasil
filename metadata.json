@@ -1,0 +1,6 @@
+{
+  "name": "Óticas Brasil - Checkout & Boutique Óptica",
+  "description": "Checkout de alta precisão óptica, personalização de lentes graduadas e curadoria exclusiva de armações de luxo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

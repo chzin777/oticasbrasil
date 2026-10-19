@@ -1,0 +1,511 @@
+/* ============================================================
+   HERO CAPA — ótica (estilo Capa.jsx / DAPS)
+   Paleta: #061748 (azul-marinho), #C4D600 (verde-limão), #fff
+   Estrutura: metade chapada + metade fotográfica multicamada
+   Animações: balanço CSS das armações, entrada GSAP escalonada,
+              parallax do mouse e scroll via data-mov / data-rol
+   ============================================================ */
+
+.hc {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  overflow-x: clip;
+  overflow-y: visible;
+  z-index: 2;
+  background: transparent;
+}
+
+
+/* Gradiente de fade sobre o SVG — azul-marinho sólido à esquerda, transparente à direita */
+.hc::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to right, #061748 0%, #061748 30%, rgba(6, 23, 72, 0.85) 50%, rgba(6, 23, 72, 0.4) 70%, rgba(6, 23, 72, 0) 100%);
+}
+
+/* ---- tarja superior correndo ---- */
+.hc-tarja {
+  position: absolute;
+  z-index: 6;
+  inset: 0 0 auto 0;
+  overflow: hidden;
+  padding-block: 0.55rem;
+  background: #041030;
+  color: #fff;
+}
+.hc-trilho {
+  display: flex;
+  width: max-content;
+  animation: hc-corre 30s linear infinite;
+}
+.hc-trilho span {
+  display: flex;
+  white-space: nowrap;
+}
+.hc-trilho b {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding-inline: 0.75rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.hc-trilho i {
+  font-style: normal;
+  color: #C4D600;
+}
+@keyframes hc-corre {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ---- metade chapada (texto) ---- */
+.hc-texto {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(100px, 14vh, 150px) clamp(28px, 5vw, 76px) clamp(46px, 7vh, 80px);
+  color: #fff;
+}
+
+/* manchete */
+.hc-h1 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.hc-headline-top {
+  display: block;
+}
+.hc-brand-badge {
+  display: inline-block;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 900;
+  font-size: clamp(2.2rem, 5.5vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #061748;
+  text-transform: uppercase;
+  background: #C4D600;
+  padding: 0.25rem 0.9rem;
+  border-radius: 8px;
+  transform: rotate(-1.5deg);
+  box-shadow: 0 4px 20px rgba(196, 214, 0, 0.4), 3px 3px 0 rgba(255, 255, 255, 0.2);
+  margin-bottom: 0.5rem;
+}
+.hc-headline-bottom {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  position: relative;
+}
+.hc-com {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 900;
+  font-size: clamp(3.5rem, 9vw, 6.5rem);
+  line-height: 0.72;
+  letter-spacing: -0.06em;
+  color: #fff;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+.hc-percent-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0.72;
+}
+.hc-percent {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 900;
+  font-size: clamp(7rem, 18vw, 13rem);
+  line-height: 0.72;
+  letter-spacing: -0.06em;
+  color: #C4D600;
+  display: block;
+}
+.hc-off {
+  position: absolute;
+  right: -0.22em;
+  bottom: -0.18em;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.3rem, 2.8vw, 2rem);
+  color: #061748;
+  background: #C4D600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.4rem 0.75rem 0.35rem;
+  border-radius: 4px;
+  border: 2px dashed rgba(6, 23, 72, 0.4);
+  transform: rotate(-9deg);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.5),
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 -2px 6px rgba(0, 0, 0, 0.18) inset;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.hc-off::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%) rotate(9deg);
+  width: 26px;
+  height: 11px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* subtítulo */
+.hc-sub {
+  max-width: 32rem;
+  margin-bottom: 2.4rem;
+  font-size: clamp(1.05rem, 1.3vw, 1.25rem);
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
+}
+
+/* ações / CTAs */
+.hc-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2.8rem;
+}
+.hc-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 1.15rem 2.4rem;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 1.02rem;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  overflow: hidden;
+  isolation: isolate;
+}
+.hc-btn svg {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+/* Primário — Quero o meu */
+.hc-btn-primary {
+  background: linear-gradient(135deg, #d4e610 0%, #C4D600 55%, #a8bd00 100%);
+  color: #061748;
+  box-shadow:
+    0 6px 22px rgba(196, 214, 0, 0.45),
+    0 2px 0 rgba(255, 255, 255, 0.45) inset,
+    0 -2px 8px rgba(0, 0, 0, 0.12) inset;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+  animation: hc-glow-pulse 2.2s ease-in-out infinite;
+}
+@keyframes hc-glow-pulse {
+  0%, 100% {
+    box-shadow:
+      0 6px 22px rgba(196, 214, 0, 0.45),
+      0 0 0 0 rgba(196, 214, 0, 0.55),
+      0 2px 0 rgba(255, 255, 255, 0.45) inset,
+      0 -2px 8px rgba(0, 0, 0, 0.12) inset;
+  }
+  50% {
+    box-shadow:
+      0 8px 28px rgba(196, 214, 0, 0.65),
+      0 0 0 14px rgba(196, 214, 0, 0),
+      0 2px 0 rgba(255, 255, 255, 0.55) inset,
+      0 -2px 8px rgba(0, 0, 0, 0.12) inset;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-btn-primary {
+    animation: none;
+  }
+}
+.hc-btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+  z-index: -1;
+}
+.hc-btn-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:
+    0 12px 36px rgba(196, 214, 0, 0.6),
+    0 2px 0 rgba(255, 255, 255, 0.55) inset,
+    0 -2px 8px rgba(0, 0, 0, 0.15) inset;
+}
+.hc-btn-primary:hover::before {
+  transform: translateX(120%);
+}
+.hc-btn-primary:hover svg {
+  transform: translateX(5px);
+}
+.hc-btn-primary:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+/* Secundário — Explorar catálogo */
+.hc-btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+}
+.hc-btn-ghost::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(135deg, rgba(196, 214, 0, 0.6), rgba(255, 255, 255, 0.15) 50%, rgba(196, 214, 0, 0.4));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.hc-btn-ghost:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: transparent;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), 0 0 24px rgba(196, 214, 0, 0.25);
+}
+.hc-btn-ghost:hover::before {
+  opacity: 1;
+}
+.hc-btn-ghost:hover svg {
+  transform: translateX(4px);
+}
+.hc-btn-ghost:active {
+  transform: translateY(-1px);
+}
+
+/* prova social / trust */
+.hc-trust {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+.hc-trust-stars {
+  display: flex;
+  gap: 0.15rem;
+}
+.hc-trust-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* ---- metade fotográfica (cena multicamada) ---- */
+.hc-cena {
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+}
+
+/* invólucro de posicionamento — não recebe animação GSAP */
+.hc-pos {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+/* camada animável — só transform via GSAP */
+.hc-camada {
+  display: block;
+  width: 100%;
+  height: auto;
+  will-change: transform;
+}
+
+/* Posicionamento das camadas (equivalente às folhas do daps) */
+
+/* óculos de sol superior (glasses1) — mais acima e à esquerda, À FRENTE do TiltedCard */
+.hc-g2 {
+  top: calc(4% - 30px);
+  right: 8%;
+  width: 40%;
+  transform: rotate(-14deg);
+  transform-origin: 80% 10%;
+  animation: hc-balanca-a 9s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  z-index: 6;
+  pointer-events: none;
+}
+
+/* CoverflowCarousel principal — largura reduzida para não sobrepor o texto */
+.hc-g1 {
+  top: 50%;
+  left: 42%;
+  width: 46%;
+  max-width: 620px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.45));
+  pointer-events: auto;
+  z-index: 5;
+}
+
+/* Fade elíptico atrás do carrossel para destaque suave */
+.hc-g1::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 140%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(6, 23, 72, 0.35) 0%,
+    rgba(6, 23, 72, 0.18) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Wrapper do coverflow — sem tamanho fixo, ocupa a área da cena */
+.hc-spiral-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
+
+/* Calvin Klein (glasses3) — subido ~15px para afastar do texto "RAY-BAN META", inclinado, balanço */
+.hc-g3 {
+  z-index: 4;
+  top: calc(10% - 15px);
+  left: 4%;
+  width: 22%;
+  transform: rotate(-10deg);
+  transform-origin: 20% 80%;
+  animation: hc-balanca-c 10s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.35));
+}
+
+/* armação que "vaza" — inclinada para a direita como se estivesse caindo */
+.hc-vaza {
+  z-index: 7;
+  bottom: -4%;
+  left: 33%;
+  width: 24%;
+  transform: rotate(18deg);
+  transform-origin: 30% 90%;
+  animation: hc-balanca-b 11s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  filter: drop-shadow(0 26px 36px rgba(0, 0, 0, 0.26));
+}
+
+@keyframes hc-balanca-a {
+  0%, 100% { rotate: 0deg; }
+  50%      { rotate: 3.2deg; }
+}
+@keyframes hc-balanca-b {
+  0%, 100% { rotate: 0deg; }
+  50%      { rotate: -2.6deg; }
+}
+@keyframes hc-balanca-c {
+  0%, 100% { rotate: 0deg; }
+  50%      { rotate: 2.8deg; }
+}
+
+/* ---- responsivo ---- */
+@media (max-width: 900px) {
+  .hc {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+  .hc-cena {
+    aspect-ratio: 4 / 3;
+  }
+  .hc-g1 {
+    width: 52%;
+  }
+}
+
+@media (max-width: 760px) {
+  .hc-cena {
+    aspect-ratio: 5 / 4;
+  }
+  .hc-texto {
+    padding: calc(34px + 76px) var(--pad, 20px) clamp(30px, 5vh, 44px);
+  }
+  .hc-brand-badge {
+    font-size: clamp(1.6rem, 7vw, 2.4rem);
+    padding: 0.3rem 0.8rem;
+  }
+  .hc-com {
+    font-size: clamp(1.6rem, 7vw, 2.4rem);
+    margin-top: 0.4rem;
+  }
+  .hc-percent {
+    font-size: clamp(4rem, 18vw, 7rem);
+  }
+  .hc-off {
+    font-size: clamp(1rem, 4vw, 1.6rem);
+    margin-bottom: 0.5rem;
+  }
+  .hc-sub {
+    font-size: 1rem;
+    max-width: none;
+    width: 100%;
+  }
+  .hc-acoes {
+    display: grid;
+    gap: 0.6rem;
+    width: 100%;
+  }
+  .hc-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 52px;
+    padding-block: 0;
+    white-space: nowrap;
+  }
+  .hc-vaza {
+    width: 34%;
+    left: 6%;
+    bottom: -12%;
+  }
+  .hc-g1 {
+    width: 56%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hc-g2,
+  .hc-g3,
+  .hc-vaza {
+    animation: none;
+  }
+  .hc-trilho {
+    animation: none;
+  }
+}
