@@ -105,7 +105,8 @@
 }
 .hc-headline-bottom {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: 0.35rem;
   position: relative;
 }
