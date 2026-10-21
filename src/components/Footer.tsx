@@ -214,8 +214,16 @@ export const Footer: React.FC<FooterProps> = ({
 
           <div className="flex items-center gap-6">
             <span className="font-mono text-[10px] opacity-60">CNPJ 01.536.747/0001-21</span>
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider opacity-40">
+            <div className="flex flex-col items-end gap-1 text-[10px] font-bold uppercase tracking-wider opacity-40">
               <span>Feito com precisão no Brasil</span>
+              <a
+                href="https://www.linkedin.com/in/christofer-henrique-43366725b/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:opacity-100 hover:text-[#C4D600] transition-colors normal-case font-normal"
+              >
+                Desenvolvido por Christofer Henrique
+              </a>
             </div>
           </div>
         </div>

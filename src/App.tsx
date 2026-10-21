@@ -12,6 +12,9 @@ import { FramesPage } from './pages/FramesPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { TaxasAsaasPage } from './pages/TaxasAsaasPage';
+import { RayBanMetaPage } from './pages/RayBanMetaPage';
+import { SunglassesPage } from './pages/SunglassesPage';
+import { LensesPage } from './pages/LensesPage';
 import { OrderSuccessModal } from './components/OrderSuccessModal';
 import { CatalogModal } from './components/CatalogModal';
 import { StoresModal } from './components/StoresModal';
@@ -20,6 +23,7 @@ import { LensGuideModal } from './components/LensGuideModal';
 import { CepModal } from './components/CepModal';
 import { SupportModal } from './components/SupportModal';
 import { CartDrawer } from './components/CartDrawer';
+import { SpecialistChat } from './components/SpecialistChat';
 import { Footer } from './components/Footer';
 
 import {
@@ -112,6 +116,7 @@ export default function App() {
   const [isCepOpen, setIsCepOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isSpecialistChatOpen, setIsSpecialistChatOpen] = useState(false);
 
   // Hero theme state (shared between HomePage and Header)
   const [heroTheme, setHeroTheme] = useState<'default' | 'blackfriday'>('default');
@@ -277,6 +282,10 @@ export default function App() {
             />
           } />
 
+          <Route path="/rayban-meta" element={<RayBanMetaPage />} />
+          <Route path="/oculos-de-sol" element={<SunglassesPage />} />
+          <Route path="/lentes-de-grau" element={<LensesPage />} />
+
           <Route path="/taxas" element={<TaxasAsaasPage />} />
 
           <Route path="*" element={<NotFoundPage />} />
@@ -385,6 +394,24 @@ export default function App() {
         onAddAccessory={handleAddAccessory}
         onCheckout={() => navigateTo('checkout')}
       />
+
+      {/* Specialist Chat Widget */}
+      <SpecialistChat
+        isOpen={isSpecialistChatOpen}
+        onClose={() => setIsSpecialistChatOpen(false)}
+      />
+
+      {/* Floating Trigger Button - positioned to the left of theme toggle area */}
+      {!isSpecialistChatOpen && (
+        <button
+          onClick={() => setIsSpecialistChatOpen(true)}
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-[#061748] hover:bg-[#0a2366] text-white px-5 py-3 rounded-full shadow-[0_4px_20px_rgba(6,23,72,0.3)] transition-all duration-300 hover:scale-105 cursor-pointer group"
+          aria-label="Falar com um especialista"
+        >
+          <span className="material-symbols-outlined text-[20px] text-[#dbee2c] group-hover:animate-pulse">support_agent</span>
+          <span className="text-sm font-bold tracking-wide">Falar com Especialista</span>
+        </button>
+      )}
     </div>
   );
 }

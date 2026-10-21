@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -62,6 +63,7 @@ const THEME_CONFIG = {
 };
 
 export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'default' }: HeroCapaProps) {
+  const navigate = useNavigate();
   const root = useRef<HTMLElement>(null);
   const tocou = useRef(false);
   const prevTheme = useRef(theme);
@@ -212,7 +214,7 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
               <button
                 type="button"
                 className="hc-btn hc-btn-primary"
-                onClick={() => onOpenCatalog?.('oculos-de-sol')}
+                onClick={() => navigate('/rayban-meta')}
               >
                 {config.primaryCta}
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -278,7 +280,7 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
               <button
                 type="button"
                 className="hc-btn hc-btn-primary"
-                onClick={() => onOpenCatalog?.('oculos-de-sol')}
+                onClick={() => navigate('/rayban-meta')}
               >
                 {config.primaryCta}
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
