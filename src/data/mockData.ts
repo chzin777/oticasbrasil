@@ -517,6 +517,124 @@ export const CATALOG_PRODUCTS: EyewearProduct[] = [
     fullStory: 'Técnica de montagem drill-mount que exige precisão de 0.01mm na perfuração da lente.',
     specs: { lensWidth: '53 mm', bridgeWidth: '18 mm', templeLength: '140 mm', weight: '12 g', hingeType: 'Beta-Titanium Flex', origin: 'Japão' },
     badge: 'Ultra-Leve'
+  },
+  {
+    id: 'rb-meta-wayfarer',
+    name: 'Ray-Ban Meta Wayfarer',
+    category: 'rayban-meta',
+    brand: 'Ray-Ban',
+    price: 2499.00,
+    originalPrice: 2999.00,
+    rating: 4.8,
+    reviewCount: 234,
+    image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=900&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=900&q=80'
+    ],
+    colorName: 'Preto Fosco',
+    colorHex: '#1e1e1e',
+    availableColors: [
+      { name: 'Preto Fosco', hex: '#1e1e1e' },
+      { name: 'Tartaruga Havana', hex: '#52341b' },
+      { name: 'Azul Navy', hex: '#1a2744' }
+    ],
+    material: 'Acetato Premium + Tecnologia Meta',
+    shape: 'Wayfarer Clássico',
+    calibre: 'M (50mm)',
+    availableCalibres: ['M (50mm)', 'G (53mm)'],
+    description: 'O icônico Wayfarer reinventado com câmera de 12MP, áudio espacial e integração com IA Meta.',
+    fullStory: 'Capture fotos e vídeos em primeira pessoa, ouça música com alto-falantes direcionais e faça chamadas sem tirar as mãos do que está fazendo. Bateria para até 4 horas de uso contínuo.',
+    specs: { lensWidth: '50 mm', bridgeWidth: '22 mm', templeLength: '150 mm', weight: '49 g', hingeType: 'Spring Hinge Reforçada', origin: 'Itália / EUA' },
+    badge: 'Smart Glasses'
+  },
+  {
+    id: 'rb-meta-headliner',
+    name: 'Ray-Ban Meta Headliner',
+    category: 'rayban-meta',
+    brand: 'Ray-Ban',
+    price: 2699.00,
+    originalPrice: 3199.00,
+    rating: 4.9,
+    reviewCount: 178,
+    image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=900&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=900&q=80'
+    ],
+    colorName: 'Preto Brilhante',
+    colorHex: '#111111',
+    availableColors: [
+      { name: 'Preto Brilhante', hex: '#111111' },
+      { name: 'Gunmetal', hex: '#4a4e52' },
+      { name: 'Dourado', hex: '#d4af37' }
+    ],
+    material: 'Metal Leve + Tecnologia Meta',
+    shape: 'Headliner Moderno',
+    calibre: 'M (52mm)',
+    availableCalibres: ['M (52mm)'],
+    description: 'Design contemporâneo com linhas mais retas e tecnologia Meta integrada nas hastes.',
+    fullStory: 'Para criadores de conteúdo que buscam um visual moderno. Gravação em 1080p, estabilização eletrônica e transmissão ao vivo direta para Instagram e Facebook.',
+    specs: { lensWidth: '52 mm', bridgeWidth: '20 mm', templeLength: '145 mm', weight: '47 g', hingeType: 'Flex Spring Titanium', origin: 'Itália / EUA' },
+    badge: 'Criador'
+  },
+  {
+    id: 'rb-meta-skyler',
+    name: 'Ray-Ban Meta Skyler',
+    category: 'rayban-meta',
+    brand: 'Ray-Ban',
+    price: 2599.00,
+    originalPrice: 3099.00,
+    rating: 4.7,
+    reviewCount: 145,
+    image: 'https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=900&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1577803645773-f96470509666?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1574258495973-f010dfbb5371?auto=format&fit=crop&w=900&q=80'
+    ],
+    colorName: 'Havana Dourado',
+    colorHex: '#8b6914',
+    availableColors: [
+      { name: 'Havana Dourado', hex: '#8b6914' },
+      { name: 'Preto Matte', hex: '#2d2d2d' }
+    ],
+    material: 'Acetato Oversized + Tecnologia Meta',
+    shape: 'Skyler Oversized',
+    calibre: 'G (56mm)',
+    availableCalibres: ['G (56mm)'],
+    description: 'Estilo oversized bold com campo de visão ampliado e captura de conteúdo imersiva.',
+    fullStory: 'Lentes maiores proporcionam maior área de captura e proteção solar. Ideal para quem quer fazer statement enquanto documenta o dia a dia.',
+    specs: { lensWidth: '56 mm', bridgeWidth: '18 mm', templeLength: '145 mm', weight: '52 g', hingeType: 'Barrel Titanium', origin: 'Itália / EUA' },
+    badge: 'Oversized'
+  },
+  {
+    id: 'rb-meta-transitions',
+    name: 'Ray-Ban Meta Transitions',
+    category: 'rayban-meta',
+    brand: 'Ray-Ban',
+    price: 2799.00,
+    originalPrice: 3299.00,
+    rating: 4.9,
+    reviewCount: 201,
+    image: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?auto=format&fit=crop&w=900&q=80',
+    gallery: [
+      'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=900&q=80'
+    ],
+    colorName: 'Grafite Fotossensível',
+    colorHex: '#33373b',
+    availableColors: [
+      { name: 'Grafite Fotossensível', hex: '#33373b' },
+      { name: 'Marrom Fotossensível', hex: '#5c4033' }
+    ],
+    material: 'Acetato + Lentes Transitions® + Meta',
+    shape: 'Wayfarer Adaptativo',
+    calibre: 'M (50mm)',
+    availableCalibres: ['M (50mm)', 'G (53mm)'],
+    description: 'Lentes que se adaptam automaticamente à luz ambiente combinadas com tecnologia smart.',
+    fullStory: 'A combinação perfeita para quem transita entre ambientes internos e externos. As lentes Transitions® Gen 8 escurecem em segundos sob sol e ficam cristalinas indoors.',
+    specs: { lensWidth: '50 mm', bridgeWidth: '22 mm', templeLength: '150 mm', weight: '50 g', hingeType: 'Spring Hinge Reforçada', origin: 'Itália / EUA / França' },
+    badge: '2 em 1'
   }
 ];
 

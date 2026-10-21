@@ -229,9 +229,10 @@ export default function App() {
         onOpenCatalog={(category) => {
           if (category === 'armacoes') {
             navigateTo('frames');
-          } else {
-            setCatalogCategory(category);
-            setIsCatalogOpen(true);
+          } else if (category === 'oculos-de-sol') {
+            navigate('/oculos-de-sol');
+          } else if (category === 'lentes-de-grau') {
+            navigate('/lentes-de-grau');
           }
         }}
         onOpenStores={() => setIsStoresOpen(true)}
@@ -282,7 +283,12 @@ export default function App() {
             />
           } />
 
-          <Route path="/rayban-meta" element={<RayBanMetaPage />} />
+          <Route path="/rayban-meta" element={
+            <RayBanMetaPage
+              onSelectProductForCheckout={handleGoToCheckoutWithProduct}
+              onNavigateHome={() => navigateTo('home')}
+            />
+          } />
           <Route path="/oculos-de-sol" element={<SunglassesPage />} />
           <Route path="/lentes-de-grau" element={<LensesPage />} />
 
@@ -324,9 +330,10 @@ export default function App() {
         onOpenCatalog={(category) => {
           if (category === 'armacoes') {
             navigateTo('frames');
-          } else {
-            setCatalogCategory(category);
-            setIsCatalogOpen(true);
+          } else if (category === 'oculos-de-sol') {
+            navigate('/oculos-de-sol');
+          } else if (category === 'lentes-de-grau') {
+            navigate('/lentes-de-grau');
           }
         }}
         onOpenStores={() => setIsStoresOpen(true)}
@@ -401,11 +408,11 @@ export default function App() {
         onClose={() => setIsSpecialistChatOpen(false)}
       />
 
-      {/* Floating Trigger Button - positioned to the left of theme toggle area */}
+      {/* Floating Trigger Button - stacked above theme toggle */}
       {!isSpecialistChatOpen && (
         <button
           onClick={() => setIsSpecialistChatOpen(true)}
-          className="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-[#061748] hover:bg-[#0a2366] text-white px-5 py-3 rounded-full shadow-[0_4px_20px_rgba(6,23,72,0.3)] transition-all duration-300 hover:scale-105 cursor-pointer group"
+          className="fixed bottom-[72px] right-6 z-40 flex items-center gap-2 bg-[#061748] hover:bg-[#0a2366] text-white px-5 py-3 rounded-full shadow-[0_4px_20px_rgba(6,23,72,0.3)] transition-all duration-300 hover:scale-105 cursor-pointer group"
           aria-label="Falar com um especialista"
         >
           <span className="material-symbols-outlined text-[20px] text-[#dbee2c] group-hover:animate-pulse">support_agent</span>
