@@ -45,6 +45,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
   const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const framesProducts = useMemo(() => CATALOG_PRODUCTS.filter((p) => p.category === 'armacoes'), []);
 
@@ -70,7 +71,9 @@ export const FramesPage: React.FC<FramesPageProps> = ({
   };
 
   const filteredProducts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
     return framesProducts.filter((product) => {
+      if (query && !(product.name.toLowerCase().includes(query) || product.brand.toLowerCase().includes(query) || product.colorName.toLowerCase().includes(query))) return false;
       if (filters.brand.length > 0 && !filters.brand.includes(product.brand)) return false;
       if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) return false;
       if (filters.frameColor.length > 0 && !filters.frameColor.includes(product.colorName)) return false;
@@ -79,7 +82,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
       if (filters.bridgeSize.length > 0 && !filters.bridgeSize.includes(product.specs.bridgeWidth)) return false;
       return true;
     });
-  }, [framesProducts, filters]);
+  }, [framesProducts, filters, searchQuery]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -134,6 +137,19 @@ export const FramesPage: React.FC<FramesPageProps> = ({
             Limpar ({activeFilterCount})
           </button>
         )}
+      </div>
+
+      <div className="mb-6">
+        <div className="relative">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#8a8d96] text-[18px]">search</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar armação..."
+            className="w-full pl-9 pr-3 py-2.5 text-sm border border-[#eceef0] rounded-lg bg-white focus:outline-none focus:border-[#4156b8] focus:ring-1 focus:ring-[#4156b8]/30 transition-all placeholder:text-[#b0b3ba]"
+          />
+        </div>
       </div>
 
       {/* Gender */}
