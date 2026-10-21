@@ -15,6 +15,7 @@ interface HeaderProps {
   onOpenProfile?: () => void;
   activeCategory?: CatalogCategory | null;
   isStoresActive?: boolean;
+  heroTheme?: 'default' | 'blackfriday';
 }
 
 const isHome = (page: AppPage) => page === 'home';
@@ -31,10 +32,30 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCart,
   onOpenProfile,
   activeCategory,
-  isStoresActive
+  isStoresActive,
+  heroTheme = 'default'
 }) => {
+  const isBlackFriday = heroTheme === 'blackfriday';
   const navRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+  const [scrolledPastHero, setScrolledPastHero] = useState(false);
+  const [hoveringTop, setHoveringTop] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!isHome(currentPage)) {
+      setScrolledPastHero(true);
+      return;
+    }
+    const onScroll = () => {
+      setScrolledPastHero(window.scrollY > window.innerHeight * 0.85);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [currentPage]);
+
+  /* Zona de hover no topo — revela a navbar quando o mouse entra nos primeiros 120px */
+  const navVisible = scrolledPastHero || hoveringTop;
 
   const activeKey: NavKey | null =
     currentPage === 'home'
@@ -59,11 +80,29 @@ export const Header: React.FC<HeaderProps> = ({
       isActive ? 'text-[#061748]' : 'text-[#45464f] hover:text-[#061748]'
     }`;
   return (
-    <header className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300 ${isHome(currentPage) ? '' : 'bg-white'}`}>
-      {/* Top Bar Announcement */}
-      <div className={`text-[11px] font-bold tracking-wider uppercase py-2 px-4 sm:px-8 text-center select-none transition-colors duration-300 ${isHome(currentPage) ? 'bg-[#061748]/80 backdrop-blur-md text-white' : 'bg-[#061748] text-[#ffffff]'}`}>
+    <>
+      {/* Zona de hover invisível no topo — revela a navbar ao passar o mouse nos primeiros 120px */}
+      {isHome(currentPage) && !scrolledPastHero && (
+        <div
+          className="fixed top-0 left-0 w-full h-[120px] z-40"
+          onMouseEnter={() => setHoveringTop(true)}
+          onMouseLeave={() => setHoveringTop(false)}
+          aria-hidden="true"
+        />
+      )}
+      <header
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+          isHome(currentPage) && !navVisible
+            ? 'opacity-0 pointer-events-none -translate-y-full'
+            : 'opacity-100 translate-y-0 pointer-events-auto'
+        } ${!isHome(currentPage) || scrolledPastHero ? 'bg-white' : ''}`}
+        onMouseEnter={() => setHoveringTop(true)}
+        onMouseLeave={() => setHoveringTop(false)}
+      >
+        {/* Top Bar Announcement */}
+      <div className={`text-[11px] font-bold tracking-wider uppercase py-2 px-4 sm:px-8 text-center select-none transition-colors duration-300 ${isBlackFriday ? 'bg-black text-[#C4D600]' : isHome(currentPage) ? 'bg-[#061748]/80 backdrop-blur-md text-white' : 'bg-[#061748] text-[#ffffff]'}`}>
         <TextMarquee
-          items={['10x sem juros', 'Frete grátis acima de R$ 299,00']}
+          items={isBlackFriday ? ['BLACK FRIDAY', 'ATÉ 70% OFF', 'OFERTAS IMPERDÍVEIS', 'BLACK FRIDAY'] : ['10x sem juros', 'Frete grátis acima de R$ 299,00']}
           speed={30}
           direction="left"
           separator="|"
@@ -176,5 +215,6 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
     </header>
+  </>
   );
 };

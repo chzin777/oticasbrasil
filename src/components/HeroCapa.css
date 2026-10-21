@@ -13,19 +13,39 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   overflow-x: clip;
   overflow-y: visible;
-  z-index: 2;
   background: transparent;
 }
 
+/* Container parallax do background — ocupa toda a área do hero */
+.hc-parallax-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
 
-/* Gradiente de fade sobre o SVG — azul-marinho sólido à esquerda, transparente à direita */
+/* Tema Black Friday: mantém overflow padrão para evitar sobreposição ao rolar */
+.hc-theme-blackfriday {
+  overflow: hidden;
+}
+
+/* Camadas parallax — cada uma com a mesma imagem mas velocidades diferentes via GSAP */
+.hc-parallax-layer {
+  position: absolute;
+  inset: -20% 0;
+  background: url('/hero-bg.jpg') calc(100% + 200px) center / cover no-repeat;
+  will-change: transform;
+}
+
+/* Gradiente de fade sobre o background — preto sólido à esquerda, transparente à direita */
 .hc::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(to right, #061748 0%, #061748 30%, rgba(6, 23, 72, 0.85) 50%, rgba(6, 23, 72, 0.4) 70%, rgba(6, 23, 72, 0) 100%);
+  background: linear-gradient(to right, #000 0%, #000 30%, rgba(0, 0, 0, 0.85) 50%, rgba(0, 0, 0, 0.4) 70%, rgba(0, 0, 0, 0) 100%);
 }
 
 /* ---- tarja superior correndo ---- */
@@ -106,7 +126,7 @@
 .hc-headline-bottom {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.35rem;
   position: relative;
 }
@@ -118,7 +138,7 @@
   letter-spacing: -0.06em;
   color: #fff;
   text-transform: uppercase;
-  align-self: flex-start;
+  align-self: center;
 }
 .hc-percent-wrap {
   position: relative;
@@ -175,8 +195,9 @@
   margin-bottom: 2.4rem;
   font-size: clamp(1.05rem, 1.3vw, 1.25rem);
   line-height: 1.65;
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* ações / CTAs */
@@ -352,7 +373,7 @@
 /* óculos de sol superior (glasses1) — mais acima e à esquerda, À FRENTE do TiltedCard */
 .hc-g2 {
   top: calc(4% - 30px);
-  right: 8%;
+  right: -4%;
   width: 40%;
   transform: rotate(-14deg);
   transform-origin: 80% 10%;
@@ -361,16 +382,50 @@
   pointer-events: none;
 }
 
+/* Seta de scroll no centro inferior do hero */
+.hc-scroll-hint {
+  position: absolute;
+  bottom: clamp(24px, 4vh, 48px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #C4D600;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  animation: hc-scroll-bounce 2s ease-in-out infinite;
+  pointer-events: none;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+.hc-scroll-hint svg {
+  width: 32px;
+  height: 32px;
+  stroke: #C4D600;
+  stroke-width: 2.5;
+}
+@keyframes hc-scroll-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.7; }
+  50%      { transform: translateX(-50%) translateY(8px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-scroll-hint { animation: none; opacity: 0.7; }
+}
+
 /* CoverflowCarousel principal — largura reduzida para não sobrepor o texto */
 .hc-g1 {
   top: 50%;
-  left: 42%;
-  width: 46%;
-  max-width: 620px;
+  left: 36%;
+  width: 26%;
+  max-width: 360px;
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.45));
   pointer-events: auto;
-  z-index: 5;
+  z-index: 60;
 }
 
 /* Fade elíptico atrás do carrossel para destaque suave */
@@ -447,7 +502,7 @@
     aspect-ratio: 4 / 3;
   }
   .hc-g1 {
-    width: 52%;
+    width: 40%;
   }
 }
 
@@ -496,7 +551,7 @@
     bottom: -12%;
   }
   .hc-g1 {
-    width: 56%;
+    width: 44%;
   }
 }
 
@@ -509,4 +564,272 @@
   .hc-trilho {
     animation: none;
   }
+}
+
+/* ============================================================
+   TEMA BLACK FRIDAY — monocromático escuro com detalhes verdes (#C4D600)
+   ============================================================ */
+
+/* Remove o gradiente azul padrão no modo Black Friday */
+.hc-theme-blackfriday::before {
+ background: none;
+}
+
+/* Tarja superior escura com detalhes verdes da paleta */
+.hc-theme-blackfriday .hc-tarja {
+  background: #050505;
+}
+.hc-theme-blackfriday .hc-trilho i {
+  color: #C4D600;
+}
+
+/* Badge "BLACK FRIDAY" — verde da paleta sobre fundo escuro */
+.hc-theme-blackfriday .hc-brand-badge {
+  color: #0a0a0a;
+  background: #C4D600;
+  box-shadow: 0 4px 20px rgba(196, 214, 0, 0.4), 3px 3px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Texto "ATÉ" branco */
+.hc-theme-blackfriday .hc-com {
+  color: #fff;
+}
+
+/* Percentual verde da paleta */
+.hc-theme-blackfriday .hc-percent {
+  color: #C4D600;
+}
+
+/* Badge "OFF" — verde da paleta sobre fundo escuro */
+.hc-theme-blackfriday .hc-off {
+  color: #0a0a0a;
+  background: #C4D600;
+  border-color: rgba(196, 214, 0, 0.4);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.7),
+    0 2px 0 rgba(255, 255, 255, 0.3) inset,
+    0 -2px 6px rgba(0, 0, 0, 0.3) inset;
+}
+.hc-theme-blackfriday .hc-off::before {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Subtítulo branco suave */
+.hc-theme-blackfriday .hc-sub {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* CTA primário — verde da paleta (#C4D600) sobre fundo escuro */
+.hc-theme-blackfriday .hc-btn-primary {
+  background: linear-gradient(135deg, #d4e610 0%, #C4D600 55%, #a8bd00 100%);
+  color: #0a0a0a;
+  box-shadow:
+    0 6px 22px rgba(196, 214, 0, 0.45),
+    0 2px 0 rgba(255, 255, 255, 0.3) inset,
+    0 -2px 8px rgba(0, 0, 0, 0.2) inset;
+  text-shadow: none;
+}
+@keyframes hc-glow-pulse-bf {
+  0%, 100% {
+    box-shadow:
+      0 6px 22px rgba(196, 214, 0, 0.45),
+      0 0 0 0 rgba(196, 214, 0, 0.55),
+      0 2px 0 rgba(255, 255, 255, 0.3) inset,
+      0 -2px 8px rgba(0, 0, 0, 0.2) inset;
+  }
+  50% {
+    box-shadow:
+      0 8px 28px rgba(196, 214, 0, 0.65),
+      0 0 0 14px rgba(196, 214, 0, 0),
+      0 2px 0 rgba(255, 255, 255, 0.4) inset,
+      0 -2px 8px rgba(0, 0, 0, 0.2) inset;
+  }
+}
+.hc-theme-blackfriday .hc-btn-primary {
+  animation: hc-glow-pulse-bf 2.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-theme-blackfriday .hc-btn-primary {
+    animation: none;
+  }
+}
+.hc-theme-blackfriday .hc-btn-primary:hover {
+  box-shadow:
+    0 12px 36px rgba(196, 214, 0, 0.6),
+    0 2px 0 rgba(255, 255, 255, 0.4) inset,
+    0 -2px 8px rgba(0, 0, 0, 0.25) inset;
+}
+
+/* CTA secundário — ghost com borda verde sutil */
+.hc-theme-blackfriday .hc-btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(196, 214, 0, 0.3);
+}
+.hc-theme-blackfriday .hc-btn-ghost::before {
+  background: linear-gradient(135deg, rgba(196, 214, 0, 0.6), rgba(255, 255, 255, 0.1) 50%, rgba(196, 214, 0, 0.4));
+}
+.hc-theme-blackfriday .hc-btn-ghost:hover {
+  background: rgba(196, 214, 0, 0.08);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 24px rgba(196, 214, 0, 0.25);
+}
+
+/* Trust / prova social */
+.hc-theme-blackfriday .hc-trust {
+  color: rgba(255, 255, 255, 0.6);
+}
+.hc-theme-blackfriday .hc-trust-stars svg {
+  fill: #C4D600;
+}
+.hc-theme-blackfriday .hc-trust-dot {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Seta de scroll verde da paleta */
+.hc-theme-blackfriday .hc-scroll-hint svg {
+  stroke: #C4D600;
+}
+
+/* Fade elíptico atrás do carrossel — escuro em vez de azul */
+.hc-theme-blackfriday .hc-g1::before {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(10, 10, 10, 0.4) 0%,
+    rgba(10, 10, 10, 0.2) 40%,
+    transparent 70%
+  );
+}
+
+/* ============================================================
+ LAYOUT BLACK FRIDAY — texto centralizado, óculos simétricos
+ ============================================================ */
+
+/* Texto centralizado no modo BF — usa grid do .hc para centralizar sem position absolute */
+.hc-theme-blackfriday {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hc-theme-blackfriday .hc-texto-center {
+  position: relative;
+  z-index: 20;
+  width: 100%;
+  max-width: 720px;
+  text-align: center;
+  padding: 0 1.5rem;
+}
+
+/* Headline centralizada */
+.hc-theme-blackfriday .hc-texto-center .hc-h1 {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+}
+.hc-theme-blackfriday .hc-texto-center .hc-headline-top {
+  justify-content: center;
+}
+.hc-theme-blackfriday .hc-texto-center .hc-headline-bottom {
+  justify-content: center;
+}
+
+/* Subtítulo centralizado */
+.hc-theme-blackfriday .hc-texto-center .hc-sub {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  max-width: 540px;
+}
+
+/* CTAs centralizados */
+.hc-theme-blackfriday .hc-texto-center .hc-acoes {
+  justify-content: center;
+}
+
+/* Trust centralizado */
+.hc-theme-blackfriday .hc-texto-center .hc-trust {
+  justify-content: center;
+}
+
+/* Óculos esquerdo — inclinado para a direita, lado esquerdo da tela */
+.hc-theme-blackfriday .hc-bf-left {
+  position: absolute;
+  left: 3%;
+  top: 50%;
+  transform: translateY(-50%) rotate(-18deg);
+  z-index: 10;
+  width: clamp(180px, 22vw, 320px);
+  opacity: 0.85;
+  filter: drop-shadow(0 8px 32px rgba(196, 214, 0, 0.15));
+}
+.hc-theme-blackfriday .hc-bf-left img {
+  width: 100%;
+  height: auto;
+}
+
+/* Óculos direito — espelhado, lado direito da tela */
+.hc-theme-blackfriday .hc-bf-right {
+  position: absolute;
+  right: 3%;
+  top: 50%;
+  transform: translateY(-50%) rotate(18deg) scaleX(-1);
+  z-index: 10;
+  width: clamp(180px, 22vw, 320px);
+  opacity: 0.85;
+  filter: drop-shadow(0 8px 32px rgba(196, 214, 0, 0.15));
+}
+.hc-theme-blackfriday .hc-bf-right img {
+  width: 100%;
+  height: auto;
+}
+
+/* Óculos topo — flutuando acima do conteúdo, menor e sutil */
+.hc-theme-blackfriday .hc-bf-top {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%) rotate(-8deg);
+  z-index: 5;
+  width: clamp(140px, 16vw, 240px);
+  opacity: 0.5;
+  filter: drop-shadow(0 4px 20px rgba(196, 214, 0, 0.1));
+}
+.hc-theme-blackfriday .hc-bf-top img {
+  width: 100%;
+  height: auto;
+}
+
+/* Responsividade: esconde óculos laterais em telas pequenas */
+@media (max-width: 768px) {
+  .hc-theme-blackfriday .hc-bf-left,
+  .hc-theme-blackfriday .hc-bf-right {
+    display: none;
+  }
+  .hc-theme-blackfriday .hc-bf-top {
+    top: 5%;
+    width: clamp(100px, 28vw, 180px);
+    opacity: 0.4;
+  }
+  .hc-theme-blackfriday .hc-texto-center {
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+}
+
+/* Animação de entrada da logo no hero Black Friday */
+@keyframes hc-logo-bf-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.7) translateY(-20px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05) translateY(0);
+  }
+  100% {
+    opacity: 0.95;
+    transform: scale(1) translateY(0);
+  }
+}
+.hc-logo-bf {
+  animation: hc-logo-bf-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

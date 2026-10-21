@@ -1,5 +1,11 @@
 import type { CSSProperties } from 'react';
 
+interface HeroBackgroundProps {
+ className?: string;
+ style?: CSSProperties;
+ theme?: 'default' | 'blackfriday';
+}
+
 /* ============================================================
 HERO BACKGROUND — Grafismos da marca Óticas Brasil
 Baseado FIELMENTE nos exemplos do manual (pág 15-17):
@@ -21,8 +27,29 @@ ocupando metade da largura
 - Canto direito: Círculos azuis sobrepostos cortados
 ============================================================ */
 
-const HeroBackground = ({ className = '', style }: { className?: string; style?: CSSProperties }) => {
-return (
+const HeroBackground = ({ className = '', style, theme = 'default' }: HeroBackgroundProps) => {
+ // Tema Black Friday: imagem de fundo black-bg.jpg com parallax
+ if (theme === 'blackfriday') {
+ return (
+ <div
+ className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}
+ aria-hidden="true"
+ >
+ <div className="hc-parallax-container" data-parallax-layers>
+ <div
+ className="hc-parallax-layer absolute inset-0"
+ data-parallax-layer="1"
+ style={{
+ background: 'url(/black-bg.jpg) center/cover no-repeat',
+ ...style,
+ }}
+ />
+ </div>
+ </div>
+ );
+ }
+
+ return (
 <div
 className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}
 style={style}

@@ -113,6 +113,9 @@ export default function App() {
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
 
+  // Hero theme state (shared between HomePage and Header)
+  const [heroTheme, setHeroTheme] = useState<'default' | 'blackfriday'>('default');
+
   // Navigation helper with scroll to top
   const navigateTo = (page: AppPage, productId?: string) => {
     let path = '/';
@@ -216,6 +219,7 @@ export default function App() {
         currentPage={currentPage}
         activeCategory={isCatalogOpen ? catalogCategory : currentPage === 'frames' ? 'armacoes' : null}
         isStoresActive={isStoresOpen}
+        heroTheme={heroTheme}
         onNavigate={(page) => navigateTo(page)}
         onOpenCatalog={(category) => {
           if (category === 'armacoes') {
@@ -239,6 +243,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={
             <HomePage
+              heroTheme={heroTheme}
+              onSetHeroTheme={setHeroTheme}
               onSelectProduct={handleSelectProduct}
               onGoToCheckoutWithProduct={handleGoToCheckoutWithProduct}
               onOpenLensGuide={() => setIsLensGuideOpen(true)}
