@@ -333,7 +333,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }}
-                      className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                      className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md transition-all cursor-pointer"
                       title="Editar produto"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -450,7 +450,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }}
-                      className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                      className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md transition-all cursor-pointer"
                       title="Editar produto"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -647,7 +647,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }}
-                      className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                      className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md transition-all cursor-pointer"
                       title="Editar produto"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -828,7 +828,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }}
-                    className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                    className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md transition-all cursor-pointer"
                     title="Editar produto"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -911,7 +911,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
                   {freeShipping && original > effectivePrice && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP2}%</span>)}
                   {!freeShipping && original > effectivePrice && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP2}%</span>)}
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
@@ -962,7 +962,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
                   {freeShipping && original > effectivePrice && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP3}%</span>)}
                   {!freeShipping && original > effectivePrice && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP3}%</span>)}
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
@@ -1013,7 +1013,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
                   {freeShipping && original > effectivePrice && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP4}%</span>)}
                   {!freeShipping && original > effectivePrice && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP4}%</span>)}
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
