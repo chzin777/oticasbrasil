@@ -209,31 +209,42 @@ export const HomePage: React.FC<HomePageProps> = ({
     ref.current.scrollBy({ left: direction === 'right' ? scrollAmount : -scrollAmount, behavior: 'smooth' });
   };
 
-  /* Rolagem infinita — duplica os cards e reposiciona silenciosamente ao atingir os limites */
-  const setupInfiniteScroll = useCallback((ref: React.RefObject<HTMLDivElement | null>) => {
-    const el = ref.current;
-    if (!el || el.dataset.infiniteReady === 'true') return;
-    el.dataset.infiniteReady = 'true';
-
-    // Duplica o conteúdo para criar o loop visual
-    const originalHTML = el.innerHTML;
-    el.innerHTML = originalHTML + originalHTML;
-
-    const handleScroll = () => {
-      const half = el.scrollWidth / 2;
-      if (el.scrollLeft >= half - 10) {
+  /* Rolagem infinita via React — renderiza itens duplicados no JSX e reseta posição sem manipular DOM */
+  const useInfiniteScrollHandler = useCallback((ref: React.RefObject<HTMLDivElement | null>) => {
+    return useCallback(() => {
+      const el = ref.current;
+      if (!el) return;
+      const children = Array.from(el.children);
+      const totalChildren = children.length;
+      if (totalChildren === 0) return;
+      // Metade dos filhos são originais, metade são clones visuais
+      const half = totalChildren / 2;
+      if (half < 1) return;
+      const firstChildWidth = children[0].getBoundingClientRect().width;
+      const gap = parseFloat(getComputedStyle(el).gap) || 16;
+      const halfWidth = half * (firstChildWidth + gap);
+      if (el.scrollLeft >= halfWidth - 10) {
         el.scrollTo({ left: 0, behavior: 'instant' as ScrollBehavior });
       } else if (el.scrollLeft <= 10) {
-        el.scrollTo({ left: half, behavior: 'instant' as ScrollBehavior });
+        el.scrollTo({ left: halfWidth, behavior: 'instant' as ScrollBehavior });
       }
-    };
-
-    el.addEventListener('scroll', handleScroll, { passive: true });
+    }, [ref]);
   }, []);
 
+  const infiniteRefs = [row1Ref, row2Ref, exclusiveRowRef, newProductsRef, newProductsRef2, newProductsRef3, newProductsRef4];
+  const handlers = infiniteRefs.map(useInfiniteScrollHandler);
+
   useEffect(() => {
-    [row1Ref, row2Ref, exclusiveRowRef, newProductsRef, newProductsRef2, newProductsRef3, newProductsRef4].forEach(setupInfiniteScroll);
-  }, [setupInfiniteScroll]);
+    const cleanups: (() => void)[] = [];
+    infiniteRefs.forEach((ref, i) => {
+      const el = ref.current;
+      const handler = handlers[i];
+      if (!el || !handler) return;
+      el.addEventListener('scroll', handler, { passive: true });
+      cleanups.push(() => el.removeEventListener('scroll', handler));
+    });
+    return () => cleanups.forEach((fn) => fn());
+  }, [handlers]);
 
   return (
     <div className="w-full flex flex-col bg-white">
@@ -302,18 +313,19 @@ export const HomePage: React.FC<HomePageProps> = ({
             </div>
           </div>
           <div ref={row1Ref} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {CATALOG_PRODUCTS.slice(0, 20).map((product, idx) => {
+            {[...CATALOG_PRODUCTS.slice(0, 20), ...CATALOG_PRODUCTS.slice(0, 20)].map((product, idx) => {
+              const realIdx = idx % 20;
               const original = product.originalPrice || Math.round(product.price * 1.25);
               const effectivePrice = getEffectivePrice(product, original);
               const pixPrice = Math.round(effectivePrice * 0.9);
               const installment = (effectivePrice / 10).toFixed(2).replace('.', ',');
-              const showBFBadge = heroTheme === 'blackfriday' && idx % 3 === 0;
-              const freeShipping = isFreeShipping(product, idx);
+              const showBFBadge = heroTheme === 'blackfriday' && realIdx % 3 === 0;
+              const freeShipping = isFreeShipping(product, realIdx);
               const discountPctR1 = Math.round(((original - product.price) / original) * 100);
               const bfHighlightR1 = heroTheme === 'blackfriday' && (customDiscounts[product.id] ?? discountPctR1) >= 30;
               return (
                 <div
-                  key={`row1-${product.id}`}
+                  key={`row1-${idx}-${product.id}`}
                   className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightR1 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
                 >
                   <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
@@ -420,17 +432,18 @@ export const HomePage: React.FC<HomePageProps> = ({
             </div>
           </div>
           <div ref={row2Ref} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {[...CATALOG_PRODUCTS].reverse().slice(0, 20).map((product, idx) => {
+            {[...[...CATALOG_PRODUCTS].reverse().slice(0, 20), ...[...CATALOG_PRODUCTS].reverse().slice(0, 20)].map((product, idx) => {
+              const realIdx = idx % 20;
               const original = product.originalPrice || Math.round(product.price * 1.25);
               const effectivePrice = getEffectivePrice(product, original);
               const installment = (effectivePrice / 10).toFixed(2).replace('.', ',');
-              const freeShipping = isFreeShipping(product, idx);
-              const showBFBadgeR2 = heroTheme === 'blackfriday' && idx % 3 === 0;
+              const freeShipping = isFreeShipping(product, realIdx);
+              const showBFBadgeR2 = heroTheme === 'blackfriday' && realIdx % 3 === 0;
               const discountPctR2 = Math.round(((original - product.price) / original) * 100);
               const bfHighlightR2 = heroTheme === 'blackfriday' && (customDiscounts[product.id] ?? discountPctR2) >= 30;
               return (
                 <div
-                  key={`row2-${product.id}`}
+                  key={`row2-${idx}-${product.id}`}
                   className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightR2 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
                 >
                   <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
@@ -621,18 +634,19 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
 
           <div ref={exclusiveRowRef} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {CATALOG_PRODUCTS.slice(5, 15).map((product, idx) => {
+            {[...CATALOG_PRODUCTS.slice(5, 15), ...CATALOG_PRODUCTS.slice(5, 15)].map((product, idx) => {
+              const realIdx = idx % 10;
               const original = product.originalPrice || Math.round(product.price * 1.25);
               const effectivePrice = getEffectivePrice(product, original);
               const pixPrice = Math.round(effectivePrice * 0.9);
               const installment = (effectivePrice / 10).toFixed(2).replace('.', ',');
-              const showBFBadgeExcl = heroTheme === 'blackfriday' && idx % 3 === 0;
-              const freeShipping = isFreeShipping(product, idx);
+              const showBFBadgeExcl = heroTheme === 'blackfriday' && realIdx % 3 === 0;
+              const freeShipping = isFreeShipping(product, realIdx);
               const discountPctExcl = Math.round(((original - product.price) / original) * 100);
               const bfHighlightExcl = heroTheme === 'blackfriday' && (customDiscounts[product.id] ?? discountPctExcl) >= 30;
               return (
                 <div
-                  key={`exclusive-${product.id}`}
+                  key={`exclusive-${idx}-${product.id}`}
                   className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightExcl ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
                 >
                   <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
@@ -788,7 +802,8 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
         <div ref={newProductsRef} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {CATALOG_PRODUCTS.slice(5, 25).map((product, idx) => {
+          {[...CATALOG_PRODUCTS.slice(5, 25), ...CATALOG_PRODUCTS.slice(5, 25)].map((product, idx) => {
+            const realIdx = idx % 20;
             const original = product.originalPrice || Math.round(product.price * 1.25);
             const effectivePrice = getEffectivePrice(product, original);
             const pixPrice = Math.round(effectivePrice * 0.9);
@@ -895,17 +910,18 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
         <div ref={newProductsRef2} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {CATALOG_PRODUCTS.slice(10, 30).map((product, idx) => {
+          {[...CATALOG_PRODUCTS.slice(10, 30), ...CATALOG_PRODUCTS.slice(10, 30)].map((product, idx) => {
+            const realIdx = idx % 20;
             const original = product.originalPrice || Math.round(product.price * 1.25);
             const effectivePrice = getEffectivePrice(product, original);
             const pixPrice = Math.round(effectivePrice * 0.9);
             const installment = (effectivePrice / 10).toFixed(2).replace('.', ',');
             const showBFBadge = heroTheme === 'blackfriday' && idx % 4 === 0;
-            const freeShipping = isFreeShipping(product, idx);
+            const freeShipping = isFreeShipping(product, realIdx);
             const discountPctNP2 = Math.round(((original - effectivePrice) / original) * 100);
             const bfHighlightNP2 = heroTheme === 'blackfriday' && discountPctNP2 >= 30;
             return (
-              <div key={`np2-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP2 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
+              <div key={`np2-${idx}-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP2 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
                 <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                   {showBFBadge && (<span className="absolute top-0 right-0 z-20 overflow-hidden w-28 h-28 pointer-events-none"><span className="absolute top-4 -right-8 w-36 bg-[#C4D600] text-[#061748] text-[10px] font-black uppercase tracking-wider text-center py-1.5 rotate-45 shadow-md">Black Friday</span></span>)}
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
@@ -946,17 +962,18 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
         <div ref={newProductsRef3} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {CATALOG_PRODUCTS.slice(15, 35).map((product, idx) => {
+          {[...CATALOG_PRODUCTS.slice(15, 35), ...CATALOG_PRODUCTS.slice(15, 35)].map((product, idx) => {
+            const realIdx = idx % 20;
             const original = product.originalPrice || Math.round(product.price * 1.25);
             const effectivePrice = getEffectivePrice(product, original);
             const pixPrice = Math.round(effectivePrice * 0.9);
             const installment = (effectivePrice / 10).toFixed(2).replace('.', ',');
-            const showBFBadge = heroTheme === 'blackfriday' && idx % 4 === 0;
-            const freeShipping = isFreeShipping(product, idx);
+            const showBFBadge = heroTheme === 'blackfriday' && realIdx % 4 === 0;
+            const freeShipping = isFreeShipping(product, realIdx);
             const discountPctNP3 = Math.round(((original - effectivePrice) / original) * 100);
             const bfHighlightNP3 = heroTheme === 'blackfriday' && discountPctNP3 >= 30;
             return (
-              <div key={`np3-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP3 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
+              <div key={`np3-${idx}-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP3 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
                 <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                   {showBFBadge && (<span className="absolute top-0 right-0 z-20 overflow-hidden w-28 h-28 pointer-events-none"><span className="absolute top-4 -right-8 w-36 bg-[#C4D600] text-[#061748] text-[10px] font-black uppercase tracking-wider text-center py-1.5 rotate-45 shadow-md">Black Friday</span></span>)}
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
@@ -997,17 +1014,18 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
         <div ref={newProductsRef4} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {CATALOG_PRODUCTS.slice(20, 40).map((product, idx) => {
+          {[...CATALOG_PRODUCTS.slice(20, 40), ...CATALOG_PRODUCTS.slice(20, 40)].map((product, idx) => {
+            const realIdx = idx % 20;
             const original = product.originalPrice || Math.round(product.price * 1.25);
             const effectivePrice = getEffectivePrice(product, original);
             const pixPrice = Math.round(effectivePrice * 0.9);
             const installment = (effectivePrice / 10).toFixed(2).replace('.', ',');
-            const showBFBadge = heroTheme === 'blackfriday' && idx % 4 === 0;
-            const freeShipping = isFreeShipping(product, idx);
+            const showBFBadge = heroTheme === 'blackfriday' && realIdx % 4 === 0;
+            const freeShipping = isFreeShipping(product, realIdx);
             const discountPctNP4 = Math.round(((original - effectivePrice) / original) * 100);
             const bfHighlightNP4 = heroTheme === 'blackfriday' && discountPctNP4 >= 30;
             return (
-              <div key={`np4-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP4 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
+              <div key={`np4-${idx}-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP4 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
                 <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                   {showBFBadge && (<span className="absolute top-0 right-0 z-20 overflow-hidden w-28 h-28 pointer-events-none"><span className="absolute top-4 -right-8 w-36 bg-[#C4D600] text-[#061748] text-[10px] font-black uppercase tracking-wider text-center py-1.5 rotate-45 shadow-md">Black Friday</span></span>)}
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
