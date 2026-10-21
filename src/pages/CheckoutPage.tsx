@@ -137,8 +137,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT COLUMN: Active Step (8 Cols) */}
-          <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6">
+          {/* LEFT COLUMN: Active Step (8 Cols) — altura fixa para evitar pulo de layout entre steps */}
+          <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6 min-h-[520px]">
             {activeStep === 0 && (
               <StepIdentification
                 customer={customer}
@@ -216,6 +216,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           <OrderSummary
             items={items}
             paymentMethod={paymentMethod}
+            deliveryMethod={deliveryMethod}
             appliedCoupon={appliedCoupon}
             onApplyCoupon={onApplyCoupon}
             couponDiscount={couponDiscount}

@@ -102,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Top Bar Announcement */}
       <div className={`text-[11px] font-bold tracking-wider uppercase py-2 px-4 sm:px-8 text-center select-none transition-colors duration-300 ${isBlackFriday ? 'bg-black text-[#C4D600]' : isHome(currentPage) ? 'bg-[#061748]/80 backdrop-blur-md text-white' : 'bg-[#061748] text-[#ffffff]'}`}>
         <TextMarquee
-          items={isBlackFriday ? ['BLACK FRIDAY', 'ATÉ 70% OFF', 'OFERTAS IMPERDÍVEIS', 'BLACK FRIDAY'] : ['10x sem juros', 'Frete grátis acima de R$ 299,00']}
+          items={isBlackFriday ? ['BLACK FRIDAY', '10x sem juros', 'Frete grátis acima de R$ 299,00'] : ['10x sem juros', 'Frete grátis acima de R$ 299,00']}
           speed={30}
           direction="left"
           separator="|"

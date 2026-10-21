@@ -27,7 +27,7 @@ export const StepDelivery: React.FC<StepDeliveryProps> = ({
     setCepFeedback(null);
     setTimeout(() => {
       setCalculating(false);
-      setCepFeedback('Frete Sedex Especial Óptico gratuito aplicado com sucesso!');
+      setCepFeedback('Frete Correios gratuito aplicado com sucesso!');
       setTimeout(() => setCepFeedback(null), 4000);
     }, 600);
   };
@@ -109,7 +109,7 @@ export const StepDelivery: React.FC<StepDeliveryProps> = ({
                 onChange={() => onSelectDeliveryMethod('sedex')}
                 className="accent-[#4156b8] w-4 h-4 cursor-pointer"
               />
-              <span className="text-sm font-bold text-[#061748]">Sedex Especial Óptico</span>
+              <span className="text-sm font-bold text-[#061748]">Correios</span>
             </div>
             <span className="bg-[#dbee2c] text-[#061748] text-[11px] px-2.5 py-0.5 rounded-full font-bold">
               GRÁTIS
@@ -142,7 +142,7 @@ export const StepDelivery: React.FC<StepDeliveryProps> = ({
                 onChange={() => onSelectDeliveryMethod('boutique')}
                 className="accent-[#4156b8] w-4 h-4 cursor-pointer"
               />
-              <span className="text-sm font-bold text-[#061748]">Retirada em Boutique</span>
+              <span className="text-sm font-bold text-[#061748]">Retirada na Loja</span>
             </div>
             <span className="bg-[#eceef0] text-[#45464f] text-[11px] px-2.5 py-0.5 rounded-full font-bold">
               GRÁTIS

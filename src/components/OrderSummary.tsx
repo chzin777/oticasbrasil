@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { OrderItem, PaymentMethod } from '../types';
+import { OrderItem, PaymentMethod, DeliveryMethod } from '../types';
 import { AVAILABLE_COUPONS } from '../data/mockData';
 
 interface OrderSummaryProps {
   items: OrderItem[];
   paymentMethod: PaymentMethod;
+  deliveryMethod: DeliveryMethod;
   appliedCoupon: string | null;
   onApplyCoupon: (code: string | null, discountAmount: number) => void;
   couponDiscount: number;
@@ -16,6 +17,7 @@ interface OrderSummaryProps {
 export const OrderSummary: React.FC<OrderSummaryProps> = ({
   items,
   paymentMethod,
+  deliveryMethod,
   appliedCoupon,
   onApplyCoupon,
   couponDiscount,
@@ -178,10 +180,12 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             </div>
           )}
 
-          <div className="flex justify-between text-[#45464f]">
-            <span>Frete Sedex com Seguro</span>
-            <span className="text-[#4156b8] font-bold">Grátis</span>
-          </div>
+          {deliveryMethod !== 'pickup' && (
+            <div className="flex justify-between text-[#45464f]">
+              <span>Frete Correios com Seguro</span>
+              <span className="text-[#4156b8] font-bold">Grátis</span>
+            </div>
+          )}
 
           {paymentMethod === 'pix' && (
             <div className="flex justify-between items-center text-[#F7915E] font-semibold">
