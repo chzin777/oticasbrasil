@@ -897,27 +897,29 @@ export const HomePage: React.FC<HomePageProps> = ({
         <div ref={newProductsRef2} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {CATALOG_PRODUCTS.slice(10, 30).map((product, idx) => {
             const original = product.originalPrice || Math.round(product.price * 1.25);
-            const pixPrice = Math.round(product.price * 0.9);
-            const installment = (product.price / 10).toFixed(2).replace('.', ',');
+            const effectivePrice = getEffectivePrice(product, original);
+            const pixPrice = Math.round(effectivePrice * 0.9);
+            const installment = (effectivePrice / 10).toFixed(2).replace('.', ',');
             const showBFBadge = heroTheme === 'blackfriday' && idx % 4 === 0;
-            const freeShipping = idx % 3 === 0;
-            const discountPctNP2 = Math.round(((original - product.price) / original) * 100);
+            const freeShipping = isFreeShipping(product, idx);
+            const discountPctNP2 = Math.round(((original - effectivePrice) / original) * 100);
             const bfHighlightNP2 = heroTheme === 'blackfriday' && discountPctNP2 >= 30;
             return (
               <div key={`np2-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP2 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
                 <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                   {showBFBadge && (<span className="absolute top-0 right-0 z-20 overflow-hidden w-28 h-28 pointer-events-none"><span className="absolute top-4 -right-8 w-36 bg-[#C4D600] text-[#061748] text-[10px] font-black uppercase tracking-wider text-center py-1.5 rotate-45 shadow-md">Black Friday</span></span>)}
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
-                  {freeShipping && original > product.price && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{Math.round(((original - product.price) / original) * 100)}%</span>)}
-                  {!freeShipping && original > product.price && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{Math.round(((original - product.price) / original) * 100)}%</span>)}
+                  {freeShipping && original > effectivePrice && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP2}%</span>)}
+                  {!freeShipping && original > effectivePrice && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP2}%</span>)}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
                   <p className="text-[10px] text-[#45464f] mb-1 uppercase tracking-wide">{product.brand}</p>
                   <h3 className="text-base font-bold text-[#061748] mb-3 truncate cursor-pointer hover:text-[#4156b8] transition-colors" onClick={() => onSelectProduct(product)}>{product.name}</h3>
                   <div className="mt-auto space-y-2">
-                    {original > product.price && (<p className="text-xs text-[#8a8d96] line-through">De R$ {original.toFixed(2).replace('.', ',')}</p>)}
-                    <div className="flex items-baseline gap-2"><span className="text-xl font-black text-[#061748]">R$ {product.price.toFixed(2).replace('.', ',')}</span><span className="text-[11px] text-[#45464f]">à vista no PIX</span></div>
+                    {original > effectivePrice && (<p className="text-xs text-[#8a8d96] line-through">De R$ {original.toFixed(2).replace('.', ',')}</p>)}
+                    <div className="flex items-baseline gap-2"><span className="text-xl font-black text-[#061748]">R$ {effectivePrice.toFixed(2).replace('.', ',')}</span><span className="text-[11px] text-[#45464f]">à vista no PIX</span></div>
                     <p className="text-xs text-[#4156b8] font-semibold">ou 10x de R$ {installment} sem juros</p>
                     <div className="flex gap-2 pt-3">
                       <button type="button" onClick={(e) => { e.stopPropagation(); onGoToCheckoutWithProduct?.(product); }} className="flex-[2] bg-[#061748] text-white text-sm font-bold py-3 rounded-lg hover:bg-[#0a2060] active:scale-95 transition-all cursor-pointer">Comprar Agora</button>
@@ -946,27 +948,29 @@ export const HomePage: React.FC<HomePageProps> = ({
         <div ref={newProductsRef3} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {CATALOG_PRODUCTS.slice(15, 35).map((product, idx) => {
             const original = product.originalPrice || Math.round(product.price * 1.25);
-            const pixPrice = Math.round(product.price * 0.9);
-            const installment = (product.price / 10).toFixed(2).replace('.', ',');
+            const effectivePrice = getEffectivePrice(product, original);
+            const pixPrice = Math.round(effectivePrice * 0.9);
+            const installment = (effectivePrice / 10).toFixed(2).replace('.', ',');
             const showBFBadge = heroTheme === 'blackfriday' && idx % 4 === 0;
-            const freeShipping = idx % 5 === 0;
-            const discountPctNP3 = Math.round(((original - product.price) / original) * 100);
+            const freeShipping = isFreeShipping(product, idx);
+            const discountPctNP3 = Math.round(((original - effectivePrice) / original) * 100);
             const bfHighlightNP3 = heroTheme === 'blackfriday' && discountPctNP3 >= 30;
             return (
               <div key={`np3-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP3 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
                 <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                   {showBFBadge && (<span className="absolute top-0 right-0 z-20 overflow-hidden w-28 h-28 pointer-events-none"><span className="absolute top-4 -right-8 w-36 bg-[#C4D600] text-[#061748] text-[10px] font-black uppercase tracking-wider text-center py-1.5 rotate-45 shadow-md">Black Friday</span></span>)}
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
-                  {freeShipping && original > product.price && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{Math.round(((original - product.price) / original) * 100)}%</span>)}
-                  {!freeShipping && original > product.price && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{Math.round(((original - product.price) / original) * 100)}%</span>)}
+                  {freeShipping && original > effectivePrice && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP3}%</span>)}
+                  {!freeShipping && original > effectivePrice && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP3}%</span>)}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
                   <p className="text-[10px] text-[#45464f] mb-1 uppercase tracking-wide">{product.brand}</p>
                   <h3 className="text-base font-bold text-[#061748] mb-3 truncate cursor-pointer hover:text-[#4156b8] transition-colors" onClick={() => onSelectProduct(product)}>{product.name}</h3>
                   <div className="mt-auto space-y-2">
-                    {original > product.price && (<p className="text-xs text-[#8a8d96] line-through">De R$ {original.toFixed(2).replace('.', ',')}</p>)}
-                    <div className="flex items-baseline gap-2"><span className="text-xl font-black text-[#061748]">R$ {product.price.toFixed(2).replace('.', ',')}</span><span className="text-[11px] text-[#45464f]">à vista no PIX</span></div>
+                    {original > effectivePrice && (<p className="text-xs text-[#8a8d96] line-through">De R$ {original.toFixed(2).replace('.', ',')}</p>)}
+                    <div className="flex items-baseline gap-2"><span className="text-xl font-black text-[#061748]">R$ {effectivePrice.toFixed(2).replace('.', ',')}</span><span className="text-[11px] text-[#45464f]">à vista no PIX</span></div>
                     <p className="text-xs text-[#4156b8] font-semibold">ou 10x de R$ {installment} sem juros</p>
                     <div className="flex gap-2 pt-3">
                       <button type="button" onClick={(e) => { e.stopPropagation(); onGoToCheckoutWithProduct?.(product); }} className="flex-[2] bg-[#061748] text-white text-sm font-bold py-3 rounded-lg hover:bg-[#0a2060] active:scale-95 transition-all cursor-pointer">Comprar Agora</button>
@@ -995,27 +999,29 @@ export const HomePage: React.FC<HomePageProps> = ({
         <div ref={newProductsRef4} className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {CATALOG_PRODUCTS.slice(20, 40).map((product, idx) => {
             const original = product.originalPrice || Math.round(product.price * 1.25);
-            const pixPrice = Math.round(product.price * 0.9);
-            const installment = (product.price / 10).toFixed(2).replace('.', ',');
+            const effectivePrice = getEffectivePrice(product, original);
+            const pixPrice = Math.round(effectivePrice * 0.9);
+            const installment = (effectivePrice / 10).toFixed(2).replace('.', ',');
             const showBFBadge = heroTheme === 'blackfriday' && idx % 4 === 0;
-            const freeShipping = idx % 4 === 0;
-            const discountPctNP4 = Math.round(((original - product.price) / original) * 100);
+            const freeShipping = isFreeShipping(product, idx);
+            const discountPctNP4 = Math.round(((original - effectivePrice) / original) * 100);
             const bfHighlightNP4 = heroTheme === 'blackfriday' && discountPctNP4 >= 30;
             return (
               <div key={`np4-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP4 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
                 <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                   {showBFBadge && (<span className="absolute top-0 right-0 z-20 overflow-hidden w-28 h-28 pointer-events-none"><span className="absolute top-4 -right-8 w-36 bg-[#C4D600] text-[#061748] text-[10px] font-black uppercase tracking-wider text-center py-1.5 rotate-45 shadow-md">Black Friday</span></span>)}
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
-                  {freeShipping && original > product.price && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{Math.round(((original - product.price) / original) * 100)}%</span>)}
-                  {!freeShipping && original > product.price && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{Math.round(((original - product.price) / original) * 100)}%</span>)}
+                  {freeShipping && original > effectivePrice && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP4}%</span>)}
+                  {!freeShipping && original > effectivePrice && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP4}%</span>)}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
                   <p className="text-[10px] text-[#45464f] mb-1 uppercase tracking-wide">{product.brand}</p>
                   <h3 className="text-base font-bold text-[#061748] mb-3 truncate cursor-pointer hover:text-[#4156b8] transition-colors" onClick={() => onSelectProduct(product)}>{product.name}</h3>
                   <div className="mt-auto space-y-2">
-                    {original > product.price && (<p className="text-xs text-[#8a8d96] line-through">De R$ {original.toFixed(2).replace('.', ',')}</p>)}
-                    <div className="flex items-baseline gap-2"><span className="text-xl font-black text-[#061748]">R$ {product.price.toFixed(2).replace('.', ',')}</span><span className="text-[11px] text-[#45464f]">à vista no PIX</span></div>
+                    {original > effectivePrice && (<p className="text-xs text-[#8a8d96] line-through">De R$ {original.toFixed(2).replace('.', ',')}</p>)}
+                    <div className="flex items-baseline gap-2"><span className="text-xl font-black text-[#061748]">R$ {effectivePrice.toFixed(2).replace('.', ',')}</span><span className="text-[11px] text-[#45464f]">à vista no PIX</span></div>
                     <p className="text-xs text-[#4156b8] font-semibold">ou 10x de R$ {installment} sem juros</p>
                     <div className="flex gap-2 pt-3">
                       <button type="button" onClick={(e) => { e.stopPropagation(); onGoToCheckoutWithProduct?.(product); }} className="flex-[2] bg-[#061748] text-white text-sm font-bold py-3 rounded-lg hover:bg-[#0a2060] active:scale-95 transition-all cursor-pointer">Comprar Agora</button>
@@ -1029,6 +1035,22 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       </div>
     </section>
+
+      {editingProductId && (() => {
+        const product = CATALOG_PRODUCTS.find((p) => p.id === editingProductId);
+        if (!product) return null;
+        const original = product.originalPrice || Math.round(product.price * 1.25);
+        const idx = CATALOG_PRODUCTS.indexOf(product);
+        const defaultFreeShipping = idx % 3 === 0;
+        return (
+          <EditProductModal
+            product={product}
+            original={original}
+            defaultFreeShipping={defaultFreeShipping}
+            onClose={() => setEditingProductId(null)}
+          />
+        );
+      })()}
     </div>
   );
 }
