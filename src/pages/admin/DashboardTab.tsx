@@ -186,7 +186,7 @@ export const DashboardTab: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 min-[480px]:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <Kpi icon="inventory_2" label="Produtos" value={String(products.length)} sub={`${brands.size} marcas no catálogo`} />
         <Kpi icon="payments" label="Preço médio" value={fmtBRL(avgPrice)} sub={`Catálogo somado: ${fmtBRL(totalValue)}`} />
         <Kpi

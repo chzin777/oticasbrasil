@@ -263,7 +263,7 @@ function SiteApp() {
       />
 
       {/* Main Content Area based on Current Page */}
-      <main className={`w-full min-h-screen ${currentPage === 'home' ? '' : 'pt-36 bg-[#f7f9fb]'}`}>
+      <main className={`w-full min-w-0 min-h-screen ${currentPage === 'home' ? '' : 'pt-32 sm:pt-36 bg-[#f7f9fb]'}`}>
         <Routes>
           <Route path="/" element={
             <HomePage
@@ -449,11 +449,11 @@ function SiteApp() {
       {!isSpecialistChatOpen && (
         <button
           onClick={() => setIsSpecialistChatOpen(true)}
-          className="fixed bottom-[72px] right-6 z-40 flex items-center gap-2 bg-[#061748] hover:bg-[#0a2366] text-white px-5 py-3 rounded-full shadow-[0_4px_20px_rgba(6,23,72,0.3)] transition-all duration-300 hover:scale-105 cursor-pointer group"
+          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-3 sm:right-6 z-40 flex items-center gap-2 bg-[#061748] hover:bg-[#0a2366] text-white px-3 sm:px-5 py-3 rounded-full shadow-[0_4px_20px_rgba(6,23,72,0.3)] transition-all duration-300 hover:scale-105 cursor-pointer group"
           aria-label="Falar com um especialista"
         >
           <span className="material-symbols-outlined text-[20px] text-[#dbee2c] group-hover:animate-pulse">support_agent</span>
-          <span className="text-sm font-bold tracking-wide">Falar com Especialista</span>
+          <span className="hidden sm:inline text-sm font-bold tracking-wide">Falar com Especialista</span>
         </button>
       )}
     </div>

@@ -63,7 +63,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onOpenStores }) => {
       </section>
 
       {/* Stats */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 -mt-8 relative z-10 px-2 sm:px-6">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 -mt-8 relative z-10 px-0 sm:px-6">
         {STATS.map((s) => (
           <div key={s.label} className="bg-white rounded-2xl border border-[#eceef0] shadow-sm p-5 text-center">
             <p className="text-3xl font-black text-[#061748]">{s.value}</p>
@@ -73,7 +73,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onOpenStores }) => {
       </section>
 
       {/* Story */}
-      <section className="grid lg:grid-cols-2 gap-10 items-center mt-16">
+      <section className="grid lg:grid-cols-2 gap-6 lg:gap-10 items-center mt-16">
         <div className="relative">
           <div className="aspect-[4/3] rounded-3xl overflow-hidden bg-[#eceef0] shadow-sm border border-[#eceef0]">
             <img src="/assets/women1.jpg" alt="Cliente Óticas Brasil" className="w-full h-full object-cover" />
@@ -148,7 +148,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onOpenStores }) => {
       </section>
 
       {/* CTA */}
-      <section className="mt-20 relative overflow-hidden rounded-3xl bg-[#061748] text-white p-8 sm:p-12 text-center">
+      <section className="mt-20 relative overflow-hidden rounded-3xl bg-[#061748] text-white p-6 sm:p-12 text-center">
         <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-[#C4D600]/20 blur-3xl" aria-hidden="true" />
         <h2 className="relative text-2xl sm:text-3xl font-bold tracking-tight">Pronto para encontrar o seu estilo?</h2>
         <p className="relative text-white/70 mt-3 max-w-lg mx-auto">

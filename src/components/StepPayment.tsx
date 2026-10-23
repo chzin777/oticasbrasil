@@ -108,7 +108,7 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
 
       {/* PIX Content Panel */}
       {paymentMethod === 'pix' && (
-        <div className="bg-[#f2f4f6] p-6 rounded-xl flex flex-col md:flex-row items-center gap-6 border border-[#e0e3e5] animate-fadeIn">
+        <div className="bg-[#f2f4f6] p-4 sm:p-6 rounded-xl flex flex-col sm:flex-row items-center gap-4 sm:gap-6 border border-[#e0e3e5] animate-fadeIn">
           {/* Visual QR Code Mockup */}
           <div className="w-32 h-32 bg-white p-2 rounded-xl flex flex-col items-center justify-center shadow-sm flex-shrink-0 border border-[#c6c5d0]/30 relative group">
             <svg className="w-28 h-28 text-[#061748]" fill="currentColor" viewBox="0 0 100 100">
@@ -157,7 +157,7 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
       {/* Credit Card Content Panel */}
       {paymentMethod === 'card' && (
         <div className="flex flex-col gap-4 animate-fadeIn">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Card Number */}
             <div className="md:col-span-2 flex flex-col gap-1">
               <label className="text-xs font-semibold text-[#45464f]">Número do Cartão de Crédito</label>

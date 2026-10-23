@@ -21,16 +21,16 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSel
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[max(1rem,env(safe-area-inset-top))] sm:pt-20 p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 flex flex-col"
+        className="bg-white w-full max-w-xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 flex flex-col max-h-[calc(100dvh-2rem)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
-        <div className="p-4 border-b border-[#e0e3e5] flex items-center gap-3 bg-[#f2f4f6]">
-          <span className="material-symbols-outlined text-[24px] text-[#4156b8]">search</span>
+        <div className="p-3 sm:p-4 border-b border-[#e0e3e5] flex items-center gap-2 sm:gap-3 bg-[#f2f4f6]">
+          <span className="material-symbols-outlined text-[20px] sm:text-[24px] text-[#4156b8]">search</span>
           <input
             type="text"
             autoFocus
@@ -56,7 +56,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSel
         </div>
 
         {/* Results */}
-        <div className="p-4 max-h-80 overflow-y-auto flex flex-col gap-2">
+        <div className="p-3 sm:p-4 max-h-[min(20rem,calc(100dvh-8rem))] overflow-y-auto flex flex-col gap-2">
           {filtered.length === 0 ? (
             <div className="text-center py-8 text-xs text-[#45464f]">
               Nenhuma armação encontrada para &ldquo;{query}&rdquo;.

@@ -72,7 +72,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   };
 
   return (
-    <aside className="lg:col-span-5 xl:col-span-4 sticky top-28 flex flex-col gap-4">
+    <aside className="lg:col-span-5 xl:col-span-4 min-w-0 w-full lg:sticky lg:top-28 flex flex-col gap-4">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#eceef0] flex flex-col gap-4">
         {/* Summary Header */}
         <div className="flex items-center justify-between pb-1 border-b border-[#eceef0]">
@@ -92,7 +92,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               className="flex gap-3 items-start bg-[#f2f4f6] p-3 rounded-xl border border-[#e0e3e5] relative group"
             >
               {/* Product Thumbnail */}
-              <div className="w-20 h-20 bg-white rounded-lg flex-shrink-0 p-1 flex items-center justify-center shadow-sm border border-[#c6c5d0]/30 overflow-hidden">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg flex-shrink-0 p-1 flex items-center justify-center shadow-sm border border-[#c6c5d0]/30 overflow-hidden">
                 <img
                   src={item.image}
                   alt={item.name}
@@ -106,7 +106,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                   <h4 className="text-sm font-bold text-[#061748] truncate">
                     {item.name}
                   </h4>
-                  <span className="text-xs font-bold text-[#061748] whitespace-nowrap">
+                  <span className="text-xs font-bold text-[#061748] whitespace-nowrap shrink-0">
                     R$ {item.price.toFixed(2).replace('.', ',')}
                   </span>
                 </div>

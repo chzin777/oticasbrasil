@@ -10,10 +10,10 @@ export const StoresModal: React.FC<StoresModalProps> = ({ isOpen, onClose }) => 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="bg-[#061748] text-white p-6 flex items-center justify-between">
+        <div className="bg-[#061748] text-white p-4 sm:p-6 flex items-center justify-between gap-3">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#dbee2c]">
               Atendimento Presencial
@@ -31,7 +31,7 @@ export const StoresModal: React.FC<StoresModalProps> = ({ isOpen, onClose }) => 
         </div>
 
         {/* List of stores */}
-        <div className="p-6 overflow-y-auto flex flex-col gap-4">
+        <div className="p-4 sm:p-6 overflow-y-auto flex flex-col gap-4">
           <p className="text-xs text-[#45464f]">
             Visite nossas unidades para ajuste anatômico gratuito da sua armação, medição digital de DNP por vídeo-computação e consultoria com ópticos diplomados.
           </p>
@@ -43,7 +43,7 @@ export const StoresModal: React.FC<StoresModalProps> = ({ isOpen, onClose }) => 
                 className="bg-[#f2f4f6] p-4 rounded-2xl border border-[#e0e3e5] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
               >
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="text-sm font-bold text-[#061748]">{store.name}</h4>
                     {store.hasLab && (
                       <span className="text-[10px] bg-[#dde1ff] text-[#001257] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -72,7 +72,7 @@ export const StoresModal: React.FC<StoresModalProps> = ({ isOpen, onClose }) => 
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-[#f2f4f6] border-t border-[#e0e3e5] flex justify-end">
+        <div className="p-3 sm:p-4 bg-[#f2f4f6] border-t border-[#e0e3e5] flex justify-end">
           <button
             onClick={onClose}
             className="bg-[#061748] text-white text-xs font-bold px-5 py-2 rounded-full cursor-pointer"

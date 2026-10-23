@@ -84,7 +84,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           <button
             type="button"
             onClick={onGoBackToProduct}
-            className="text-xs text-[#4156b8] hover:text-[#061748] font-semibold flex items-center gap-1 cursor-pointer"
+            className="text-xs text-[#4156b8] hover:text-[#061748] font-semibold flex items-start sm:items-center gap-1 text-left cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px]">arrow_back</span>
             <span>Voltar para a página do produto (Aura Titanium Round)</span>
@@ -93,15 +93,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
         {/* Stepper indicator */}
         <div className="mb-6">
-          <div className="flex items-center justify-between max-w-2xl mx-auto">
+          <div className="flex items-center justify-between max-w-2xl mx-auto w-full">
             {STEPS.map((step, idx) => {
               const isActive = idx === activeStep;
               const isCompleted = idx < activeStep;
               return (
                 <React.Fragment key={step.id}>
-                  <div className="flex flex-col items-center gap-1.5 min-w-[80px]">
+                  <div className="flex flex-col items-center gap-1.5 min-w-0 sm:min-w-[80px]">
                     <div
-                      className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                         isActive
                           ? 'bg-[#4156b8] text-white shadow-md scale-110'
                           : isCompleted
@@ -116,7 +116,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       )}
                     </div>
                     <span
-                      className={`text-[11px] font-semibold tracking-wide uppercase transition-colors duration-300 ${
+                      className={`text-[9px] sm:text-[11px] font-semibold tracking-normal sm:tracking-wide uppercase text-center transition-colors duration-300 ${
                         isActive ? 'text-[#4156b8]' : isCompleted ? 'text-[#061748]' : 'text-[#9aa0a6]'
                       }`}
                     >
@@ -125,7 +125,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
                   {idx < STEPS.length - 1 && (
                     <div
-                      className={`flex-1 h-0.5 mx-2 mb-6 rounded transition-colors duration-300 ${
+                      className={`flex-1 h-0.5 mx-1 sm:mx-2 mb-6 rounded transition-colors duration-300 ${
                         idx < activeStep ? 'bg-[#C4D600]' : 'bg-[#e8eaed]'
                       }`}
                     />
@@ -138,7 +138,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT COLUMN: Active Step (8 Cols) — altura fixa para evitar pulo de layout entre steps */}
-          <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6 min-h-[520px]">
+          <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6 min-w-0 lg:min-h-[520px]">
             {activeStep === 0 && (
               <StepIdentification
                 customer={customer}
@@ -174,7 +174,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             )}
 
             {/* Navigation buttons */}
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <button
                 type="button"
                 onClick={goToPrev}

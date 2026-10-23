@@ -283,7 +283,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         <button
           type="button"
           onClick={() => setHeroTheme(heroTheme === 'default' ? 'blackfriday' : 'default')}
-          className="fixed bottom-6 right-6 z-50 bg-[#061748] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#0a2366] transition-colors text-sm font-medium flex items-center gap-2"
+          className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-50 max-w-[calc(100vw-1.5rem)] bg-[#061748] text-white px-3 sm:px-4 py-2 rounded-full shadow-lg hover:bg-[#0a2366] transition-colors text-xs sm:text-sm font-medium flex items-center gap-2"
           aria-label={`Alternar para tema ${heroTheme === 'default' ? 'Black Friday' : 'padrão'}`}
         >
           <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
@@ -307,7 +307,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
         {/* Row 1 — Armações */}
         <div className="mb-10 max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 relative group/row">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h3 className="text-sm font-bold text-[#061748] uppercase tracking-wide">Armações em Destaque</h3>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1">
@@ -351,7 +351,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               return (
                 <div
                   key={`row1-${idx}-${product.id}`}
-                  className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightR1 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
+                  className={`group flex-none w-[min(86vw,300px)] sm:w-[calc(50%_-_0.5rem)] xl:w-[calc(33.333%_-_0.667rem)] 2xl:w-[calc(25%_-_0.75rem)] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightR1 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
                 >
                   <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                     {showBFBadge && (
@@ -378,7 +378,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                   <div className="p-5 flex flex-col flex-1">
@@ -426,7 +426,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
         {/* Row 2 — Óculos de Sol */}
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 relative group/row">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h3 className="text-sm font-bold text-[#061748] uppercase tracking-wide">Óculos de Sol</h3>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1">
@@ -469,7 +469,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               return (
                 <div
                   key={`row2-${idx}-${product.id}`}
-                  className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightR2 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
+                  className={`group flex-none w-[min(86vw,300px)] sm:w-[calc(50%_-_0.5rem)] xl:w-[calc(33.333%_-_0.667rem)] 2xl:w-[calc(25%_-_0.75rem)] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightR2 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
                 >
                   <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                     {showBFBadgeR2 && (
@@ -496,7 +496,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                   <div className="p-5 flex flex-col flex-1">
@@ -567,7 +567,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {[
               {
                 icon: 'verified',
@@ -627,7 +627,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 relative group/row">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h3 className="text-sm font-bold text-[#061748] uppercase tracking-wide">Linha Exclusiva</h3>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1">
@@ -672,7 +672,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               return (
                 <div
                   key={`exclusive-${idx}-${product.id}`}
-                  className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightExcl ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
+                  className={`group flex-none w-[min(86vw,300px)] sm:w-[calc(50%_-_0.5rem)] xl:w-[calc(33.333%_-_0.667rem)] 2xl:w-[calc(25%_-_0.75rem)] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightExcl ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
                 >
                   <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                     {showBFBadgeExcl && (
@@ -694,7 +694,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                   <div className="p-5 flex flex-col flex-1">
@@ -796,7 +796,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
       <div className="mb-10 max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 relative group/row z-10">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="text-sm font-bold text-[#061748] uppercase tracking-wide">Novidades da Semana</h3>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
@@ -840,7 +840,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             return (
               <div
                 key={`new-row-${product.id}`}
-                className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP1 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
+                className={`group flex-none w-[min(86vw,300px)] sm:w-[calc(50%_-_0.5rem)] xl:w-[calc(33.333%_-_0.667rem)] 2xl:w-[calc(25%_-_0.75rem)] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP1 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}
               >
                 <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                   {showBFBadge && (
@@ -876,7 +876,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
@@ -924,7 +924,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* Lista 2 — Mais Vendidos */}
       <div className="mb-10 max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 relative group/row z-10">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="text-sm font-bold text-[#061748] uppercase tracking-wide">Mais Vendidos</h3>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
@@ -946,14 +946,14 @@ export const HomePage: React.FC<HomePageProps> = ({
             const discountPctNP2 = Math.round(((original - effectivePrice) / original) * 100);
             const bfHighlightNP2 = heroTheme === 'blackfriday' && discountPctNP2 >= 30;
             return (
-              <div key={`np2-${idx}-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP2 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
+              <div key={`np2-${idx}-${product.id}`} className={`group flex-none w-[min(86vw,300px)] sm:w-[calc(50%_-_0.5rem)] xl:w-[calc(33.333%_-_0.667rem)] 2xl:w-[calc(25%_-_0.75rem)] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP2 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
                 <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                   {showBFBadge && (<span className="absolute top-0 right-0 z-20 overflow-hidden w-28 h-28 pointer-events-none"><span className="absolute top-4 -right-8 w-36 bg-[#C4D600] text-[#061748] text-[10px] font-black uppercase tracking-wider text-center py-1.5 rotate-45 shadow-md">Black Friday</span></span>)}
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
                   {freeShipping && original > effectivePrice && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP2}%</span>)}
                   {!freeShipping && original > effectivePrice && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP2}%</span>)}
                   <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={product.image} alt={product.name} className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
                   <p className="text-[10px] text-[#45464f] mb-1 uppercase tracking-wide">{product.brand}</p>
@@ -976,7 +976,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* Lista 3 — Lançamentos */}
       <div className="mb-10 max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 relative group/row z-10">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="text-sm font-bold text-[#061748] uppercase tracking-wide">Lançamentos</h3>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
@@ -998,14 +998,14 @@ export const HomePage: React.FC<HomePageProps> = ({
             const discountPctNP3 = Math.round(((original - effectivePrice) / original) * 100);
             const bfHighlightNP3 = heroTheme === 'blackfriday' && discountPctNP3 >= 30;
             return (
-              <div key={`np3-${idx}-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP3 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
+              <div key={`np3-${idx}-${product.id}`} className={`group flex-none w-[min(86vw,300px)] sm:w-[calc(50%_-_0.5rem)] xl:w-[calc(33.333%_-_0.667rem)] 2xl:w-[calc(25%_-_0.75rem)] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP3 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
                 <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                   {showBFBadge && (<span className="absolute top-0 right-0 z-20 overflow-hidden w-28 h-28 pointer-events-none"><span className="absolute top-4 -right-8 w-36 bg-[#C4D600] text-[#061748] text-[10px] font-black uppercase tracking-wider text-center py-1.5 rotate-45 shadow-md">Black Friday</span></span>)}
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
                   {freeShipping && original > effectivePrice && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP3}%</span>)}
                   {!freeShipping && original > effectivePrice && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP3}%</span>)}
                   <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={product.image} alt={product.name} className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
                   <p className="text-[10px] text-[#45464f] mb-1 uppercase tracking-wide">{product.brand}</p>
@@ -1028,7 +1028,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
       {/* Lista 4 — Ofertas Especiais */}
       <div className="mb-4 max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 relative group/row z-10">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h3 className="text-sm font-bold text-[#061748] uppercase tracking-wide">Ofertas Especiais</h3>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
@@ -1050,14 +1050,14 @@ export const HomePage: React.FC<HomePageProps> = ({
             const discountPctNP4 = Math.round(((original - effectivePrice) / original) * 100);
             const bfHighlightNP4 = heroTheme === 'blackfriday' && discountPctNP4 >= 30;
             return (
-              <div key={`np4-${idx}-${product.id}`} className={`group flex-none w-[300px] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP4 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
+              <div key={`np4-${idx}-${product.id}`} className={`group flex-none w-[min(86vw,300px)] sm:w-[calc(50%_-_0.5rem)] xl:w-[calc(33.333%_-_0.667rem)] 2xl:w-[calc(25%_-_0.75rem)] snap-start bg-white rounded-2xl overflow-hidden border ${bfHighlightNP4 ? 'border-[#C4D600] border-2 shadow-[0_0_12px_rgba(196,214,0,0.4)]' : 'border-[#eceef0] hover:border-[#C4D600]/40'} hover:shadow-xl transition-all duration-300 flex flex-col`}>
                 <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct(product)}>
                   {showBFBadge && (<span className="absolute top-0 right-0 z-20 overflow-hidden w-28 h-28 pointer-events-none"><span className="absolute top-4 -right-8 w-36 bg-[#C4D600] text-[#061748] text-[10px] font-black uppercase tracking-wider text-center py-1.5 rotate-45 shadow-md">Black Friday</span></span>)}
                   {freeShipping && (<span className="absolute top-3 left-3 z-10 bg-[#061748] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">Frete Grátis</span>)}
                   {freeShipping && original > effectivePrice && (<span className="absolute top-[2.2rem] left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP4}%</span>)}
                   {!freeShipping && original > effectivePrice && (<span className="absolute top-3 left-3 z-10 bg-[#C4D600] text-[#061748] text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full shadow-md">-{discountPctNP4}%</span>)}
                   <button type="button" onClick={(e) => { e.stopPropagation(); setEditingProductId(product.id); }} className="absolute bottom-3 right-3 z-20 bg-white/90 hover:bg-[#C4D600] text-[#061748] p-1.5 rounded-full shadow-md transition-all cursor-pointer" title="Editar produto"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={product.image} alt={product.name} className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col flex-1">
                   <p className="text-[10px] text-[#45464f] mb-1 uppercase tracking-wide">{product.brand}</p>

@@ -8,7 +8,7 @@
 
 .hc {
   position: relative;
-  min-height: 100svh;
+  min-height: max(100svh, 42rem);
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   overflow-x: clip;
@@ -498,6 +498,24 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto auto;
   }
+  .hc-parallax-layer {
+    background-position: 65% center;
+  }
+  .hc-texto {
+    padding: clamp(128px, 19vh, 168px) clamp(24px, 6vw, 64px) 88px;
+  }
+  .hc-brand-badge {
+    font-size: clamp(1.7rem, 4.5vw, 2.8rem);
+  }
+  .hc-com {
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+  }
+  .hc-percent {
+    font-size: clamp(5rem, 15vw, 9rem);
+  }
+  .hc-sub {
+    max-width: 38rem;
+  }
   .hc-cena {
     aspect-ratio: 4 / 3;
   }
@@ -507,6 +525,30 @@
 }
 
 @media (max-width: 760px) {
+  .hc {
+    min-height: 100svh;
+  }
+
+  @media (min-width: 901px) and (max-width: 1100px) {
+    .hc-parallax-layer {
+      background-position: 65% center;
+    }
+    .hc-texto {
+      padding-inline: clamp(24px, 4vw, 44px);
+    }
+    .hc-brand-badge {
+      font-size: clamp(1.8rem, 4.2vw, 2.8rem);
+    }
+    .hc-com {
+      font-size: clamp(2.5rem, 6.5vw, 4rem);
+    }
+    .hc-percent {
+      font-size: clamp(5rem, 13vw, 8rem);
+    }
+    .hc-btn {
+      padding-inline: clamp(1.25rem, 2.5vw, 2rem);
+    }
+  }
   .hc-cena {
     aspect-ratio: 5 / 4;
   }
@@ -552,6 +594,32 @@
   }
   .hc-g1 {
     width: 44%;
+  }
+  .hc-logos {
+    top: max(1rem, env(safe-area-inset-top));
+    left: max(1rem, env(safe-area-inset-left));
+  }
+  .hc-theme-default .hc-logos > img:first-child {
+    height: clamp(3.5rem, 18vw, 4.5rem);
+  }
+  .hc-theme-default .hc-logos > img:last-child {
+    height: clamp(4rem, 20vw, 5rem);
+  }
+  .hc-scroll-hint {
+    display: none;
+  }
+  .hc-theme-blackfriday {
+    padding-block: 2rem;
+  }
+  .hc-theme-blackfriday .hc-texto-center {
+    padding: 0 1rem;
+  }
+  .hc-theme-blackfriday .hc-logo-bf {
+    height: clamp(8rem, 34vw, 12rem);
+    margin-block: -1rem;
+  }
+  .hc-theme-blackfriday .hc-percent {
+    font-size: clamp(4rem, 17vw, 6rem);
   }
 }
 
@@ -831,5 +899,7 @@
   }
 }
 .hc-logo-bf {
+  height: clamp(12rem, 25vw, 20rem);
+  margin-block: -2rem;
   animation: hc-logo-bf-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

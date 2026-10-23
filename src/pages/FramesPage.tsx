@@ -176,7 +176,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
             onChange={(e) => setFilters(prev => ({ ...prev, priceRange: [prev.priceRange[0], Number(e.target.value)] }))}
             className="w-full accent-[#4156b8] h-1.5 bg-[#eceef0] rounded-lg appearance-none cursor-pointer"
           />
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             {['Até R$ 700', 'R$ 700 - R$ 900', 'Acima R$ 900'].map((label, i) => {
               const ranges: [number, number][] = [[0, 700], [700, 900], [900, priceCap]];
               const isActive = filters.priceRange[1] === ranges[i][1] || (i === 2 && filters.priceRange[1] >= priceCap);
@@ -184,7 +184,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
                 <button
                   key={label}
                   onClick={() => setFilters(prev => ({ ...prev, priceRange: [ranges[i][0], ranges[i][1]] }))}
-                  className={`flex-1 text-[10px] py-1.5 rounded-md border transition-all cursor-pointer ${isActive ? 'bg-[#4156b8] text-white border-[#4156b8]' : 'bg-white text-[#45464f] border-[#eceef0] hover:border-[#4156b8]/50'}`}
+                  className={`flex-1 whitespace-nowrap px-2 text-[10px] py-1.5 rounded-md border transition-all cursor-pointer ${isActive ? 'bg-[#4156b8] text-white border-[#4156b8]' : 'bg-white text-[#45464f] border-[#eceef0] hover:border-[#4156b8]/50'}`}
                 >
                   {label}
                 </button>
@@ -241,9 +241,9 @@ export const FramesPage: React.FC<FramesPageProps> = ({
   return (
     <div className="min-h-screen bg-[#f7f9fb] pb-20">
       {/* Breadcrumb / Navigation Bar (No Hero) */}
-      <div className="bg-white border-b border-[#eceef0] py-3 px-4 sm:px-8 md:px-12 sticky top-[7rem] z-30">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <div className="bg-white border-b border-[#eceef0] py-3 px-4 sm:px-6 md:px-8 lg:px-12 sticky top-[7rem] z-30">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               type="button"
               onClick={onNavigateHome}
@@ -253,10 +253,10 @@ export const FramesPage: React.FC<FramesPageProps> = ({
               <span>Início</span>
             </button>
             <span className="text-[#c6c5d0]">/</span>
-            <h1 className="text-xl font-bold text-[#061748]">{showAll ? 'Todos os Produtos' : 'Armações de Grau'}</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-[#061748] truncate">{showAll ? 'Todos os Produtos' : 'Armações de Grau'}</h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <span className="text-sm text-[#767680] hidden sm:block">
               {filteredProducts.length} {filteredProducts.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
             </span>
@@ -272,9 +272,9 @@ export const FramesPage: React.FC<FramesPageProps> = ({
 
       {/* Main Content Layout */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-8">
-        <div className="flex gap-8 items-start">
+        <div className="flex gap-6 xl:gap-8 items-start">
           {/* Desktop Sidebar */}
-          <aside className="hidden lg:block w-80 shrink-0 sticky top-28 bg-white rounded-2xl border border-[#eceef0] p-6 shadow-sm max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar">
+          <aside className="hidden lg:block w-64 xl:w-80 shrink-0 sticky top-28 bg-white rounded-2xl border border-[#eceef0] p-5 xl:p-6 shadow-sm max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar">
             {FilterSidebar()}
           </aside>
 
@@ -282,7 +282,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
           {mobileFiltersOpen && (
             <div className="fixed inset-0 z-50 lg:hidden">
               <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileFiltersOpen(false)} />
-              <div className="absolute right-0 top-0 bottom-0 w-80 bg-white shadow-2xl p-6 overflow-y-auto animate-slideInRight">
+              <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-80 bg-white shadow-2xl p-6 overflow-y-auto animate-slideInRight">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-[#061748]">Filtros</h2>
                   <button onClick={() => setMobileFiltersOpen(false)} className="p-1 text-[#767680]">
@@ -301,7 +301,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
           )}
 
           {/* Product Grid */}
-          <main className="flex-1">
+          <main className="flex-1 min-w-0">
             {filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <span className="material-symbols-outlined text-6xl text-[#c6c5d0] mb-4">search_off</span>
@@ -312,7 +312,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 xl:gap-5">
                 {filteredProducts.map((prod, index) => (
                   <div
                     key={prod.id}

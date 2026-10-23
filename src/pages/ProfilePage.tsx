@@ -160,7 +160,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
       </section>
 
-      <div className="mt-8 grid lg:grid-cols-[260px_1fr] gap-6 items-start">
+      <div className="mt-8 grid lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)] gap-6 items-start">
         {/* Navigation */}
         <nav className="bg-white rounded-2xl border border-[#eceef0] shadow-sm p-2 flex lg:flex-col gap-1 overflow-x-auto lg:sticky lg:top-40">
           {TABS.map((t) => {
@@ -193,11 +193,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             <form onSubmit={save} className="space-y-6">
               {sectionHeader('Dados pessoais', 'Informações usadas na identificação dos seus pedidos.', true)}
               {successBanner}
-              <div className="grid sm:grid-cols-2 gap-5">
-                {field('Nome completo', c.name, (v) => setDraftCustomer({ ...draftCustomer, name: v }), 'sm:col-span-2')}
+              <div className="grid md:grid-cols-2 gap-5">
+                {field('Nome completo', c.name, (v) => setDraftCustomer({ ...draftCustomer, name: v }), 'md:col-span-2')}
                 {field('CPF', c.cpf, (v) => setDraftCustomer({ ...draftCustomer, cpf: v }))}
                 {field('WhatsApp', c.phone, (v) => setDraftCustomer({ ...draftCustomer, phone: v }))}
-                {field('E-mail', c.email, (v) => setDraftCustomer({ ...draftCustomer, email: v }), 'sm:col-span-2')}
+                {field('E-mail', c.email, (v) => setDraftCustomer({ ...draftCustomer, email: v }), 'md:col-span-2')}
               </div>
               {formActions}
             </form>
@@ -207,14 +207,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             <form onSubmit={save} className="space-y-6">
               {sectionHeader('Endereço de entrega', 'Usado como padrão no frete e no checkout.', true)}
               {successBanner}
-              <div className="grid sm:grid-cols-6 gap-5">
-                {field('CEP', a.cep, (v) => setDraftAddress({ ...draftAddress, cep: v }), 'sm:col-span-2')}
-                {field('Rua', a.street, (v) => setDraftAddress({ ...draftAddress, street: v }), 'sm:col-span-3')}
-                {field('Número', a.number, (v) => setDraftAddress({ ...draftAddress, number: v }), 'sm:col-span-1')}
-                {field('Complemento', a.complement, (v) => setDraftAddress({ ...draftAddress, complement: v }), 'sm:col-span-3')}
-                {field('Bairro', a.neighborhood, (v) => setDraftAddress({ ...draftAddress, neighborhood: v }), 'sm:col-span-3')}
-                {field('Cidade', a.city, (v) => setDraftAddress({ ...draftAddress, city: v }), 'sm:col-span-4')}
-                {field('UF', a.state, (v) => setDraftAddress({ ...draftAddress, state: v }), 'sm:col-span-2')}
+              <div className="grid md:grid-cols-6 gap-5">
+                {field('CEP', a.cep, (v) => setDraftAddress({ ...draftAddress, cep: v }), 'md:col-span-2')}
+                {field('Rua', a.street, (v) => setDraftAddress({ ...draftAddress, street: v }), 'md:col-span-3')}
+                {field('Número', a.number, (v) => setDraftAddress({ ...draftAddress, number: v }), 'md:col-span-1')}
+                {field('Complemento', a.complement, (v) => setDraftAddress({ ...draftAddress, complement: v }), 'md:col-span-3')}
+                {field('Bairro', a.neighborhood, (v) => setDraftAddress({ ...draftAddress, neighborhood: v }), 'md:col-span-3')}
+                {field('Cidade', a.city, (v) => setDraftAddress({ ...draftAddress, city: v }), 'md:col-span-4')}
+                {field('UF', a.state, (v) => setDraftAddress({ ...draftAddress, state: v }), 'md:col-span-2')}
               </div>
               {formActions}
             </form>
@@ -242,7 +242,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   </button>
                 </div>
               ) : (
-                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {favorites.map((prod) => (
                     <div
                       key={prod.id}

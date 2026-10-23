@@ -39,17 +39,17 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
   const pixCopyCode = '00020126580014br.gov.bcb.pix0136ob-98241-otica-brasil-pix-instant5204000053039865405845.505802BR5913OTICAS BRASIL6009SAO PAULO62070503***6304E8A2';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 max-h-[calc(100dvh-1rem)] sm:max-h-[92vh] flex flex-col">
         {/* Modal Header */}
-        <div className="bg-[#061748] text-white p-6 relative">
+        <div className="bg-[#061748] text-white p-4 sm:p-6 relative">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer transition-colors"
           >
             ✕
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 pr-8 min-w-0">
             <div className="w-12 h-12 rounded-full bg-[#dbee2c] text-[#061748] flex items-center justify-center font-bold">
               <span className="material-symbols-outlined text-[28px]">check_circle</span>
             </div>
@@ -68,7 +68,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
         </div>
 
         {/* Modal Scroll Content */}
-        <div className="p-6 overflow-y-auto flex flex-col gap-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex flex-col gap-5 sm:gap-6">
           {/* Optical Lab Workflow Tracker */}
           <div className="bg-[#f2f4f6] p-4 rounded-2xl border border-[#e0e3e5]">
             <h4 className="text-xs font-bold text-[#061748] uppercase tracking-wider mb-3 flex items-center gap-1.5">
@@ -125,7 +125,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
                 </svg>
               </div>
               <div className="flex-1 flex flex-col gap-1.5 text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-start gap-2">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <span className="text-xs font-bold text-[#061748]">Pague via Pix para faturamento instantâneo:</span>
                   <span className="text-xs font-extrabold text-[#061748] bg-[#dbee2c] px-2 py-0.5 rounded-full">
                     R$ {totalAmount.toFixed(2).replace('.', ',')}

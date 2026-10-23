@@ -123,7 +123,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({
 
       {/* Main PDP Grid */}
       <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 xl:gap-12 items-start">
 
           {/* LEFT: Product Gallery & Virtual Try-On (7 Cols) */}
           <div className="lg:col-span-7 flex flex-col gap-4">
@@ -304,7 +304,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({
                     return (
                       <div
                         key={`similar-${simProduct.id}-${idx}`}
-                        className="group flex-none w-[256px] snap-start bg-white rounded-2xl overflow-hidden border border-[#eceef0] hover:shadow-xl hover:border-[#C4D600]/40 transition-all duration-300 flex flex-col"
+                        className="group flex-none w-[75vw] max-w-[256px] sm:w-[256px] snap-start bg-white rounded-2xl overflow-hidden border border-[#eceef0] hover:shadow-xl hover:border-[#C4D600]/40 transition-all duration-300 flex flex-col"
                       >
                         <div className="aspect-[4/3] overflow-hidden bg-[#eceef0] relative cursor-pointer" onClick={() => onSelectProduct?.(simProduct)}>
                           {freeShipping && (

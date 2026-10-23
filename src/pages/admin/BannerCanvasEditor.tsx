@@ -15,6 +15,21 @@ interface BannerCanvasEditorProps {
   onBack: () => void;
 }
 
+type ResizeHandle = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
+
+const MIN_SIZE = 3;
+
+const RESIZE_HANDLES: { handle: ResizeHandle; style: React.CSSProperties; cursor: string }[] = [
+  { handle: 'nw', style: { left: 0, top: 0 }, cursor: 'nwse-resize' },
+  { handle: 'n', style: { left: '50%', top: 0 }, cursor: 'ns-resize' },
+  { handle: 'ne', style: { left: '100%', top: 0 }, cursor: 'nesw-resize' },
+  { handle: 'e', style: { left: '100%', top: '50%' }, cursor: 'ew-resize' },
+  { handle: 'se', style: { left: '100%', top: '100%' }, cursor: 'nwse-resize' },
+  { handle: 's', style: { left: '50%', top: '100%' }, cursor: 'ns-resize' },
+  { handle: 'sw', style: { left: 0, top: '100%' }, cursor: 'nesw-resize' },
+  { handle: 'w', style: { left: 0, top: '50%' }, cursor: 'ew-resize' },
+];
+
 const makeId = () => `element-${typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Date.now()}`;
 
 const resizeImage = async (file: File, background: boolean): Promise<string> => {
@@ -128,6 +143,7 @@ const BannerCanvasEditor: React.FC<BannerCanvasEditorProps> = ({ initialBanner, 
   const [msg, setMsg] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ id: string; pointerId: number; clientX: number; clientY: number; x: number; y: number } | null>(null);
+  const resizeRef = useRef<{ id: string; pointerId: number; handle: ResizeHandle; clientX: number; clientY: number; x: number; y: number; width: number; height: number; rotation: number } | null>(null);
   const backgroundFileRef = useRef<HTMLInputElement>(null);
   const elementFileRef = useRef<HTMLInputElement>(null);
   const selected = banner.elements?.find((element) => element.id === selectedId) ?? null;
@@ -168,20 +184,63 @@ const BannerCanvasEditor: React.FC<BannerCanvasEditorProps> = ({ initialBanner, 
     };
   };
 
+  const onResizeStart = (event: React.PointerEvent<HTMLSpanElement>, element: BannerCanvasElement, handle: ResizeHandle) => {
+    event.stopPropagation();
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeRef.current = {
+      id: element.id,
+      pointerId: event.pointerId,
+      handle,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      x: element.x,
+      y: element.y,
+      width: element.width,
+      height: element.height,
+      rotation: element.rotation ?? 0,
+    };
+  };
+
   const onDragMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current;
     const rect = stageRef.current?.getBoundingClientRect();
-    if (!drag || !rect) return;
+    if (!rect) return;
+    const resize = resizeRef.current;
+    if (resize && resize.pointerId === event.pointerId) {
+      const rad = (resize.rotation * Math.PI) / 180;
+      const px = event.clientX - resize.clientX;
+      const py = event.clientY - resize.clientY;
+      // Projeta o movimento nos eixos locais do elemento rotacionado.
+      const dx = ((px * Math.cos(rad) + py * Math.sin(rad)) / rect.width) * 100;
+      const dy = ((-px * Math.sin(rad) + py * Math.cos(rad)) / rect.height) * 100;
+      let left = resize.x;
+      let top = resize.y;
+      let right = resize.x + resize.width;
+      let bottom = resize.y + resize.height;
+      if (resize.handle.includes('w')) left = Math.max(0, Math.min(left + dx, right - MIN_SIZE));
+      if (resize.handle.includes('e')) right = Math.min(100, Math.max(right + dx, left + MIN_SIZE));
+      if (resize.handle.includes('n')) top = Math.max(0, Math.min(top + dy, bottom - MIN_SIZE));
+      if (resize.handle.includes('s')) bottom = Math.min(100, Math.max(bottom + dy, top + MIN_SIZE));
+      const round = (value: number) => Math.round(value * 10) / 10;
+      updateElement(resize.id, { x: round(left), y: round(top), width: round(right - left), height: round(bottom - top) });
+      return;
+    }
+    const drag = dragRef.current;
+    if (!drag) return;
     const dx = ((event.clientX - drag.clientX) / rect.width) * 100;
     const dy = ((event.clientY - drag.clientY) / rect.height) * 100;
+    const current = banner.elements?.find((element) => element.id === drag.id);
+    const maxX = Math.max(0, 100 - (current?.width ?? 0));
+    const maxY = Math.max(0, 100 - (current?.height ?? 0));
     updateElement(drag.id, {
-      x: Math.round(Math.max(0, Math.min(100, drag.x + dx)) * 10) / 10,
-      y: Math.round(Math.max(0, Math.min(100, drag.y + dy)) * 10) / 10,
+      x: Math.round(Math.max(0, Math.min(maxX, drag.x + dx)) * 10) / 10,
+      y: Math.round(Math.max(0, Math.min(maxY, drag.y + dy)) * 10) / 10,
     });
   };
 
   const onDragEnd = (event: React.PointerEvent<HTMLDivElement>) => {
     if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+    if (resizeRef.current?.pointerId === event.pointerId) resizeRef.current = null;
   };
 
   const updateImage = async (file?: File, target: 'background' | 'element' = 'element') => {
@@ -346,11 +405,32 @@ const BannerCanvasEditor: React.FC<BannerCanvasEditorProps> = ({ initialBanner, 
                 )}
               </div>
             ))}
-            {banner.images.background && (
-              <span className="pointer-events-none absolute bottom-2 right-2 z-30 rounded bg-black/60 px-2 py-1 text-[10px] text-white">Prévia proporcional 16:9</span>
+            {selected && (
+              <div
+                className="pointer-events-none absolute z-40"
+                style={{
+                  left: `${selected.x}%`,
+                  top: `${selected.y}%`,
+                  width: `${selected.width}%`,
+                  height: `${selected.height}%`,
+                  transform: `rotate(${selected.rotation ?? 0}deg)`,
+                }}
+              >
+                {RESIZE_HANDLES.map(({ handle, style, cursor }) => (
+                  <span
+                    key={handle}
+                    role="presentation"
+                    onPointerDown={(event) => onResizeStart(event, selected, handle)}
+                    className="pointer-events-auto absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-sm border-2 border-[#061748] bg-white shadow sm:h-2.5 sm:w-2.5"
+                    style={{ ...style, cursor, touchAction: 'none' }}
+                  />
+                ))}
+              </div>
+            )}
+            {banner.images.background && (              <span className="pointer-events-none absolute bottom-2 right-2 z-30 rounded bg-black/60 px-2 py-1 text-[10px] text-white">Prévia proporcional 16:9</span>
             )}
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
             <Field label="Imagem de fundo (URL)">
               <input className={inputCls} value={banner.images.background} placeholder="https://..." onChange={(event) => setImageUrl('background', event.target.value)} />
             </Field>

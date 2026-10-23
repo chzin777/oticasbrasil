@@ -25,7 +25,7 @@ export const StepIdentification: React.FC<StepIdentificationProps> = ({ customer
       </div>
 
       {/* Inputs Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
         {/* Full Name */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-[#45464f]">Nome Completo</label>

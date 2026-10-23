@@ -168,7 +168,7 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
               <img
                 src={SITE_CONFIG.images[theme].brandLogo}
                 alt="Óticas Brasil"
-                className="mx-auto h-52 sm:h-64 md:h-80 lg:h-96 w-auto object-contain -mt-35 -mb-35 scale-125 origin-center hc-logo-bf"
+                className="mx-auto w-auto max-w-[82vw] object-contain origin-center hc-logo-bf"
               />
               <span className="hc-headline-bottom">
                 <FoldText
@@ -239,7 +239,7 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
            ============================================================ */
         <>
           {/* Logos Óticas Brasil + Meta — modo padrão */}
-          <div className="absolute top-6 left-6 z-30 flex items-center gap-1 sm:gap-2">
+          <div className="hc-logos absolute top-6 left-6 z-30 flex items-center gap-1 sm:gap-2">
             <img
               src={SITE_CONFIG.images[theme].brandLogo}
               alt="Óticas Brasil"

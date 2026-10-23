@@ -32,7 +32,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         }`}
         onClick={onClose}
       />
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-4 sm:pl-10">
         <div
           className={`w-screen max-w-md bg-white shadow-2xl flex flex-col will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
             isOpen ? 'translate-x-0' : 'translate-x-full'
@@ -52,7 +52,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           </div>
 
           {/* Items list */}
-          <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-4">
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-4">
             {items.map((item) => (
               <div
                 key={item.id}

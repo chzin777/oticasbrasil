@@ -308,7 +308,7 @@ export const TaxasAsaasPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <RateField label="Pix — fixo (R$)" value={rates.pixFixed} hint="Por cobrança Pix recebida." onChange={updateRate('pixFixed')} />
             <RateField label="Pix — percentual (%)" value={rates.pixPercent} suffix="%" onChange={updateRate('pixPercent')} />
             <RateField label="Boleto — fixo (R$)" value={rates.boletoFixed} hint="Por boleto pago." onChange={updateRate('boletoFixed')} />
@@ -326,7 +326,7 @@ export const TaxasAsaasPage: React.FC = () => {
         </section>
 
         {/* ── SIMULADOR ── */}
-        <section className="lg:col-span-2 bg-white rounded-2xl border border-[#e6e9ef] shadow-sm p-6 sm:p-8 self-start sticky top-28">
+        <section className="lg:col-span-2 bg-white rounded-2xl border border-[#e6e9ef] shadow-sm p-6 sm:p-8 self-start lg:sticky lg:top-28">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#dbee2c] text-xl">calculate</span>
             <h2 className="text-xl sm:text-2xl font-bold text-[#061748]">Simulador de vendas</h2>

@@ -44,7 +44,7 @@ export const DiscountsTab: React.FC = () => {
     <div className="space-y-5">
       {msg && <Notice kind={msg.kind}>{msg.text}</Notice>}
       <Card title="Desconto em massa" subtitle="Aplica um percentual sobre o preço original de vários produtos de uma vez.">
-        <div className="grid sm:grid-cols-3 gap-5 items-end">
+        <div className="grid md:grid-cols-3 gap-5 items-end">
           <Field label="Aplicar em">
             <select className={inputCls} value={scope} onChange={(e) => setScope(e.target.value)}>
               <option value="all">Todos os produtos</option>
@@ -374,7 +374,7 @@ const BannerPreview: React.FC<{
 const BannerImageFields: React.FC<{ images: BannerImages; onChange: (images: BannerImages) => void }> = ({ images, onChange }) => (
   <details className="rounded-xl border border-[#eceef0] p-4">
     <summary className="cursor-pointer text-sm font-bold text-[#061748]">Imagens do banner — editar por URL</summary>
-    <div className="mt-4 grid gap-4 sm:grid-cols-3">
+    <div className="mt-4 grid gap-4 md:grid-cols-3">
       {([
         ['background', 'Imagem de fundo'],
         ['brandLogo', 'Logo da marca'],
@@ -434,7 +434,7 @@ const ThemeEditor: React.FC<{ theme: HeroTheme; title: string }> = ({ theme, tit
         <Field label="Barra de anúncios" hint="Um anúncio por linha">
           <textarea rows={3} className={inputCls} value={ann} onChange={(e) => setAnn(e.target.value)} />
         </Field>
-        <div className="grid sm:grid-cols-2 gap-5">
+        <div className="grid md:grid-cols-2 gap-5">
           {HERO_FIELDS.map((f) => (
             <Field key={f.key} label={f.label}>
               <input className={inputCls} value={hero[f.key] ?? ''} onChange={(e) => setHero({ ...hero, [f.key]: e.target.value })} />
@@ -557,7 +557,7 @@ export const SettingsTab: React.FC = () => {
         </div>
       </Card>
       <Card title="Senha do painel">
-        <div className="flex gap-3 max-w-md">
+        <div className="flex flex-wrap gap-3 max-w-md">
           <input type="password" className={inputCls} placeholder="Nova senha (mín. 6)" value={pw} onChange={(e) => setPw(e.target.value)} />
           <button
             className={primaryBtn}

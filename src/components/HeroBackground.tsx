@@ -57,7 +57,7 @@ style={style}
 aria-hidden="true"
 >
 <svg
-className="w-full h-full"
+className="block w-full h-full"
 viewBox="0 0 1920 1080"
 preserveAspectRatio="xMidYMid slice"
 xmlns="http://www.w3.org/2000/svg"

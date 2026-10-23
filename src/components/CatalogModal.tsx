@@ -37,10 +37,10 @@ export const CatalogModal: React.FC<CatalogModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white w-full max-w-4xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 max-h-[calc(100dvh-1rem)] sm:max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="bg-[#061748] text-white p-6 flex items-center justify-between">
+        <div className="bg-[#061748] text-white p-4 sm:p-6 flex items-center justify-between gap-3">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#dbee2c]">
               Coleção Boutique Exclusiva
@@ -58,7 +58,7 @@ export const CatalogModal: React.FC<CatalogModalProps> = ({
         </div>
 
         {/* Categories Bar */}
-        <div className="bg-[#f2f4f6] px-6 py-3 border-b border-[#e0e3e5] flex gap-2 flex-wrap">
+        <div className="bg-[#f2f4f6] px-3 sm:px-6 py-3 border-b border-[#e0e3e5] flex gap-2 flex-wrap">
           <button
             onClick={() => {
               setSelectedCategory('armacoes');
@@ -101,7 +101,7 @@ export const CatalogModal: React.FC<CatalogModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-3 sm:p-6 overflow-y-auto flex-1">
           {!selectedProduct ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProducts.map((prod) => (

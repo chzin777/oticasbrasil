@@ -151,29 +151,29 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
   return (
     <Modal title={isNew ? 'Novo produto' : 'Editar produto'} onClose={onClose} wide flush>
       <form onSubmit={submit} className="flex flex-col min-h-0 flex-1">
-        <div className="flex gap-4 px-6 pt-5 pb-4 shrink-0">
-          <div className="w-[72px] h-[72px] shrink-0 rounded-2xl overflow-hidden bg-[#eceef0] border border-[#eceef0] flex items-center justify-center">
+        <div className="flex gap-3 sm:gap-4 px-4 sm:px-6 pt-4 sm:pt-5 pb-4 shrink-0">
+          <div className="hidden sm:flex w-[72px] h-[72px] shrink-0 rounded-2xl overflow-hidden bg-[#eceef0] border border-[#eceef0] flex items-center justify-center">
             {gallery[0] ? <img src={gallery[0]} alt="" className="w-full h-full object-cover" /> : <span className="material-symbols-outlined text-[#b0b3ba] text-3xl">image</span>}
           </div>
-          <div className="flex-1 min-w-0 grid grid-cols-2 sm:grid-cols-12 gap-x-3 gap-y-2.5">
-            <Field label="Nome" className="col-span-2 sm:col-span-6">
+          <div className="flex-1 min-w-0 grid grid-cols-2 md:grid-cols-12 gap-x-3 gap-y-2.5">
+            <Field label="Nome" className="col-span-2 md:col-span-6">
               <input className={`${inputCls} !py-2`} value={p.name} onChange={(e) => set('name', e.target.value)} />
             </Field>
-            <Field label="Marca" className="col-span-1 sm:col-span-3">
+            <Field label="Marca" className="col-span-1 md:col-span-3">
               <input className={`${inputCls} !py-2`} value={p.brand} onChange={(e) => set('brand', e.target.value)} />
             </Field>
-            <Field label="Categoria" className="col-span-1 sm:col-span-3">
+            <Field label="Categoria" className="col-span-1 md:col-span-3">
               <select className={`${inputCls} !py-2`} value={p.category} onChange={(e) => set('category', e.target.value as EyewearProduct['category'])}>
                 {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </Field>
-            <Field label="Preço (R$)" className="col-span-1 sm:col-span-3">
+            <Field label="Preço (R$)" className="col-span-1 md:col-span-3">
               <input type="number" min={0} step="0.01" className={`${inputCls} !py-2`} value={p.price || ''} onChange={(e) => set('price', num(e.target.value))} />
             </Field>
-            <Field label="Preço original (R$)" className="col-span-1 sm:col-span-3">
+            <Field label="Preço original (R$)" className="col-span-1 md:col-span-3">
               <input type="number" min={0} step="0.01" className={`${inputCls} !py-2`} value={p.originalPrice ?? ''} onChange={(e) => set('originalPrice', e.target.value === '' ? undefined : num(e.target.value))} />
             </Field>
-            <Field label="Desconto (%)" className="col-span-1 sm:col-span-2">
+            <Field label="Desconto (%)" className="col-span-1 md:col-span-2">
               <input
                 type="number"
                 min={0}
@@ -185,13 +185,13 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
                 onChange={(e) => applyPercent(e.target.value === '' ? 0 : Number(e.target.value))}
               />
             </Field>
-            <Field label="Selo" className="col-span-2 sm:col-span-4">
+            <Field label="Selo" className="col-span-2 md:col-span-4">
               <input className={`${inputCls} !py-2`} placeholder="Ex.: Mais Vendido" value={p.badge ?? ''} onChange={(e) => set('badge', e.target.value)} />
             </Field>
           </div>
         </div>
 
-        <div className="flex gap-1 px-6 overflow-x-auto border-b border-[#eceef0] shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-1 px-4 sm:px-6 overflow-x-auto border-b border-[#eceef0] shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {FORM_TABS.map((t) => (
             <button
               key={t.id}
@@ -207,14 +207,14 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
           ))}
         </div>
 
-        {error && <div className="px-6 pt-4 shrink-0"><Notice kind="error">{error}</Notice></div>}
+        {error && <div className="px-4 sm:px-6 pt-4 shrink-0"><Notice kind="error">{error}</Notice></div>}
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 bg-[#f7f9fb]">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5 bg-[#f7f9fb]">
         <div className={tabCls('photos')}>
           <p className="text-xs text-[#767680] mb-3">
             Esta é a ordem em que as fotos aparecem na página do produto. A foto 1 é a principal. Arraste as fotos para reordenar.
           </p>
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 min-[420px]:grid-cols-3 md:grid-cols-5 gap-3">
             {gallery.map((src, i) => (
               <div
                 key={`${i}-${src.slice(-20)}`}
@@ -276,23 +276,23 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
           </div>
         </div>
 
-        <div className={`grid sm:grid-cols-6 gap-5 ${show('details')}`}>
-          <Field label="Cor principal" className="sm:col-span-2">
+        <div className={`grid md:grid-cols-6 gap-5 ${show('details')}`}>
+          <Field label="Cor principal" className="md:col-span-2">
             <input className={inputCls} value={p.colorName} onChange={(e) => set('colorName', e.target.value)} />
           </Field>
-          <Field label="Cor (código)" className="sm:col-span-2">
+          <Field label="Cor (código)" className="md:col-span-2">
             <div className="flex gap-2">
               <input type="color" className="h-[42px] w-14 rounded-xl border border-[#c6c5d0] bg-white p-1 cursor-pointer" value={p.colorHex} onChange={(e) => set('colorHex', e.target.value)} />
               <input className={inputCls} value={p.colorHex} onChange={(e) => set('colorHex', e.target.value)} />
             </div>
           </Field>
-          <Field label="Formato" className="sm:col-span-2">
+          <Field label="Formato" className="md:col-span-2">
             <input className={inputCls} value={p.shape} onChange={(e) => set('shape', e.target.value)} />
           </Field>
-          <Field label="Material" className="sm:col-span-3">
+          <Field label="Material" className="md:col-span-3">
             <input className={inputCls} value={p.material} onChange={(e) => set('material', e.target.value)} />
           </Field>
-          <Field label="Calibres disponíveis" hint="Separados por vírgula" className="sm:col-span-3">
+          <Field label="Calibres disponíveis" hint="Separados por vírgula" className="md:col-span-3">
             <input
               className={inputCls}
               value={p.availableCalibres.join(', ')}
@@ -302,17 +302,17 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
               }}
             />
           </Field>
-          <Field label="Descrição curta" className="sm:col-span-6">
+          <Field label="Descrição curta" className="md:col-span-6">
             <textarea rows={2} className={inputCls} value={p.description} onChange={(e) => set('description', e.target.value)} />
           </Field>
-          <Field label="História completa" className="sm:col-span-6">
+          <Field label="História completa" className="md:col-span-6">
             <textarea rows={3} className={inputCls} value={p.fullStory ?? ''} onChange={(e) => set('fullStory', e.target.value)} />
           </Field>
         </div>
 
         <div className={tabCls('specs')}>
           <h4 className="text-sm font-bold text-[#061748] mb-3">Especificações técnicas</h4>
-          <div className="grid sm:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-3 gap-5">
             <Field label="Largura da lente"><input className={inputCls} value={p.specs.lensWidth} onChange={(e) => setSpec('lensWidth', e.target.value)} /></Field>
             <Field label="Ponte"><input className={inputCls} value={p.specs.bridgeWidth} onChange={(e) => setSpec('bridgeWidth', e.target.value)} /></Field>
             <Field label="Haste"><input className={inputCls} value={p.specs.templeLength} onChange={(e) => setSpec('templeLength', e.target.value)} /></Field>
@@ -324,7 +324,7 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
 
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:items-center px-6 py-4 border-t border-[#eceef0] bg-white shrink-0">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:items-center px-4 sm:px-6 py-4 border-t border-[#eceef0] bg-white shrink-0">
           {onDelete && (
             <button
               type="button"
@@ -411,7 +411,7 @@ export const ProductsTab: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <img src={p.image} alt="" className="w-20 h-14 rounded-xl object-cover bg-[#eceef0] border border-[#eceef0]" />
                         <div className="min-w-0">
-                          <p className="font-bold text-[#061748] truncate max-w-[260px]">{p.name}</p>
+                          <p className="font-bold text-[#061748] truncate max-w-[180px] lg:max-w-[260px]">{p.name}</p>
                           <p className="text-[11px] text-[#767680]">{p.brand}{isCustomProduct(p.id) && ' • novo'}</p>
                         </div>
                       </div>

@@ -61,9 +61,19 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navRefs = useRef<Record<string, HTMLElement | null>>({});
   const [productsOpen, setProductsOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
   const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const [hoveringTop, setHoveringTop] = useState(false);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [mobileMenuOpen]);
 
   useLayoutEffect(() => {
     if (!isHome(currentPage)) {
@@ -119,9 +129,9 @@ export const Header: React.FC<HeaderProps> = ({
         />
       )}
       <header
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 w-full z-50 transition-none xl:transition-all duration-300 ${
           isHome(currentPage) && !navVisible
-            ? 'opacity-0 pointer-events-none -translate-y-full'
+            ? 'opacity-100 translate-y-0 pointer-events-auto xl:opacity-0 xl:pointer-events-none xl:-translate-y-full'
             : 'opacity-100 translate-y-0 pointer-events-auto'
         } ${!isHome(currentPage) || scrolledPastHero ? 'bg-white' : ''}`}
         onMouseEnter={() => setHoveringTop(true)}
@@ -140,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Main Header Navigation Bar */}
       <div className={`h-22 transition-all duration-300 ${isHome(currentPage) ? 'bg-white border-b border-[#eceef0]' : 'bg-white border-b border-[#c6c5d0]/30 shadow-[0_4px_12px_rgba(5,22,71,0.06)]'}`}>
-        <div className="max-w-[1440px] h-full mx-auto px-4 sm:px-8 md:px-12 flex items-center justify-between gap-4 md:gap-6">
+        <div className="max-w-[1440px] h-full mx-auto px-3 sm:px-5 lg:px-8 xl:px-12 flex items-center justify-between gap-2 sm:gap-4 xl:gap-6">
 
           {/* Logo Branding */}
           <div
@@ -149,13 +159,13 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <img
               alt="Óticas Brasil Logo"
-              className="h-10 md:h-11 w-auto object-contain transition-transform group-hover:scale-105"
+              className="h-8 max-w-[108px] sm:h-10 sm:max-w-none md:h-11 w-auto object-contain transition-transform group-hover:scale-105"
               src="/logos/logo-blue.png"
             />
           </div>
 
           {/* Nav Links */}
-          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 relative">
+          <nav className="hidden xl:flex items-center gap-4 2xl:gap-8 relative">
             <button
               ref={(el) => { navRefs.current['home'] = el; }}
               onClick={() => onNavigate('home')}
@@ -232,11 +242,20 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Quick Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1.5">
+            <button
+              type="button"
+              aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              className="flex xl:hidden w-9 h-9 sm:w-10 sm:h-10 rounded-full items-center justify-center text-[#45464f] hover:bg-[#eceef0] cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[22px]">{mobileMenuOpen ? 'close' : 'menu'}</span>
+            </button>
             <button
               onClick={onOpenSearch}
               aria-label="Buscar"
-              className="w-10 h-10 rounded-full flex items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
             >
               <span className="material-symbols-outlined text-[22px]">search</span>
             </button>
@@ -244,7 +263,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               aria-label="Lista de Desejos"
               onClick={onOpenWishlist}
-              className="relative w-10 h-10 rounded-full flex items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
+              className="relative hidden min-[380px]:flex w-9 h-9 sm:w-10 sm:h-10 rounded-full items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
             >
               <span className="material-symbols-outlined text-[22px]">favorite</span>
               <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#061748] text-white text-[10px] leading-none flex items-center justify-center font-bold">
@@ -255,7 +274,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenCart}
               aria-label="Sacola de Compras"
-              className="relative w-10 h-10 rounded-full flex items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
+              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
             >
               <span className="material-symbols-outlined text-[22px]">shopping_bag</span>
               <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#dbee2c] text-[#061748] text-[11px] font-bold leading-none flex items-center justify-center shadow-sm">
@@ -266,7 +285,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenProfile}
               aria-label="Minha Conta"
-              className="w-8 h-8 rounded-full bg-black flex items-center justify-center hover:opacity-90 transition-opacity cursor-pointer ml-1"
+              className="hidden sm:flex w-8 h-8 rounded-full bg-black items-center justify-center hover:opacity-90 transition-opacity cursor-pointer ml-1"
             >
               <span className="material-symbols-outlined text-white text-[18px]">person</span>
             </button>
@@ -274,6 +293,33 @@ export const Header: React.FC<HeaderProps> = ({
 
         </div>
       </div>
+      {mobileMenuOpen && (
+        <nav aria-label="Menu principal" className="absolute inset-x-0 top-full z-[55] max-h-[calc(100dvh-7rem)] overflow-y-auto border-t border-[#eceef0] bg-white p-3 shadow-xl xl:hidden">
+          <div className="mx-auto grid max-w-[1440px] gap-1 sm:grid-cols-2">
+            <button type="button" onClick={() => { onNavigate('home'); setMobileMenuOpen(false); }} className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-[#061748] hover:bg-[#f2f4f6]">
+              <span className="material-symbols-outlined text-[20px]">home</span>Início
+            </button>
+            <button type="button" onClick={() => { onNavigate('allProducts'); setMobileMenuOpen(false); }} className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-[#061748] hover:bg-[#f2f4f6]">
+              <span className="material-symbols-outlined text-[20px]">grid_view</span>Todos os produtos
+            </button>
+            {[
+              { label: 'Armações', category: 'armacoes' as const, icon: 'eyeglasses' },
+              { label: 'Óculos de Sol', category: 'oculos-de-sol' as const, icon: 'sunny' },
+              { label: 'Lentes de Grau', category: 'lentes-de-grau' as const, icon: 'lens_blur' },
+            ].map((item) => (
+              <button key={item.category} type="button" onClick={() => { onOpenCatalog?.(item.category); setMobileMenuOpen(false); }} className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-[#061748] hover:bg-[#f2f4f6]">
+                <span className="material-symbols-outlined text-[20px]">{item.icon}</span>{item.label}
+              </button>
+            ))}
+            <button type="button" onClick={() => { onOpenStores?.(); setMobileMenuOpen(false); }} className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-[#061748] hover:bg-[#f2f4f6]">
+              <span className="material-symbols-outlined text-[20px]">location_on</span>Lojas
+            </button>
+            <button type="button" onClick={() => { onNavigate('about'); setMobileMenuOpen(false); }} className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-[#061748] hover:bg-[#f2f4f6]">
+              <span className="material-symbols-outlined text-[20px]">groups</span>Quem somos
+            </button>
+          </div>
+        </nav>
+      )}
     </header>
   </>
   );

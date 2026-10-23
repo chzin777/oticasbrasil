@@ -9,10 +9,10 @@ export const LensGuideModal: React.FC<LensGuideModalProps> = ({ isOpen, onClose 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="bg-[#061748] text-white p-6 flex items-center justify-between">
+        <div className="bg-[#061748] text-white p-4 sm:p-6 flex items-center justify-between gap-3">
           <div>
             <span className="text-[10px] uppercase font-bold tracking-widest text-[#dbee2c]">
               Guia Técnico Óptico
@@ -30,7 +30,7 @@ export const LensGuideModal: React.FC<LensGuideModalProps> = ({ isOpen, onClose 
         </div>
 
         {/* Body Content */}
-        <div className="p-6 overflow-y-auto flex flex-col gap-6 text-xs text-[#45464f]">
+        <div className="p-4 sm:p-6 overflow-y-auto flex flex-col gap-5 sm:gap-6 text-xs text-[#45464f]">
           {/* Section 1: Calibres */}
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-bold text-[#061748] flex items-center gap-1.5">
@@ -40,7 +40,7 @@ export const LensGuideModal: React.FC<LensGuideModalProps> = ({ isOpen, onClose 
             <p className="leading-relaxed">
               O calibre representa o diâmetro horizontal de uma lente em milímetros (ex: 50mm no modelo <strong>Aura Titanium Round</strong>).
             </p>
-            <div className="grid grid-cols-3 gap-2 text-center pt-1">
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-2 text-center pt-1">
               <div className="bg-[#f2f4f6] p-3 rounded-xl border border-[#e0e3e5]">
                 <strong className="block text-sm text-[#061748]">P (47-49mm)</strong>
                 <span className="text-[11px]">Rostos estreitos ou finos</span>

@@ -17,16 +17,16 @@ export const SupportModal: React.FC<SupportModalProps> = ({ isOpen, onClose }) =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white w-full max-w-md rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 flex flex-col max-h-[calc(100dvh-1rem)]">
         {/* Header */}
-        <div className="bg-[#061748] text-white p-5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="bg-[#061748] text-white p-4 sm:p-5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-full bg-emerald-500 flex items-center justify-center text-white">
               <span className="material-symbols-outlined text-[20px]">chat</span>
             </div>
             <div>
-              <h3 className="text-sm font-bold">Concierge Óptico Óticas Brasil</h3>
+              <h3 className="text-sm font-bold break-words">Concierge Óptico Óticas Brasil</h3>
               <span className="text-[11px] text-[#b6c4fe] flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-400"></span> Online agora
               </span>
@@ -36,7 +36,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({ isOpen, onClose }) =
         </div>
 
         {/* Body */}
-        <div className="p-5 flex flex-col gap-4 text-xs">
+        <div className="p-4 sm:p-5 flex flex-col gap-4 text-xs overflow-y-auto">
           <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl flex items-start gap-2.5 text-emerald-900">
             <span className="material-symbols-outlined text-[20px] text-emerald-600">verified_user</span>
             <p className="text-[11px] leading-relaxed">

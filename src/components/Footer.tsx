@@ -18,10 +18,10 @@ export const Footer: React.FC<FooterProps> = ({
 
   return (
     <footer className="w-full bg-[#061748] text-white mt-auto border-t border-white/5">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 pt-16 pb-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 pt-10 sm:pt-16 pb-8 sm:pb-10">
 
         {/* Top Section: Logo + Links Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-16">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 sm:gap-10 lg:gap-16">
 
           {/* Brand Column */}
           <div className="md:col-span-4 lg:col-span-5 flex flex-col gap-6">
@@ -86,7 +86,7 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
 
           {/* Links Columns */}
-          <div className="md:col-span-8 lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8">
+          <div className="md:col-span-8 lg:col-span-7 grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8">
 
             {/* Collections */}
             <div className="flex flex-col gap-4">

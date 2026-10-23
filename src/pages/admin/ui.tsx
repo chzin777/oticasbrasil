@@ -59,14 +59,14 @@ export const Modal: React.FC<{ title: string; onClose: () => void; children: Rea
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6">
       <div className="fixed inset-0 bg-[#061748]/50 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative w-full ${wide ? 'max-w-4xl' : 'max-w-lg'} max-h-full flex flex-col ${flush ? 'h-[min(90vh,760px)]' : ''} bg-white rounded-3xl shadow-2xl overflow-hidden`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#eceef0] shrink-0">
-          <h3 className="text-lg font-bold text-[#061748]">{title}</h3>
+      <div className={`relative w-full ${wide ? 'max-w-4xl' : 'max-w-lg'} max-h-[calc(100dvh-1.5rem)] flex flex-col ${flush ? 'h-[min(90dvh,760px)]' : ''} bg-white rounded-3xl shadow-2xl overflow-hidden`}>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#eceef0] shrink-0">
+          <h3 className="text-base sm:text-lg font-bold text-[#061748] min-w-0 break-words">{title}</h3>
           <button type="button" onClick={onClose} aria-label="Fechar" className="w-9 h-9 rounded-full flex items-center justify-center text-[#767680] hover:bg-[#f2f4f6] hover:text-[#061748] cursor-pointer">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-        <div className={flush ? 'flex flex-col min-h-0 flex-1' : 'p-6 sm:p-8 overflow-y-auto'}>{children}</div>
+        <div className={flush ? 'flex flex-col min-h-0 flex-1' : 'p-4 sm:p-8 overflow-y-auto min-h-0'}>{children}</div>
       </div>
     </div>
   );

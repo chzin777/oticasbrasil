@@ -59,7 +59,7 @@ export const SpecialistChat: React.FC<SpecialistChatProps> = ({ isOpen, onClose 
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="fixed bottom-24 right-6 z-50 w-[320px] bg-white rounded-2xl shadow-[0_8px_32px_rgba(6,23,72,0.18)] border border-[#eceef0] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="fixed bottom-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))] right-2 sm:right-6 z-50 w-[min(320px,calc(100vw-1rem))] max-h-[min(70dvh,36rem)] bg-white rounded-2xl shadow-[0_8px_32px_rgba(6,23,72,0.18)] border border-[#eceef0] overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300">
         {/* Header */}
         <div className="bg-[#061748] px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -81,7 +81,7 @@ export const SpecialistChat: React.FC<SpecialistChatProps> = ({ isOpen, onClose 
         </div>
 
         {/* Body */}
-        <div className="p-5">
+        <div className="p-3 sm:p-5 overflow-y-auto">
           {!selectedTopic ? (
             <>
               <p className="text-[#45464f] text-xs font-semibold mb-4 uppercase tracking-wider">

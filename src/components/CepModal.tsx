@@ -28,7 +28,7 @@ export const CepModal: React.FC<CepModalProps> = ({ isOpen, onClose, onApplyAddr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 flex flex-col">
+      <div className="bg-white w-full max-w-md max-h-[92vh] rounded-3xl shadow-2xl overflow-hidden border border-[#c6c5d0]/30 flex flex-col">
         {/* Header */}
         <div className="bg-[#061748] text-white p-5 flex items-center justify-between">
           <h3 className="text-base font-bold">Consulta de CEP</h3>
@@ -36,7 +36,7 @@ export const CepModal: React.FC<CepModalProps> = ({ isOpen, onClose, onApplyAddr
         </div>
 
         {/* Input */}
-        <div className="p-5 flex flex-col gap-3">
+        <div className="p-4 sm:p-5 flex flex-col gap-3 overflow-y-auto min-h-0">
           <label className="text-xs font-semibold text-[#45464f]">Digite seu endereço ou bairro:</label>
           <input
             type="text"
@@ -46,7 +46,7 @@ export const CepModal: React.FC<CepModalProps> = ({ isOpen, onClose, onApplyAddr
             className="w-full bg-[#f2f4f6] px-4 py-2.5 rounded-full text-xs text-[#191c1e] border border-[#c6c5d0] focus:outline-none focus:border-[#4156b8]"
           />
 
-          <div className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto">
+          <div className="flex flex-col gap-2 mt-2 max-h-[40vh] sm:max-h-60 overflow-y-auto">
             {filtered.map((item) => (
               <div
                 key={item.cep}
@@ -54,7 +54,7 @@ export const CepModal: React.FC<CepModalProps> = ({ isOpen, onClose, onApplyAddr
                   onApplyAddress(item);
                   onClose();
                 }}
-                className="p-3 bg-[#f2f4f6] hover:bg-[#dde1ff]/40 rounded-xl cursor-pointer text-xs flex justify-between items-center transition-colors border border-[#e0e3e5]"
+                className="p-3 bg-[#f2f4f6] hover:bg-[#dde1ff]/40 rounded-xl cursor-pointer text-xs flex flex-wrap justify-between items-center gap-2 transition-colors border border-[#e0e3e5]"
               >
                 <div>
                   <strong className="block text-[#061748]">{item.street}</strong>

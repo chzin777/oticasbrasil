@@ -33,7 +33,7 @@ const SectionShapes = ({ variant, bg = 'white', className = '' }: SectionShapesP
 
     shapes.forEach((shape) => {
       const speed = parseFloat(shape.getAttribute('data-speed') || '0.3');
-      const distance = 120 * speed;
+      const distance = Math.sign(speed) * Math.min(120 * Math.abs(speed), window.innerHeight * 0.06);
       gsap.fromTo(
         shape,
         { y: -distance },
@@ -65,7 +65,7 @@ const SectionShapes = ({ variant, bg = 'white', className = '' }: SectionShapesP
       aria-hidden="true"
     >
       <svg
-        className="w-full h-full"
+        className="block w-full h-full"
         viewBox="0 0 1440 800"
         preserveAspectRatio="xMidYMid slice"
         xmlns="http://www.w3.org/2000/svg"
