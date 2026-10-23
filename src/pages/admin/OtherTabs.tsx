@@ -13,7 +13,6 @@ import {
   HeroTheme,
   importData,
   resetAll,
-  saveCustomBanner,
   saveCoupon,
   saveThemeBanner,
   SITE_CONFIG,
@@ -21,6 +20,7 @@ import {
   useSiteData,
 } from '../../lib/siteStore';
 import { Card, Field, fmtBRL, ghostBtn, inputCls, Modal, Notice, primaryBtn, STORAGE_FULL_MSG } from './ui';
+import BannerCanvasEditor from './BannerCanvasEditor';
 
 type Msg = { kind: 'ok' | 'error'; text: string } | null;
 
@@ -447,113 +447,20 @@ const ThemeEditor: React.FC<{ theme: HeroTheme; title: string }> = ({ theme, tit
   );
 };
 
-const CustomBannerEditor: React.FC<{ banner: CustomBanner }> = ({ banner }) => {
-  const [name, setName] = useState(banner.name);
-  const [theme, setTheme] = useState<HeroTheme>(banner.theme);
-  const [ann, setAnn] = useState(banner.announcements.join('\n'));
-  const [hero, setHero] = useState<Record<string, string>>(() => {
-    const cur = { ...THEME_CONFIG[banner.theme], ...banner.hero } as Record<string, string>;
-    return Object.fromEntries(HERO_FIELDS.map((field) => [field.key, cur[field.key] ?? '']));
-  });
-  const [images, setImages] = useState<BannerImages>({ ...banner.images });
-  const [msg, setMsg] = useState<Msg>(null);
-
-  const changeTheme = (nextTheme: HeroTheme) => {
-    setTheme(nextTheme);
-    setHero((current) => ({ ...THEME_CONFIG[nextTheme], ...current }));
-  };
-  const updateImageFile = async (key: BannerImageKey, file: File) => {
-    try {
-      const image = await readBannerImage(file, key);
-      setImages((current) => ({ ...current, [key]: image }));
-    } catch {
-      setMsg({ kind: 'error', text: 'Não foi possível processar esta imagem.' });
-    }
-  };
-  const changeAnnouncement = (index: number, value: string) => {
-    const lines = ann.split('\n');
-    lines[index] = value;
-    setAnn(lines.join('\n'));
-  };
-  const save = () => {
-    const ok = saveCustomBanner({
-      ...banner,
-      name: name.trim() || 'Banner sem nome',
-      theme,
-      announcements: ann.split('\n').map((item) => item.trim()).filter(Boolean),
-      hero: hero as unknown as Partial<HeroTexts>,
-      images,
-    });
-    setMsg(ok ? { kind: 'ok', text: 'Banner salvo.' } : { kind: 'error', text: STORAGE_FULL_MSG });
-  };
-  const remove = () => {
-    if (window.confirm(`Excluir o banner "${name}"?`)) {
-      if (deleteCustomBanner(banner.id)) setMsg(null);
-      else setMsg({ kind: 'error', text: STORAGE_FULL_MSG });
-    }
-  };
-
-  return (
-    <Card title={name || 'Novo banner'} subtitle="Clique nos textos e nas imagens da prévia para editá-los diretamente.">
-      <div className="space-y-5">
-        {msg && <Notice kind={msg.kind}>{msg.text}</Notice>}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nome do banner">
-            <input className={inputCls} value={name} onChange={(event) => setName(event.target.value)} />
-          </Field>
-          <Field label="Layout">
-            <select className={inputCls} value={theme} onChange={(event) => changeTheme(event.target.value as HeroTheme)}>
-              <option value="default">Padrão</option>
-              <option value="blackfriday">Black Friday</option>
-            </select>
-          </Field>
-        </div>
-        <BannerPreview
-          theme={theme}
-          hero={hero}
-          announcements={ann.split('\n')}
-          images={images}
-          onTextChange={(key, value) => setHero((current) => ({ ...current, [key]: value }))}
-          onAnnouncementChange={changeAnnouncement}
-          onImageFile={updateImageFile}
-        />
-        <BannerImageFields images={images} onChange={setImages} />
-        <Field label="Barra de anúncios" hint="Um anúncio por linha">
-          <textarea rows={3} className={inputCls} value={ann} onChange={(event) => setAnn(event.target.value)} />
-        </Field>
-        <div className="grid sm:grid-cols-2 gap-5">
-          {HERO_FIELDS.map((field) => (
-            <Field key={field.key} label={field.label}>
-              <input className={inputCls} value={hero[field.key] ?? ''} onChange={(event) => setHero({ ...hero, [field.key]: event.target.value })} />
-            </Field>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <button className={primaryBtn} onClick={save}>Salvar banner</button>
-          <button type="button" className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50" onClick={remove}>Excluir banner</button>
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-const createBannerId = () => `banner-${typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Date.now()}`;
-
 export const BannersTab: React.FC = () => {
   useSiteData();
   const [msg, setMsg] = useState<Msg>(null);
-  const create = () => {
-    const theme: HeroTheme = 'default';
-    const banner: CustomBanner = {
-      id: createBannerId(),
-      name: 'Novo banner',
-      theme,
-      announcements: [...SITE_CONFIG.announcements[theme]],
-      hero: { ...THEME_CONFIG[theme] },
-      images: { ...SITE_CONFIG.images[theme] },
-    };
-    setMsg(saveCustomBanner(banner) ? { kind: 'ok', text: 'Novo banner criado. Edite e salve as alterações abaixo.' } : { kind: 'error', text: STORAGE_FULL_MSG });
-  };
+  const [canvasBanner, setCanvasBanner] = useState<CustomBanner | null | undefined>(undefined);
+  if (canvasBanner !== undefined) {
+    return (
+      <BannerCanvasEditor
+        key={canvasBanner?.id ?? 'new-banner'}
+        initialBanner={canvasBanner ?? undefined}
+        onBack={() => setCanvasBanner(undefined)}
+      />
+    );
+  }
+
   const changeActiveBanner = (id: string) => {
     const next = id || null;
     setMsg(setActiveBanner(next) ? { kind: 'ok', text: 'Exibição dos banners atualizada.' } : { kind: 'error', text: STORAGE_FULL_MSG });
@@ -572,12 +479,40 @@ export const BannersTab: React.FC = () => {
             {SITE_CONFIG.customBanners.length > 1 && <option value="__rotation__">Alternar banners personalizados automaticamente</option>}
           </select>
         </Field>
-        <button className={`${primaryBtn} mt-4`} onClick={create}>
+        <button className={`${primaryBtn} mt-4`} onClick={() => setCanvasBanner(null)}>
           <span className="material-symbols-outlined text-[18px]">add</span>
-          Criar novo banner
+          Criar banner do zero
         </button>
       </Card>
-      {SITE_CONFIG.customBanners.map((banner) => <CustomBannerEditor key={banner.id} banner={banner} />)}
+      <Card title="Meus banners" subtitle="Edite seus layouts personalizados no canvas.">
+        {SITE_CONFIG.customBanners.length === 0 ? (
+          <p className="text-sm text-[#767680]">Nenhum banner personalizado criado.</p>
+        ) : (
+          <ul className="grid gap-3">
+            {SITE_CONFIG.customBanners.map((banner) => (
+              <li key={banner.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#eceef0] p-4">
+                <div>
+                  <p className="font-bold text-[#061748]">{banner.name || 'Banner sem nome'}</p>
+                  <p className="text-xs text-[#767680]">{banner.theme === 'blackfriday' ? 'Black Friday' : 'Padrão'} · {banner.elements?.length ?? 0} elementos</p>
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" className={ghostBtn} onClick={() => setCanvasBanner(banner)}>Editar no canvas</button>
+                  <button
+                    type="button"
+                    className="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50"
+                    onClick={() => {
+                      if (!window.confirm(`Excluir o banner "${banner.name}"?`)) return;
+                      setMsg(deleteCustomBanner(banner.id) ? { kind: 'ok', text: 'Banner excluído.' } : { kind: 'error', text: STORAGE_FULL_MSG });
+                    }}
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
       <ThemeEditor theme="default" title="Banner padrão" />
       <ThemeEditor theme="blackfriday" title="Banner Black Friday" />
     </div>

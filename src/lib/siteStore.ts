@@ -25,6 +25,28 @@ export interface BannerImages {
   partnerLogo: string;
 }
 
+export type BannerCanvasElementType = 'text' | 'image' | 'logo' | 'button' | 'shape';
+
+export interface BannerCanvasElement {
+  id: string;
+  type: BannerCanvasElementType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation?: number;
+  text?: string;
+  src?: string;
+  alt?: string;
+  color?: string;
+  backgroundColor?: string;
+  fontSize?: number;
+  fontWeight?: number;
+  borderRadius?: number;
+  shape?: 'rectangle' | 'circle';
+  url?: string;
+}
+
 export interface CustomBanner {
   id: string;
   name: string;
@@ -32,6 +54,8 @@ export interface CustomBanner {
   announcements: string[];
   hero: Partial<HeroTexts>;
   images: BannerImages;
+  elements?: BannerCanvasElement[];
+  canvasBackgroundColor?: string;
 }
 
 export interface SiteConfig {

@@ -20,6 +20,84 @@ const CustomBannerHero: React.FC<CustomBannerHeroProps> = ({ banner, onOpenCatal
     secondaryCta: 'Explorar catálogo',
     ...banner.hero,
   };
+  const goTo = (url?: string) => {
+    if (!url) {
+      onOpenCatalog('armacoes');
+    } else if (url.startsWith('/')) {
+      navigate(url);
+    } else {
+      try {
+        const target = new URL(url);
+        if (target.protocol === 'https:' || target.protocol === 'http:') {
+          window.open(target.href, '_blank', 'noopener,noreferrer');
+        }
+      } catch {
+        return;
+      }
+    }
+  };
+  const elements = banner.elements ?? [];
+
+  if (elements.length > 0) {
+    return (
+      <section
+        className="relative isolate w-full overflow-hidden"
+        style={{ aspectRatio: '16 / 9', backgroundColor: banner.canvasBackgroundColor || '#061748', containerType: 'inline-size' }}
+      >
+        {banner.images.background && (
+          <img src={banner.images.background} alt="" className="absolute inset-0 z-0 h-full w-full object-cover" />
+        )}
+        {elements.map((element, index) => {
+          const style: React.CSSProperties = {
+            position: 'absolute',
+            zIndex: index + 1,
+            left: `${element.x}%`,
+            top: `${element.y}%`,
+            width: `${element.width}%`,
+            height: `${element.height}%`,
+            transform: `rotate(${element.rotation ?? 0}deg)`,
+            color: element.color || '#ffffff',
+            backgroundColor: element.type === 'shape' || element.type === 'button' ? element.backgroundColor : undefined,
+            borderRadius: element.type === 'shape' && element.shape === 'circle'
+              ? '9999px'
+              : `${element.borderRadius ?? 0}px`,
+            fontSize: `${((element.fontSize ?? 24) / 1440) * 100}cqw`,
+            fontWeight: element.fontWeight ?? 700,
+          };
+
+          if (element.type === 'image' || element.type === 'logo') {
+            return element.src ? (
+              <img key={element.id} src={element.src} alt={element.alt || ''} style={{ ...style, objectFit: 'contain' }} />
+            ) : null;
+          }
+
+          if (element.type === 'button') {
+            return (
+              <button
+                key={element.id}
+                type="button"
+                onClick={() => goTo(element.url)}
+                style={style}
+                className="flex items-center justify-center overflow-hidden px-3 text-center"
+              >
+                {element.text}
+              </button>
+            );
+          }
+
+          if (element.type === 'shape') {
+            return <div key={element.id} aria-hidden="true" style={style} />;
+          }
+
+          return (
+            <div key={element.id} style={{ ...style, overflow: 'hidden', whiteSpace: 'pre-wrap', lineHeight: 1.15 }}>
+              {element.text}
+            </div>
+          );
+        })}
+      </section>
+    );
+  }
 
   return (
     <section className={`relative isolate flex min-h-screen items-center overflow-hidden text-white ${isBlackFriday ? 'justify-center text-center' : ''}`}>
