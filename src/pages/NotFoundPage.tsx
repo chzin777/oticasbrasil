@@ -34,17 +34,10 @@ export const NotFoundPage: React.FC = () => {
         >
           Voltar ao Início
         </button>
-        <button
-          type="button"
-          onClick={() => navigate('/armacoes')}
-          className="px-8 py-3.5 border-2 border-[#061748] text-[#061748] text-sm font-bold rounded-xl hover:bg-[#061748] hover:text-white active:scale-95 transition-all cursor-pointer"
-        >
-          Ver Armações
-        </button>
       </div>
 
       {/* Decorative accent line */}
-      <div className="mt-16 w-24 h-1 bg-gradient-to-r from-[#C4D600] to-[#4156b8] rounded-full opacity-60" />
+      
     </div>
   );
 };

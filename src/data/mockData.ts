@@ -695,7 +695,16 @@ export const OPTICAL_STORES: OpticalStore[] = [
   }
 ];
 
-export const AVAILABLE_COUPONS: Record<string, { discountPercent?: number; discountAmount?: number; desc: string }> = {
+export interface Coupon {
+  discountPercent?: number;
+  discountAmount?: number;
+  desc: string;
+  active?: boolean;
+  minSubtotal?: number;
+  expiresAt?: string;
+}
+
+export const AVAILABLE_COUPONS: Record<string, Coupon> = {
   'BRASIL10': { discountPercent: 10, desc: '10% OFF em toda a compra' },
   'BEMVINDO': { discountAmount: 50, desc: 'R$ 50,00 OFF de Boas-Vindas' },
   'OPTICA5': { discountPercent: 5, desc: '5% OFF Especial' }

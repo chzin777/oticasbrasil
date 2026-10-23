@@ -4,6 +4,7 @@ interface HeroBackgroundProps {
  className?: string;
  style?: CSSProperties;
  theme?: 'default' | 'blackfriday';
+ backgroundImage?: string;
 }
 
 /* ============================================================
@@ -27,7 +28,7 @@ ocupando metade da largura
 - Canto direito: Círculos azuis sobrepostos cortados
 ============================================================ */
 
-const HeroBackground = ({ className = '', style, theme = 'default' }: HeroBackgroundProps) => {
+const HeroBackground = ({ className = '', style, theme = 'default', backgroundImage }: HeroBackgroundProps) => {
  // Tema Black Friday: imagem de fundo black-bg.jpg com parallax
  if (theme === 'blackfriday') {
  return (
@@ -40,7 +41,7 @@ const HeroBackground = ({ className = '', style, theme = 'default' }: HeroBackgr
  className="hc-parallax-layer absolute inset-0"
  data-parallax-layer="1"
  style={{
- background: 'url(/black-bg.jpg) center/cover no-repeat',
+ background: `url("${backgroundImage || '/black-bg.jpg'}") center/cover no-repeat`,
  ...style,
  }}
  />

@@ -19,7 +19,7 @@ export const StoresModal: React.FC<StoresModalProps> = ({ isOpen, onClose }) => 
               Atendimento Presencial
             </span>
             <h2 className="text-xl md:text-2xl font-bold tracking-tight">
-              Nossas Boutiques &amp; Laboratórios
+              Nossas Lojas
             </h2>
           </div>
           <button

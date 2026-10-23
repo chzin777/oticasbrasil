@@ -15,6 +15,10 @@ import { TaxasAsaasPage } from './pages/TaxasAsaasPage';
 import { RayBanMetaPage } from './pages/RayBanMetaPage';
 import { SunglassesPage } from './pages/SunglassesPage';
 import { LensesPage } from './pages/LensesPage';
+import { WishlistPage } from './pages/WishlistPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { AboutPage } from './pages/AboutPage';
+import AdminPage from './pages/AdminPage';
 import { OrderSuccessModal } from './components/OrderSuccessModal';
 import { CatalogModal } from './components/CatalogModal';
 import { StoresModal } from './components/StoresModal';
@@ -48,6 +52,12 @@ import {
 const getPageFromPath = (pathname: string): AppPage => {
   if (pathname.startsWith('/produto/')) return 'product';
   if (pathname === '/armacoes') return 'frames';
+  if (pathname === '/oculos-de-sol') return 'sunglasses';
+  if (pathname === '/lentes-de-grau') return 'lenses';
+  if (pathname === '/lista-de-desejos') return 'wishlist';
+  if (pathname === '/todos-os-produtos') return 'allProducts';
+  if (pathname === '/quem-somos') return 'about';
+  if (pathname === '/minha-conta') return 'profile';
   if (pathname === '/checkout') return 'checkout';
   if (pathname === '/taxas') return 'taxas';
   return 'home';
@@ -87,6 +97,12 @@ function ProductPageRoute({
 }
 
 export default function App() {
+  const { pathname } = useLocation();
+  if (pathname.startsWith('/admin')) return <AdminPage />;
+  return <SiteApp />;
+}
+
+function SiteApp() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPage = getPageFromPath(location.pathname);
@@ -128,6 +144,9 @@ export default function App() {
       case 'home': path = '/'; break;
       case 'product': path = `/produto/${productId}`; break;
       case 'frames': path = '/armacoes'; break;
+      case 'lenses': path = '/lentes-de-grau'; break;
+      case 'allProducts': path = '/todos-os-produtos'; break;
+      case 'about': path = '/quem-somos'; break;
       case 'checkout': path = '/checkout'; break;
       case 'taxas': path = '/taxas'; break;
     }
@@ -222,7 +241,7 @@ export default function App() {
       {/* Top Announcement Bar, Navigation & Screen Switcher */}
       <Header
         currentPage={currentPage}
-        activeCategory={isCatalogOpen ? catalogCategory : currentPage === 'frames' ? 'armacoes' : null}
+        activeCategory={isCatalogOpen ? catalogCategory : currentPage === 'frames' ? 'armacoes' : currentPage === 'sunglasses' ? 'oculos-de-sol' : currentPage === 'lenses' ? 'lentes-de-grau' : null}
         isStoresActive={isStoresOpen}
         heroTheme={heroTheme}
         onNavigate={(page) => navigateTo(page)}
@@ -239,9 +258,8 @@ export default function App() {
         onOpenSearch={() => setIsSearchOpen(true)}
         cartCount={items.reduce((acc, i) => acc + i.quantity, 0)}
         onOpenCart={() => setIsCartDrawerOpen(true)}
-        onOpenProfile={() => {
-          alert(`Usuário Conectado: ${customer.name}\nCPF: ${customer.cpf}\nWhatsApp: ${customer.phone}`);
-        }}
+        onOpenWishlist={() => { navigate('/lista-de-desejos'); window.scrollTo({ top: 0, behavior: 'instant' }); }}
+        onOpenProfile={() => { navigate('/minha-conta'); window.scrollTo({ top: 0, behavior: 'instant' }); }}
       />
 
       {/* Main Content Area based on Current Page */}
@@ -283,6 +301,14 @@ export default function App() {
             />
           } />
 
+          <Route path="/todos-os-produtos" element={
+            <FramesPage
+              showAll
+              onSelectProductForCheckout={handleGoToCheckoutWithProduct}
+              onNavigateHome={() => navigateTo('home')}
+            />
+          } />
+          <Route path="/quem-somos" element={<AboutPage onOpenStores={() => setIsStoresOpen(true)} />} />
           <Route path="/rayban-meta" element={
             <RayBanMetaPage
               onSelectProductForCheckout={handleGoToCheckoutWithProduct}
@@ -291,6 +317,17 @@ export default function App() {
           } />
           <Route path="/oculos-de-sol" element={<SunglassesPage />} />
           <Route path="/lentes-de-grau" element={<LensesPage />} />
+          <Route path="/lista-de-desejos" element={<WishlistPage />} />
+          <Route path="/minha-conta" element={
+            <ProfilePage
+              customer={customer}
+              address={address}
+              cartCount={items.reduce((acc, i) => acc + i.quantity, 0)}
+              onUpdateCustomer={handleUpdateCustomer}
+              onUpdateAddress={setAddress}
+              onOpenCart={() => setIsCartDrawerOpen(true)}
+            />
+          } />
 
           <Route path="/taxas" element={<TaxasAsaasPage />} />
 

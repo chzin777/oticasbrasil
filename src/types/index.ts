@@ -2,7 +2,7 @@ export type PaymentMethod = 'pix' | 'card' | 'boleto';
 
 export type DeliveryMethod = 'sedex' | 'boutique';
 
-export type AppPage = 'home' | 'product' | 'checkout' | 'frames' | 'taxas';
+export type AppPage = 'home' | 'product' | 'checkout' | 'frames' | 'sunglasses' | 'lenses' | 'wishlist' | 'allProducts' | 'about' | 'profile' | 'taxas';
 
 export interface PrescriptionData {
   file: File | null;

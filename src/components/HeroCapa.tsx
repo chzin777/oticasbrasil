@@ -8,6 +8,7 @@ import HeroBackground from './HeroBackground';
 import CountUp from './CountUp';
 import BFConfetti from './BFConfetti';
 import FoldText from './FoldText';
+import { SITE_CONFIG, useSiteData } from '../lib/siteStore';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -37,7 +38,7 @@ interface HeroCapaProps {
   theme?: HeroTheme;
 }
 
-const THEME_CONFIG = {
+export const THEME_CONFIG = {
   default: {
     brandBadge: 'RAY-BAN META',
     headlineCom: 'COM',
@@ -69,7 +70,8 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
   const prevTheme = useRef(theme);
   const [discountUnlocked, setDiscountUnlocked] = useState(false);
   const isBlackFriday = theme === 'blackfriday';
-  const config = THEME_CONFIG[theme];
+  const config = { ...THEME_CONFIG[theme], ...SITE_CONFIG.hero[theme] };
+  useSiteData();
 
   useGSAP(
     () => {
@@ -149,7 +151,7 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
   return (
     <section className={`hc hc-theme-${theme}`} id="topo" ref={root}>
       {/* Background geométrico — apenas no tema Black Friday */}
-      {isBlackFriday && <HeroBackground theme={theme} />}
+      {isBlackFriday && <HeroBackground theme={theme} backgroundImage={SITE_CONFIG.images[theme].background} />}
 
       {/* ============================================================
           LAYOUT BLACK FRIDAY — texto centralizado
@@ -164,7 +166,7 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
                 <span className="hc-brand-badge">{config.brandBadge} É NA</span>
               </span>
               <img
-                src="/logos/logo-green.png"
+                src={SITE_CONFIG.images[theme].brandLogo}
                 alt="Óticas Brasil"
                 className="mx-auto h-52 sm:h-64 md:h-80 lg:h-96 w-auto object-contain -mt-35 -mb-35 scale-125 origin-center hc-logo-bf"
               />
@@ -239,13 +241,13 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
           {/* Logos Óticas Brasil + Meta — modo padrão */}
           <div className="absolute top-6 left-6 z-30 flex items-center gap-1 sm:gap-2">
             <img
-              src="/logos/logo-green.png"
+              src={SITE_CONFIG.images[theme].brandLogo}
               alt="Óticas Brasil"
               className="h-20 sm:h-24 md:h-28 w-auto"
             />
             <span className="hidden sm:block h-10 md:h-12 w-px bg-white/30" aria-hidden="true" />
             <img
-              src="/logos/meta.png"
+              src={SITE_CONFIG.images[theme].partnerLogo}
               alt="Meta"
               className="h-24 sm:h-28 md:h-32 w-auto opacity-90 -ml-2 sm:-ml-3"
             />
@@ -253,10 +255,10 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
 
           {/* Camadas parallax do background — controladas pelo GSAP ScrollTrigger */}
           <div className="hc-parallax-container" data-parallax-layers aria-hidden="true">
-            <div className="hc-parallax-layer" data-parallax-layer="1" />
-            <div className="hc-parallax-layer" data-parallax-layer="2" />
-            <div className="hc-parallax-layer" data-parallax-layer="3" />
-            <div className="hc-parallax-layer" data-parallax-layer="4" />
+            <div className="hc-parallax-layer" data-parallax-layer="1" style={{ backgroundImage: `url("${SITE_CONFIG.images[theme].background}")` }} />
+            <div className="hc-parallax-layer" data-parallax-layer="2" style={{ backgroundImage: `url("${SITE_CONFIG.images[theme].background}")` }} />
+            <div className="hc-parallax-layer" data-parallax-layer="3" style={{ backgroundImage: `url("${SITE_CONFIG.images[theme].background}")` }} />
+            <div className="hc-parallax-layer" data-parallax-layer="4" style={{ backgroundImage: `url("${SITE_CONFIG.images[theme].background}")` }} />
           </div>
 
           {/* Texto */}

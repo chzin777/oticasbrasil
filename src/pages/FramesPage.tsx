@@ -2,10 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATALOG_PRODUCTS } from '../data/mockData';
 import { EyewearProduct } from '../types';
+import { WishlistButton } from '../components/WishlistContext';
+import { FilterSection, CheckboxItem } from '../components/FilterParts';
 
 interface FramesPageProps {
   onSelectProductForCheckout: (product: EyewearProduct, lensType: string) => void;
   onNavigateHome: () => void;
+  showAll?: boolean;
 }
 
 interface Filters {
@@ -41,13 +44,23 @@ const LENS_PROTECTION_OPTIONS = ['UV400', 'Blue Light', 'Polarizado', 'Antirrefl
 export const FramesPage: React.FC<FramesPageProps> = ({
   onSelectProductForCheckout,
   onNavigateHome,
+  showAll = false,
 }) => {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const framesProducts = useMemo(() => CATALOG_PRODUCTS.filter((p) => p.category === 'armacoes'), []);
+  const framesProducts = useMemo(
+    () => (showAll ? CATALOG_PRODUCTS : CATALOG_PRODUCTS.filter((p) => p.category === 'armacoes')),
+    [showAll]
+  );
+
+  const priceCap = useMemo(
+    () => Math.max(2000, Math.ceil(Math.max(...framesProducts.map((p) => p.price)) / 100) * 100),
+    [framesProducts]
+  );
+  const initialFilters = useMemo<Filters>(() => ({ ...INITIAL_FILTERS, priceRange: [0, priceCap] }), [priceCap]);
+  const [filters, setFilters] = useState<Filters>(initialFilters);
 
   // Extract unique filter options from products
   const filterOptions = useMemo(() => {
@@ -88,7 +101,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
     let count = 0;
     if (filters.gender.length) count += filters.gender.length;
     if (filters.brand.length) count += filters.brand.length;
-    if (filters.priceRange[0] > 0 || filters.priceRange[1] < filterOptions.maxPrice) count++;
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < priceCap) count++;
     if (filters.frameColor.length) count += filters.frameColor.length;
     if (filters.lensColor.length) count += filters.lensColor.length;
     if (filters.shape.length) count += filters.shape.length;
@@ -97,32 +110,13 @@ export const FramesPage: React.FC<FramesPageProps> = ({
     if (filters.lensProtection.length) count += filters.lensProtection.length;
     if (filters.bridgeSize.length) count += filters.bridgeSize.length;
     return count;
-  }, [filters, filterOptions.maxPrice]);
+  }, [filters, priceCap]);
 
-  const clearFilters = () => setFilters(INITIAL_FILTERS);
+  const clearFilters = () => setFilters(initialFilters);
 
   const handleChooseProduct = (prod: EyewearProduct) => {
     navigate(`/produto/${prod.id}`);
   };
-
-  // Filter Section Component
-  const FilterSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="border-b border-[#eceef0] pb-4 mb-4 last:border-0">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-[#061748] mb-3">{title}</h3>
-      <div className="flex flex-col gap-2">{children}</div>
-    </div>
-  );
-
-  const CheckboxItem = ({ label, checked, onClick, count }: { label: string; checked: boolean; onClick: () => void; count?: number }) => (
-    <label className="flex items-center gap-2 cursor-pointer group">
-      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${checked ? 'bg-[#4156b8] border-[#4156b8]' : 'border-[#c6c5d0] bg-white group-hover:border-[#4156b8]/50'}`}>
-        {checked && <span className="material-symbols-outlined text-white text-[10px]">check</span>}
-      </div>
-      <input type="checkbox" className="hidden" checked={checked} onChange={onClick} />
-      <span className={`text-sm flex-1 ${checked ? 'text-[#061748] font-semibold' : 'text-[#45464f] group-hover:text-[#061748]'}`}>{label}</span>
-      {count !== undefined && <span className="text-[10px] text-[#999]">({count})</span>}
-    </label>
-  );
 
   // Sidebar Content
   const FilterSidebar = () => (
@@ -146,7 +140,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar armação..."
+            placeholder={showAll ? 'Buscar produto...' : 'Buscar armação...'}
             className="w-full pl-9 pr-3 py-2.5 text-sm border border-[#eceef0] rounded-lg bg-white focus:outline-none focus:border-[#4156b8] focus:ring-1 focus:ring-[#4156b8]/30 transition-all placeholder:text-[#b0b3ba]"
           />
         </div>
@@ -176,7 +170,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
           <input
             type="range"
             min={0}
-            max={Math.ceil(filterOptions.maxPrice / 100) * 100}
+            max={priceCap}
             step={50}
             value={filters.priceRange[1]}
             onChange={(e) => setFilters(prev => ({ ...prev, priceRange: [prev.priceRange[0], Number(e.target.value)] }))}
@@ -184,8 +178,8 @@ export const FramesPage: React.FC<FramesPageProps> = ({
           />
           <div className="mt-2 flex gap-2">
             {['Até R$ 700', 'R$ 700 - R$ 900', 'Acima R$ 900'].map((label, i) => {
-              const ranges: [number, number][] = [[0, 700], [700, 900], [900, 2000]];
-              const isActive = filters.priceRange[1] === ranges[i][1] || (i === 2 && filters.priceRange[1] >= 2000);
+              const ranges: [number, number][] = [[0, 700], [700, 900], [900, priceCap]];
+              const isActive = filters.priceRange[1] === ranges[i][1] || (i === 2 && filters.priceRange[1] >= priceCap);
               return (
                 <button
                   key={label}
@@ -201,7 +195,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
       </FilterSection>
 
       {/* Frame Color */}
-      <FilterSection title="Cor da Armação">
+      <FilterSection title={showAll ? 'Cor do Produto' : 'Cor da Armação'}>
         {filterOptions.frameColors.map((c) => (
           <CheckboxItem key={c} label={c} checked={filters.frameColor.includes(c)} onClick={() => toggleFilter('frameColor', c)} />
         ))}
@@ -259,7 +253,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
               <span>Início</span>
             </button>
             <span className="text-[#c6c5d0]">/</span>
-            <h1 className="text-xl font-bold text-[#061748]">Armações de Grau</h1>
+            <h1 className="text-xl font-bold text-[#061748]">{showAll ? 'Todos os Produtos' : 'Armações de Grau'}</h1>
           </div>
 
           <div className="flex items-center gap-3">
@@ -281,7 +275,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
         <div className="flex gap-8 items-start">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-80 shrink-0 sticky top-28 bg-white rounded-2xl border border-[#eceef0] p-6 shadow-sm max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar">
-            <FilterSidebar />
+            {FilterSidebar()}
           </aside>
 
           {/* Mobile Filters Drawer */}
@@ -295,7 +289,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
                     <span className="material-symbols-outlined">close</span>
                   </button>
                 </div>
-                <FilterSidebar />
+                {FilterSidebar()}
                 <button
                   onClick={() => setMobileFiltersOpen(false)}
                   className="w-full mt-6 bg-[#061748] text-white font-bold py-3 rounded-xl"
@@ -354,9 +348,7 @@ export const FramesPage: React.FC<FramesPageProps> = ({
                               alt={prod.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
-                            <button className="absolute bottom-2 right-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[#4156b8] z-10">
-                              <span className="material-symbols-outlined text-[16px]">favorite</span>
-                            </button>
+                            <WishlistButton productId={prod.id} className="absolute bottom-2 right-2" />
                           </div>
                           <div className="p-4 flex flex-col flex-1">
                             <p className="text-[10px] text-[#45464f] mb-0.5 uppercase tracking-wide">{prod.brand}</p>

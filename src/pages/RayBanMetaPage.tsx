@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CATALOG_PRODUCTS } from '../data/mockData';
 import { EyewearProduct } from '../types';
+import { WishlistButton } from '../components/WishlistContext';
+import { FilterSection, CheckboxItem } from '../components/FilterParts';
 
 interface RayBanMetaPageProps {
   onSelectProductForCheckout: (product: EyewearProduct, lensType: string) => void;
@@ -101,25 +103,6 @@ export const RayBanMetaPage: React.FC<RayBanMetaPageProps> = ({
   const handleChooseProduct = (prod: EyewearProduct) => {
     navigate(`/produto/${prod.id}`);
   };
-
-  // Filter Section Component
-  const FilterSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="border-b border-[#eceef0] pb-4 mb-4 last:border-0">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-[#061748] mb-3">{title}</h3>
-      <div className="flex flex-col gap-2">{children}</div>
-    </div>
-  );
-
-  const CheckboxItem = ({ label, checked, onClick, count }: { label: string; checked: boolean; onClick: () => void; count?: number }) => (
-    <label className="flex items-center gap-2 cursor-pointer group">
-      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${checked ? 'bg-[#4156b8] border-[#4156b8]' : 'border-[#c6c5d0] bg-white group-hover:border-[#4156b8]/50'}`}>
-        {checked && <span className="material-symbols-outlined text-white text-[10px]">check</span>}
-      </div>
-      <input type="checkbox" className="hidden" checked={checked} onChange={onClick} />
-      <span className={`text-sm flex-1 ${checked ? 'text-[#061748] font-semibold' : 'text-[#45464f] group-hover:text-[#061748]'}`}>{label}</span>
-      {count !== undefined && <span className="text-[10px] text-[#999]">({count})</span>}
-    </label>
-  );
 
   // Sidebar Content
   const FilterSidebar = () => (
@@ -265,7 +248,7 @@ export const RayBanMetaPage: React.FC<RayBanMetaPageProps> = ({
         <div className="flex gap-8 items-start">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-80 shrink-0 sticky top-28 bg-white rounded-2xl border border-[#eceef0] p-6 shadow-sm max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar">
-            <FilterSidebar />
+            {FilterSidebar()}
           </aside>
 
           {/* Mobile Filters Drawer */}
@@ -279,7 +262,7 @@ export const RayBanMetaPage: React.FC<RayBanMetaPageProps> = ({
                     <span className="material-symbols-outlined">close</span>
                   </button>
                 </div>
-                <FilterSidebar />
+                {FilterSidebar()}
                 <button
                   onClick={() => setMobileFiltersOpen(false)}
                   className="w-full mt-6 bg-[#061748] text-white font-bold py-3 rounded-xl"
@@ -338,9 +321,7 @@ export const RayBanMetaPage: React.FC<RayBanMetaPageProps> = ({
                               alt={prod.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
-                            <button className="absolute bottom-2 right-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[#4156b8] z-10">
-                              <span className="material-symbols-outlined text-[16px]">favorite</span>
-                            </button>
+                            <WishlistButton productId={prod.id} className="absolute bottom-2 right-2" />
                           </div>
                           <div className="p-4 flex flex-col flex-1">
                             <p className="text-[10px] text-[#45464f] mb-0.5 uppercase tracking-wide">{prod.brand}</p>

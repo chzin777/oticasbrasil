@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { EyewearProduct, OrderItem } from '../types';
 import { LENS_OPTIONS, CATALOG_PRODUCTS } from '../data/mockData';
+import { WishlistButton, WishlistToggle } from '../components/WishlistContext';
 
 interface ProductPageProps {
   product: EyewearProduct;
@@ -321,6 +322,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({
                             alt={simProduct.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
+                          <WishlistButton productId={simProduct.id} className="absolute bottom-2 right-2" />
                         </div>
                         <div className="p-4 flex flex-col flex-1">
                           <p className="text-[10px] text-[#45464f] mb-0.5 uppercase tracking-wide">{simProduct.brand}</p>
@@ -368,142 +370,110 @@ export const ProductPage: React.FC<ProductPageProps> = ({
           </div>
 
           {/* RIGHT: Product Details & Configurator (5 Cols) */}
-          <div className="lg:col-span-5 flex flex-col gap-6 bg-white p-6 md:p-8 rounded-3xl border border-[#eceef0] shadow-sm sticky top-24">
+          <div className="lg:col-span-5 flex flex-col gap-4 bg-white p-5 md:p-6 rounded-3xl border border-[#eceef0] shadow-sm lg:sticky lg:top-24">
             {/* Title & Brand */}
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#4156b8]">
-                {product.brand}
-              </span>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#061748] tracking-tight mt-1">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#4156b8]">
+                  {product.brand}
+                </span>
+                <WishlistToggle productId={product.id} />
+              </div>
+              <h1 className="text-2xl font-bold text-[#061748] tracking-tight leading-tight">
                 {product.name}
               </h1>
-
-              {/* Review rating */}
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex text-amber-500 text-sm">
-                  {'★'.repeat(5)}
-                </div>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-amber-500 text-sm leading-none">★</span>
                 <span className="text-xs font-bold text-[#061748]">{product.rating}</span>
-                <span className="text-xs text-[#767680]">({product.reviewCount} avaliações verificadas)</span>
+                <span className="text-xs text-[#767680]">({product.reviewCount} avaliações)</span>
               </div>
             </div>
 
-            {/* Price Box - PIX Hero */}
-            <div className="relative bg-gradient-to-br from-[#f8f9fb] to-[#eef1f5] p-5 rounded-2xl border border-[#dce0e6] shadow-sm overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-[#C4D600]/10 rounded-bl-full pointer-events-none" />
-
-              <div className="relative z-10 flex flex-col gap-3">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#6b7280]">
-                  {selectedColor.name} com Lentes
-                </span>
-
-                {/* PIX Price - Primary */}
-                <div className="flex items-end justify-between gap-4">
-                  <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="material-symbols-outlined text-[#C4D600] text-[18px] fill-current drop-shadow-sm">account_balance_wallet</span>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[#061748]/70">
-                        Preço no Pix
-                      </span>
-                    </div>
-                    <div className="text-4xl sm:text-[2.7rem] font-black text-[#061748] tracking-tighter leading-none">
-                      R$ {pixPrice.toFixed(2).replace('.', ',')}
-                    </div>
-                    <span className="inline-flex self-start items-center gap-1 text-[10px] font-bold text-[#16a34a] bg-[#16a34a]/10 px-2 py-0.5 rounded-md mt-1">
-                      <span className="material-symbols-outlined text-[12px]">savings</span>
-                      Economia de R$ {(totalPrice - pixPrice).toFixed(2).replace('.', ',')}
-                    </span>
-                  </div>
-
-                  <div className="hidden sm:flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-[#C4D600] text-[#061748] shadow-[0_4px_12px_rgba(196,214,0,0.4)]">
-                    <span className="text-lg font-black leading-none">5%</span>
-                    <span className="text-[9px] font-bold uppercase tracking-wide leading-none">OFF</span>
-                  </div>
-                </div>
-
-                <div className="h-px w-full bg-[#061748]/8 my-0.5" />
-
-                {/* Card Price + Installments */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm text-[#45464f]">
-                    <span className="material-symbols-outlined text-[18px] text-[#061748]/40">credit_card</span>
-                    <span>
-                      <span className="text-xs text-[#9ca3af] mr-1">R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
-                      ou até <strong className="text-[#061748] font-bold">10x</strong> de{' '}
-                      <strong className="text-[#061748] font-bold">
-                        R$ {(totalPrice / 10).toFixed(2).replace('.', ',')}
-                      </strong>
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-semibold text-[#061748]/50 uppercase tracking-wider">
-                    Sem juros
+            {/* Price */}
+            <div className="bg-[#f7f9fb] px-4 py-3 rounded-2xl border border-[#eceef0] flex flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-3xl font-black text-[#061748] tracking-tight leading-none">
+                    R$ {pixPrice.toFixed(2).replace('.', ',')}
                   </span>
+                  <span className="text-xs font-bold text-[#061748]/70">no Pix</span>
+                </div>
+                <span className="shrink-0 text-[11px] font-black text-[#061748] bg-[#C4D600] px-2 py-1 rounded-md">
+                  5% OFF
+                </span>
+              </div>
+              <p className="text-xs text-[#45464f]">
+                ou <strong className="text-[#061748]">10x de R$ {(totalPrice / 10).toFixed(2).replace('.', ',')}</strong> sem juros
+                <span className="text-[#9ca3af]"> · R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+              </p>
+            </div>
+
+            {/* Color + Calibre */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-bold text-[#061748] uppercase tracking-wide">Cor</span>
+                  <span className="text-xs text-[#767680] truncate">{selectedColor.name}</span>
+                </div>
+                <div className="flex gap-2">
+                  {product.availableColors?.map((color) => (
+                    <button
+                      key={color.name}
+                      type="button"
+                      onClick={() => setSelectedColor(color)}
+                      className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-all ${
+                        selectedColor.name === color.name
+                          ? 'border-[#061748] ring-2 ring-white ring-inset'
+                          : 'border-[#e0e3e5] hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                      aria-label={color.name}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#061748] uppercase tracking-wide">Calibre</span>
+                  <button
+                    type="button"
+                    onClick={onOpenLensGuide}
+                    className="text-[11px] font-bold text-[#4156b8] hover:underline cursor-pointer"
+                  >
+                    Guia de medidas
+                  </button>
+                </div>
+                <div className="flex gap-1.5">
+                  {product.availableCalibres?.map((cal) => (
+                    <button
+                      key={cal}
+                      type="button"
+                      onClick={() => setSelectedCalibre(cal)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                        selectedCalibre === cal
+                          ? 'bg-[#061748] text-white border-[#061748]'
+                          : 'bg-white text-[#061748] border-[#e0e3e5] hover:border-[#061748]'
+                      }`}
+                    >
+                      {cal}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* 1. Color Selector */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-[#061748] uppercase tracking-wide">Cor</label>
-              <div className="flex flex-wrap gap-2">
-                {product.availableColors?.map((color) => (
-                  <button
-                    key={color.name}
-                    type="button"
-                    onClick={() => setSelectedColor(color)}
-                    className={`w-8 h-8 rounded-full border-2 cursor-pointer transition-all ${
-                      selectedColor.name === color.name
-                        ? 'border-[#061748] scale-110 shadow-sm'
-                        : 'border-transparent hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: color.hex }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-              <span className="text-xs text-[#767680]">{selectedColor.name}</span>
-            </div>
-
-            {/* 2. Calibre Selector */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#061748] uppercase tracking-wide">Calibre</label>
-                <button
-                  type="button"
-                  onClick={onOpenLensGuide}
-                  className="text-[10px] font-bold text-[#4156b8] hover:underline cursor-pointer"
-                >
-                  Guia de Medidas
-                </button>
-              </div>
-              <div className="flex gap-2">
-                {product.availableCalibres?.map((cal) => (
-                  <button
-                    key={cal}
-                    type="button"
-                    onClick={() => setSelectedCalibre(cal)}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      selectedCalibre === cal
-                        ? 'bg-[#061748] text-white border-[#061748] shadow-md'
-                        : 'bg-white text-[#061748] border-[#e0e3e5] hover:border-[#061748]'
-                    }`}
-                  >
-                    {cal}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. Lens Type Selector */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-[#061748] uppercase tracking-wide">Tipo de Lente</label>
-              <div className="flex flex-col gap-2">
+            {/* Lens Type Selector */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-[#061748] uppercase tracking-wide">Tipo de Lente</span>
+              <div className="flex flex-col gap-1.5">
                 {LENS_OPTIONS.map((lens) => (
                   <button
                     key={lens.id}
                     type="button"
                     onClick={() => setSelectedLens(lens)}
-                    className={`w-full text-left px-4 py-3 rounded-xl border text-xs transition-all cursor-pointer flex justify-between items-center ${
+                    className={`w-full text-left px-3 py-2 rounded-xl border text-xs transition-all cursor-pointer flex justify-between items-center gap-2 ${
                       selectedLens.id === lens.id
                         ? 'bg-[#f0f4ff] border-[#4156b8] text-[#061748] font-bold'
                         : 'bg-white border-[#e0e3e5] text-[#45464f] hover:border-[#c6c5d0]'
@@ -511,36 +481,55 @@ export const ProductPage: React.FC<ProductPageProps> = ({
                   >
                     <span>{lens.name}</span>
                     {lens.includedPrice > 0 && (
-                      <span className="text-[10px] opacity-60">+ R$ {lens.includedPrice}</span>
+                      <span className="shrink-0 text-[10px] opacity-60">+ R$ {lens.includedPrice}</span>
                     )}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col gap-3 mt-2">
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                className="w-full bg-[#061748] text-white text-sm font-black py-4 rounded-xl hover:bg-[#0a2470] active:scale-[0.98] transition-all shadow-lg shadow-[#061748]/20 cursor-pointer"
-              >
-                Comprar Agora
-              </button>
+            {/* CTA */}
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              className="w-full bg-[#061748] text-white text-sm font-black py-4 rounded-xl hover:bg-[#0a2470] active:scale-[0.98] transition-all shadow-lg shadow-[#061748]/20 cursor-pointer"
+            >
+              Comprar Agora
+            </button>
 
+            {/* Trust + shipping */}
+            <div className="flex items-center justify-between gap-2 text-[11px] text-[#45464f]">
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[16px] text-[#4156b8]">verified</span>
+                Garantia de 2 anos
+              </span>
               <button
                 type="button"
                 onClick={onOpenCepModal}
-                className="w-full bg-white text-[#061748] border border-[#e0e3e5] text-sm font-bold py-3.5 rounded-xl hover:bg-[#f7f9fb] hover:border-[#061748] transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="flex items-center gap-1 font-bold text-[#4156b8] hover:underline cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[18px]">local_shipping</span>
-                Calcular Frete e Prazo
+                <span className="material-symbols-outlined text-[16px]">local_shipping</span>
+                Calcular frete e prazo
               </button>
             </div>
           </div>
         </div>
+      </div>
 
-              </div>
+      {/* Mobile sticky buy bar */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-[#eceef0] px-4 py-3 flex items-center gap-3 shadow-[0_-4px_16px_rgba(6,23,72,0.08)]">
+        <div className="flex flex-col leading-tight">
+          <span className="text-lg font-black text-[#061748]">R$ {pixPrice.toFixed(2).replace('.', ',')}</span>
+          <span className="text-[10px] text-[#767680]">no Pix</span>
+        </div>
+        <button
+          type="button"
+          onClick={handleBuyNow}
+          className="flex-1 bg-[#061748] text-white text-sm font-black py-3 rounded-xl active:scale-[0.98] transition-all cursor-pointer"
+        >
+          Comprar Agora
+        </button>
+      </div>
     </div>
   );
 };

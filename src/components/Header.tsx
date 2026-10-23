@@ -1,6 +1,8 @@
-import React, { useRef, useLayoutEffect, useState } from 'react';
+import React, { useEffect, useRef, useLayoutEffect, useState } from 'react';
 import { AppPage } from '../types';
 import { TextMarquee } from './TextMarquee';
+import { useWishlist } from './WishlistContext';
+import { SITE_CONFIG, useSiteData } from '../lib/siteStore';
 
 type CatalogCategory = 'armacoes' | 'oculos-de-sol' | 'lentes-de-grau';
 
@@ -13,6 +15,7 @@ interface HeaderProps {
   cartCount: number;
   onOpenCart?: () => void;
   onOpenProfile?: () => void;
+  onOpenWishlist?: () => void;
   activeCategory?: CatalogCategory | null;
   isStoresActive?: boolean;
   heroTheme?: 'default' | 'blackfriday';
@@ -20,7 +23,7 @@ interface HeaderProps {
 
 const isHome = (page: AppPage) => page === 'home';
 
-type NavKey = 'home' | 'armacoes' | 'oculos-de-sol' | 'lentes-de-grau' | 'lojas';
+type NavKey = 'home' | 'produtos' | 'lojas' | 'quem-somos';
 
 export const Header: React.FC<HeaderProps> = ({
   currentPage,
@@ -31,12 +34,33 @@ export const Header: React.FC<HeaderProps> = ({
   cartCount,
   onOpenCart,
   onOpenProfile,
+  onOpenWishlist,
   activeCategory,
   isStoresActive,
   heroTheme = 'default'
 }) => {
-  const isBlackFriday = heroTheme === 'blackfriday';
-  const navRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [bannerRotationIndex, setBannerRotationIndex] = useState(0);
+  const isBannerRotation = SITE_CONFIG.activeBannerId === '__rotation__';
+  const activeCustomBanner = SITE_CONFIG.customBanners.find((banner) => banner.id === SITE_CONFIG.activeBannerId)
+    ?? (isBannerRotation ? SITE_CONFIG.customBanners[bannerRotationIndex % Math.max(1, SITE_CONFIG.customBanners.length)] : undefined);
+  const isBlackFriday = activeCustomBanner
+    ? activeCustomBanner.theme === 'blackfriday'
+    : SITE_CONFIG.activeBannerId === 'blackfriday' || (SITE_CONFIG.activeBannerId === null && heroTheme === 'blackfriday');
+  const announcements = activeCustomBanner?.announcements
+    ?? SITE_CONFIG.announcements[isBlackFriday ? 'blackfriday' : 'default'];
+  const wishlistCount = useWishlist().ids.length;
+  useSiteData();
+
+  useEffect(() => {
+    if (!isBannerRotation || SITE_CONFIG.customBanners.length < 2) return;
+    const timer = window.setInterval(() => {
+      setBannerRotationIndex((index) => (index + 1) % SITE_CONFIG.customBanners.length);
+    }, 7000);
+    return () => window.clearInterval(timer);
+  }, [isBannerRotation, SITE_CONFIG.customBanners.length]);
+
+  const navRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [productsOpen, setProductsOpen] = useState(false);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
   const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const [hoveringTop, setHoveringTop] = useState(false);
@@ -62,7 +86,11 @@ export const Header: React.FC<HeaderProps> = ({
       ? 'home'
       : isStoresActive
         ? 'lojas'
-        : activeCategory ?? null;
+        : currentPage === 'about'
+          ? 'quem-somos'
+          : activeCategory || currentPage === 'allProducts'
+          ? 'produtos'
+          : null;
 
   useLayoutEffect(() => {
     if (!activeKey) {
@@ -76,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
   }, [activeKey]);
 
   const getNavClass = (isActive: boolean) =>
-    `relative text-sm font-semibold transition-colors py-1 cursor-pointer ${
+    `relative text-sm font-semibold transition-colors py-1 cursor-pointer flex items-center gap-1.5 ${
       isActive ? 'text-[#061748]' : 'text-[#45464f] hover:text-[#061748]'
     }`;
   return (
@@ -102,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Top Bar Announcement */}
       <div className={`text-[11px] font-bold tracking-wider uppercase py-2 px-4 sm:px-8 text-center select-none transition-colors duration-300 ${isBlackFriday ? 'bg-black text-[#C4D600]' : isHome(currentPage) ? 'bg-[#061748]/80 backdrop-blur-md text-white' : 'bg-[#061748] text-[#ffffff]'}`}>
         <TextMarquee
-          items={isBlackFriday ? ['BLACK FRIDAY', '10x sem juros', 'Frete grátis acima de R$ 299,00'] : ['10x sem juros', 'Frete grátis acima de R$ 299,00']}
+          items={announcements}
           speed={30}
           direction="left"
           separator="|"
@@ -133,35 +161,67 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => onNavigate('home')}
               className={getNavClass(currentPage === 'home')}
             >
+              <span className="material-symbols-outlined text-[18px]">home</span>
               Início
             </button>
-            <button
-              ref={(el) => { navRefs.current['armacoes'] = el; }}
-              onClick={() => onOpenCatalog && onOpenCatalog('armacoes')}
-              className={getNavClass(activeCategory === 'armacoes')}
+            <div
+              ref={(el) => { navRefs.current['produtos'] = el; }}
+              className="relative"
+              onMouseEnter={() => setProductsOpen(true)}
+              onMouseLeave={() => setProductsOpen(false)}
             >
-              Armações
-            </button>
-            <button
-              ref={(el) => { navRefs.current['oculos-de-sol'] = el; }}
-              onClick={() => onOpenCatalog && onOpenCatalog('oculos-de-sol')}
-              className={getNavClass(activeCategory === 'oculos-de-sol')}
-            >
-              Óculos de Sol
-            </button>
-            <button
-              ref={(el) => { navRefs.current['lentes-de-grau'] = el; }}
-              onClick={() => onOpenCatalog && onOpenCatalog('lentes-de-grau')}
-              className={getNavClass(activeCategory === 'lentes-de-grau')}
-            >
-              Lentes de Grau
-            </button>
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={productsOpen}
+                onClick={() => setProductsOpen((o) => !o)}
+                className={getNavClass(activeKey === 'produtos')}
+              >
+                <span className="material-symbols-outlined text-[18px]">storefront</span>
+                Produtos
+                <span className={`material-symbols-outlined text-[18px] transition-transform ${productsOpen ? 'rotate-180' : ''}`}>expand_more</span>
+              </button>
+              {productsOpen && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
+                  <div role="menu" className="min-w-[210px] bg-white border border-[#eceef0] rounded-2xl shadow-xl p-2 animate-fadeIn">
+                    {[
+                      { label: 'Todos os produtos', icon: 'grid_view', action: () => onNavigate('allProducts'), active: currentPage === 'allProducts' },
+                      { label: 'Armações', icon: 'eyeglasses', action: () => onOpenCatalog?.('armacoes'), active: activeCategory === 'armacoes' },
+                      { label: 'Óculos de Sol', icon: 'sunny', action: () => onOpenCatalog?.('oculos-de-sol'), active: activeCategory === 'oculos-de-sol' },
+                      { label: 'Lentes de Grau', icon: 'lens_blur', action: () => onOpenCatalog?.('lentes-de-grau'), active: activeCategory === 'lentes-de-grau' },
+                    ].map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => { setProductsOpen(false); item.action(); }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-left transition-colors cursor-pointer ${
+                          item.active ? 'bg-[#061748] text-white' : 'text-[#45464f] hover:bg-[#f2f4f6] hover:text-[#061748]'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <button
               ref={(el) => { navRefs.current['lojas'] = el; }}
               onClick={() => onOpenStores && onOpenStores()}
               className={getNavClass(!!isStoresActive)}
             >
+              <span className="material-symbols-outlined text-[18px]">location_on</span>
               Lojas
+            </button>
+            <button
+              ref={(el) => { navRefs.current['quem-somos'] = el; }}
+              onClick={() => onNavigate('about')}
+              className={getNavClass(currentPage === 'about')}
+            >
+              <span className="material-symbols-outlined text-[18px]">groups</span>
+              Quem somos
             </button>
             {indicator && (
               <span
@@ -183,12 +243,12 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               aria-label="Lista de Desejos"
-              onClick={() => alert('Sua Lista de Desejos está vazia no momento.')}
+              onClick={onOpenWishlist}
               className="relative w-10 h-10 rounded-full flex items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
             >
               <span className="material-symbols-outlined text-[22px]">favorite</span>
               <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#061748] text-white text-[10px] leading-none flex items-center justify-center font-bold">
-                0
+                {wishlistCount}
               </span>
             </button>
 

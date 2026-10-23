@@ -2,7 +2,9 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { CATALOG_PRODUCTS } from '../data/mockData';
 import { EyewearProduct } from '../types';
 import HeroCapa, { type HeroTheme } from '../components/HeroCapa';
+import CustomBannerHero from '../components/CustomBannerHero';
 import SectionShapes from '../components/SectionShapes';
+import { SITE_CONFIG, useSiteData } from '../lib/siteStore';
 import '../components/HeroCapa.css';
 
 interface HomePageProps {
@@ -24,9 +26,26 @@ export const HomePage: React.FC<HomePageProps> = ({
   onOpenStores,
   onOpenCatalog
 }) => {
+  useSiteData();
   const [internalHeroTheme, setInternalHeroTheme] = useState<HeroTheme>('default');
-  const heroTheme = externalHeroTheme ?? internalHeroTheme;
   const setHeroTheme = onSetHeroTheme ?? setInternalHeroTheme;
+  const selectedHeroTheme = externalHeroTheme ?? internalHeroTheme;
+  const [rotationIndex, setRotationIndex] = useState(0);
+  const activeBannerId = SITE_CONFIG.activeBannerId;
+  const isBannerRotation = activeBannerId === '__rotation__';
+  const activeCustomBanner = isBannerRotation
+    ? SITE_CONFIG.customBanners[rotationIndex % Math.max(1, SITE_CONFIG.customBanners.length)]
+    : SITE_CONFIG.customBanners.find((banner) => banner.id === activeBannerId);
+  const heroTheme: HeroTheme = activeCustomBanner?.theme
+    ?? (activeBannerId === 'default' || activeBannerId === 'blackfriday' ? activeBannerId : selectedHeroTheme);
+
+  useEffect(() => {
+    if (!isBannerRotation || SITE_CONFIG.customBanners.length < 2) return;
+    const timer = window.setInterval(() => {
+      setRotationIndex((index) => (index + 1) % SITE_CONFIG.customBanners.length);
+    }, 7000);
+    return () => window.clearInterval(timer);
+  }, [isBannerRotation, SITE_CONFIG.customBanners.length]);
   const [customDiscounts, setCustomDiscounts] = useState<Record<string, number>>({});
   const [editingDiscountId, setEditingDiscountId] = useState<string | null>(null);
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
@@ -249,22 +268,28 @@ export const HomePage: React.FC<HomePageProps> = ({
   return (
     <div className="w-full flex flex-col bg-white">
       {/* 1. HERO SECTION — HeroCapa (estilo DAPS com parallax multicamada) */}
-      <HeroCapa
-        onSelectProduct={onSelectProduct}
-        onOpenCatalog={onOpenCatalog}
-        theme={heroTheme}
-      />
+      {activeCustomBanner ? (
+        <CustomBannerHero banner={activeCustomBanner} onOpenCatalog={onOpenCatalog} />
+      ) : (
+        <HeroCapa
+          onSelectProduct={onSelectProduct}
+          onOpenCatalog={onOpenCatalog}
+          theme={heroTheme}
+        />
+      )}
 
       {/* Botão de alternância de tema do Hero */}
-      <button
-        type="button"
-        onClick={() => setHeroTheme(heroTheme === 'default' ? 'blackfriday' : 'default')}
-        className="fixed bottom-6 right-6 z-50 bg-[#061748] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#0a2366] transition-colors text-sm font-medium flex items-center gap-2"
-        aria-label={`Alternar para tema ${heroTheme === 'default' ? 'Black Friday' : 'padrão'}`}
-      >
-        <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
-        {heroTheme === 'default' ? 'Modo Black Friday' : 'Modo Padrão'}
-      </button>
+      {activeBannerId === null && (
+        <button
+          type="button"
+          onClick={() => setHeroTheme(heroTheme === 'default' ? 'blackfriday' : 'default')}
+          className="fixed bottom-6 right-6 z-50 bg-[#061748] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#0a2366] transition-colors text-sm font-medium flex items-center gap-2"
+          aria-label={`Alternar para tema ${heroTheme === 'default' ? 'Black Friday' : 'padrão'}`}
+        >
+          <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
+          {heroTheme === 'default' ? 'Modo Black Friday' : 'Modo Padrão'}
+        </button>
+      )}
 
       {/* 2. CURADORIA DE ALTA MODA ÓPTICA */}
       <section className="bg-white py-16 sm:py-20 relative z-0">

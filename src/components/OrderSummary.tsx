@@ -42,18 +42,28 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
     const code = couponCodeInput.trim().toUpperCase();
     if (!code) return;
 
-    if (AVAILABLE_COUPONS[code]) {
-      const info = AVAILABLE_COUPONS[code];
+    const info = AVAILABLE_COUPONS[code];
+    if (!info || info.active === false) {
+      setCouponError('Cupom inválido ou inativo.');
+      return;
+    }
+    if (info.expiresAt && new Date(`${info.expiresAt}T23:59:59`) < new Date()) {
+      setCouponError('Este cupom expirou.');
+      return;
+    }
+    if (info.minSubtotal && subtotal < info.minSubtotal) {
+      setCouponError(`Cupom válido para compras a partir de R$ ${info.minSubtotal.toFixed(2).replace('.', ',')}.`);
+      return;
+    }
+    {
       let discountVal = 0;
       if (info.discountPercent) {
         discountVal = (subtotal * info.discountPercent) / 100;
       } else if (info.discountAmount) {
         discountVal = info.discountAmount;
       }
-      onApplyCoupon(code, discountVal);
+      onApplyCoupon(code, Math.min(discountVal, subtotal));
       setCouponCodeInput('');
-    } else {
-      setCouponError('Cupom inválido. Experimente: BRASIL10 ou BEMVINDO');
     }
   };
 
