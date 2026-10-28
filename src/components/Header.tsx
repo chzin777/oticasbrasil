@@ -19,6 +19,8 @@ interface HeaderProps {
   activeCategory?: CatalogCategory | null;
   isStoresActive?: boolean;
   heroTheme?: 'default' | 'blackfriday';
+  userName?: string | null;
+  onLogout?: () => void;
 }
 
 const isHome = (page: AppPage) => page === 'home';
@@ -37,8 +39,12 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenWishlist,
   activeCategory,
   isStoresActive,
-  heroTheme = 'default'
+  heroTheme = 'default',
+  userName,
+  onLogout,
 }) => {
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const [bannerRotationIndex, setBannerRotationIndex] = useState(0);
   const isBannerRotation = SITE_CONFIG.activeBannerId === '__rotation__';
   const activeCustomBanner = SITE_CONFIG.customBanners.find((banner) => banner.id === SITE_CONFIG.activeBannerId)
@@ -65,6 +71,24 @@ export const Header: React.FC<HeaderProps> = ({
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
   const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const [hoveringTop, setHoveringTop] = useState(false);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setUserMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [userMenuOpen]);
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -282,13 +306,70 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
 
-            <button
-              onClick={onOpenProfile}
-              aria-label="Minha Conta"
-              className="hidden sm:flex w-8 h-8 rounded-full bg-black items-center justify-center hover:opacity-90 transition-opacity cursor-pointer ml-1"
-            >
-              <span className="material-symbols-outlined text-white text-[18px]">person</span>
-            </button>
+            <div ref={userMenuRef} className="relative hidden sm:flex items-center ml-1">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((open) => !open)}
+                aria-haspopup="menu"
+                aria-expanded={userMenuOpen}
+                aria-label="Menu do usuário"
+                className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 hover:bg-[#f2f4f6] transition-colors cursor-pointer"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#061748] text-xs font-bold text-white select-none">
+                  {userName ? userName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'U' : <span className="material-symbols-outlined text-[18px]">person</span>}
+                </span>
+                {userName && (
+                  <span className="max-w-[120px] truncate text-sm font-semibold text-[#061748]">{userName}</span>
+                )}
+                <span className={`material-symbols-outlined text-[16px] text-[#68748a] transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}>expand_more</span>
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 z-[60] min-w-[200px] origin-top-right animate-fadeIn">
+                  <div role="menu" className="overflow-hidden rounded-xl border border-[#eceef0] bg-white shadow-xl">
+                    {userName && (
+                      <div className="border-b border-[#eceef0] px-4 py-3">
+                        <p className="truncate text-sm font-bold text-[#061748]">{userName}</p>
+                      </div>
+                    )}
+                    <div className="p-1">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => { setUserMenuOpen(false); onOpenProfile?.(); }}
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-[#45464f] hover:bg-[#f2f4f6] hover:text-[#061748] transition-colors cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">person</span>
+                        Minha Conta
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => { setUserMenuOpen(false); onOpenWishlist?.(); }}
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-[#45464f] hover:bg-[#f2f4f6] hover:text-[#061748] transition-colors cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">favorite</span>
+                        Lista de Desejos
+                      </button>
+                      {onLogout && (
+                        <>
+                          <div className="my-1 border-t border-[#eceef0]" />
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => { setUserMenuOpen(false); onLogout(); }}
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-[#b91c1c] hover:bg-[#fef2f2] transition-colors cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">logout</span>
+                            Sair
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
         </div>

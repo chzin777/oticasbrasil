@@ -1,0 +1,109 @@
+name: oticas-site
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    pull_policy: never
+    container_name: oticas-site-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: oticas_site
+      POSTGRES_USER: oticas_site
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    volumes:
+      - oticas_site_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oticas_site -d oticas_site"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - oticas_site_internal
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    pull_policy: never
+    container_name: oticas-site-pgbouncer
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: oticas_site
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: oticas_site
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 200
+      DEFAULT_POOL_SIZE: 20
+      LISTEN_PORT: 6432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - oticas_site_internal
+
+  redis:
+    image: redis:7-alpine
+    pull_policy: never
+    container_name: oticas-site-redis
+    restart: unless-stopped
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$${REDIS_PASSWORD}\""]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Configure REDIS_PASSWORD}
+    volumes:
+      - oticas_site_redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - oticas_site_internal
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: oticas-site-app
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://oticas_site:${POSTGRES_PASSWORD}@pgbouncer:6432/oticas_site
+      MIGRATION_DATABASE_URL: postgres://oticas_site:${POSTGRES_PASSWORD}@postgres:5432/oticas_site
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Configure REDIS_PASSWORD}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Configure ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Configure ADMIN_PASSWORD}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      CRM_API_URL: ${CRM_API_URL:-}
+      INTEGRATION_SHARED_SECRET: ${INTEGRATION_SHARED_SECRET:-}
+    ports:
+      - "${SITE_PORT:-8080}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - oticas_site_internal
+      - oticas_site_edge
+
+volumes:
+  oticas_site_postgres:
+  oticas_site_redis:
+
+networks:
+  oticas_site_internal:
+    name: oticas-site-internal
+    internal: true
+  oticas_site_edge:
+    name: oticas-site-edge

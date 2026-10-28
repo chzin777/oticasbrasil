@@ -1,4 +1,6 @@
 import React, { useRef, useState } from 'react';
+import { CustomSelect } from '../../components/CustomSelect';
+import { useToast } from '../../components/ToastContext';
 import type {
   BannerCanvasElement,
   BannerCanvasElementType,
@@ -147,6 +149,7 @@ const formatUrlError = (url: string) => {
 };
 
 const BannerCanvasEditor: React.FC<BannerCanvasEditorProps> = ({ initialBanner, onBack }) => {
+  const toast = useToast();
   const [banner, setBanner] = useState<CustomBanner>(() => {
     if (!initialBanner) return newBanner();
     return {
@@ -297,9 +300,12 @@ const BannerCanvasEditor: React.FC<BannerCanvasEditorProps> = ({ initialBanner, 
       name: banner.name.trim(),
       announcements: banner.announcements.map((item) => item.trim()).filter(Boolean),
     };
-    setMsg(saveCustomBanner(savedBanner)
+    const saved = saveCustomBanner(savedBanner);
+    setMsg(saved
       ? { kind: 'ok', text: 'Banner salvo. Você já pode selecioná-lo para exibição na loja.' }
       : { kind: 'error', text: STORAGE_FULL_MSG });
+    if (saved) toast.success(initialBanner ? 'Banner atualizado' : 'Banner criado', savedBanner.name);
+    else toast.error('Não foi possível salvar o banner', STORAGE_FULL_MSG);
   };
 
   const selectedFile = (event: React.ChangeEvent<HTMLInputElement>, target: 'background' | 'element') => {
@@ -613,10 +619,15 @@ const BannerCanvasEditor: React.FC<BannerCanvasEditorProps> = ({ initialBanner, 
               )}
               {selected.type === 'shape' && (
                 <Field label="Formato">
-                  <select className={inputCls} value={selected.shape || 'rectangle'} onChange={(event) => updateElement(selected.id, { shape: event.target.value as 'rectangle' | 'circle' })}>
-                    <option value="rectangle">Retângulo</option>
-                    <option value="circle">Círculo</option>
-                  </select>
+                  <CustomSelect
+                    className={inputCls}
+                    value={selected.shape || 'rectangle'}
+                    onChange={(shape) => updateElement(selected.id, { shape })}
+                    options={[
+                      { value: 'rectangle', label: 'Retângulo' },
+                      { value: 'circle', label: 'Círculo' },
+                    ]}
+                  />
                 </Field>
               )}
               {selected.type !== 'shape' && (

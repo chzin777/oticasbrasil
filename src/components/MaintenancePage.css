@@ -1,0 +1,284 @@
+.mt-page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  color: #fff;
+  background:
+    radial-gradient(ellipse 60% 45% at 50% 38%, rgba(65, 86, 184, 0.35), transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% 110%, rgba(21, 174, 206, 0.12), transparent 70%),
+    linear-gradient(180deg, #030c2b 0%, #061748 55%, #0a2160 100%);
+}
+
+/* Estrelas caindo */
+@keyframes mt-snow {
+  0% { opacity: 0; transform: translateY(0); }
+  20% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(calc(100vh + 140px)); }
+}
+
+.mt-stars {
+  position: absolute;
+  inset: -140px 0 auto 0;
+  height: 100vh;
+  pointer-events: none;
+  animation: mt-snow 7s linear infinite;
+}
+.mt-stars-2 { animation-delay: -1.8s; }
+.mt-stars-3 { animation-delay: -3.5s; }
+.mt-stars-4 { animation-delay: -5.2s; }
+
+.mt-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.7;
+}
+.mt-star::before,
+.mt-star::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+}
+.mt-star::before { width: 6px; height: 6px; top: 80px; left: 70px; opacity: 0.7; }
+.mt-star::after { width: 8px; height: 8px; top: 8px; left: 170px; opacity: 0.9; }
+
+.mt-p1 { top: 30px; left: 2%; }
+.mt-p2 { top: 110px; left: 17%; }
+.mt-p3 { top: 60px; left: 38%; }
+.mt-p4 { top: 120px; left: 60%; }
+.mt-p5 { top: 20px; left: 75%; }
+.mt-p6 { top: 90px; left: 86%; }
+.mt-p7 { top: 30px; left: 96%; }
+
+/* Astronauta */
+@keyframes mt-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes mt-float {
+  0%, 100% { transform: translateY(-8px); }
+  50% { transform: translateY(8px); }
+}
+
+.mt-astro-wrap {
+  position: relative;
+  z-index: 11;
+  width: 250px;
+  height: 300px;
+  margin-bottom: 8px;
+  animation: mt-float 5s ease-in-out infinite;
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.45));
+}
+.mt-astro {
+  position: relative;
+  width: 250px;
+  height: 300px;
+  animation: mt-spin 40s linear infinite;
+}
+
+.mt-bag {
+  position: absolute;
+  z-index: 1;
+  width: 100px;
+  height: 150px;
+  top: calc(50% - 75px);
+  left: calc(50% - 50px);
+  background: #4156b8;
+  border-radius: 50px 50px 0 0 / 30px 30px 0 0;
+}
+.mt-head {
+  position: absolute;
+  z-index: 3;
+  width: 97px;
+  height: 80px;
+  top: 34px;
+  left: calc(50% - 47.5px);
+  border-radius: 50%;
+  background: linear-gradient(to right, #dfe5f3 0%, #dfe5f3 50%, #fbfdfa 50%, #fbfdfa 100%);
+}
+.mt-head::after {
+  content: "";
+  position: absolute;
+  width: 60px;
+  height: 50px;
+  top: calc(50% - 25px);
+  left: calc(50% - 30px);
+  border-radius: 15px;
+  background: linear-gradient(to bottom, #4156b8 0%, #4156b8 50%, #2d3f94 50%, #2d3f94 100%);
+  box-shadow: inset 6px 6px 0 rgba(255, 255, 255, 0.18);
+}
+.mt-head::before {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 25px;
+  top: calc(50% - 12.5px);
+  left: -4px;
+  border-radius: 5px;
+  background: #1a2c78;
+  box-shadow: 92px 0 0 #1a2c78;
+}
+.mt-body {
+  position: absolute;
+  z-index: 2;
+  width: 85px;
+  height: 100px;
+  top: 105px;
+  left: calc(50% - 41px);
+  border-radius: 40px / 20px;
+  background: linear-gradient(to right, #dfe5f3 0%, #dfe5f3 50%, #fbfdfa 50%, #fbfdfa 100%);
+}
+.mt-panel {
+  position: absolute;
+  width: 60px;
+  height: 40px;
+  top: 20px;
+  left: calc(50% - 30px);
+  background: #061748;
+}
+.mt-panel::before {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 5px;
+  top: 9px;
+  left: 7px;
+  background: #fbfdfa;
+  box-shadow: 0 9px 0 #fbfdfa, 0 18px 0 #fbfdfa;
+}
+.mt-panel::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  top: 9px;
+  right: 7px;
+  border-radius: 50%;
+  background: #f5c542;
+  box-shadow: 0 14px 0 2px #fbfdfa;
+}
+.mt-arm {
+  position: absolute;
+  z-index: 2;
+  width: 80px;
+  height: 30px;
+  top: 121px;
+}
+.mt-arm-l { left: 30px; background: #dfe5f3; border-radius: 0 0 0 39px; }
+.mt-arm-r { right: 30px; background: #fbfdfa; border-radius: 0 0 39px 0; }
+.mt-arm::before {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 70px;
+  top: -40px;
+}
+.mt-arm-l::before { left: 0; background: #dfe5f3; border-radius: 50px 50px 0 120px / 50px 50px 0 110px; }
+.mt-arm-r::before { right: 0; background: #fbfdfa; border-radius: 50px 50px 120px 0 / 50px 50px 110px 0; }
+.mt-arm::after {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 10px;
+  top: -24px;
+}
+.mt-arm-l::after { left: 0; background: #2d3f94; }
+.mt-arm-r::after { right: 0; background: #7f93df; }
+.mt-leg {
+  position: absolute;
+  z-index: 2;
+  width: 30px;
+  height: 40px;
+  bottom: 70px;
+}
+.mt-leg-l { left: 76px; background: #dfe5f3; transform: rotate(20deg); }
+.mt-leg-r { right: 73px; background: #fbfdfa; transform: rotate(-20deg); }
+.mt-leg::before {
+  content: "";
+  position: absolute;
+  width: 50px;
+  height: 25px;
+  bottom: -26px;
+}
+.mt-leg-l::before { left: -20px; background: #dfe5f3; border-radius: 30px 0 0 0; border-bottom: 10px solid #2d3f94; }
+.mt-leg-r::before { right: -20px; background: #fbfdfa; border-radius: 0 30px 0 0; border-bottom: 10px solid #7f93df; }
+
+/* Conteúdo */
+.mt-content {
+  position: relative;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 520px;
+}
+.mt-logo {
+  height: 44px;
+  width: auto;
+  margin-bottom: 28px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+.mt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #cdd6f6;
+  backdrop-filter: blur(6px);
+}
+.mt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f5c542;
+  animation: mt-pulse 1.6s ease-in-out infinite;
+}
+@keyframes mt-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+.mt-title {
+  margin: 18px 0 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.mt-message {
+  margin: 14px 0 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.78);
+}
+.mt-footer {
+  margin-top: 28px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 640px) {
+  .mt-astro-wrap { transform: scale(0.75); margin: -30px 0 -30px; animation-name: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mt-stars, .mt-astro, .mt-astro-wrap, .mt-dot { animation: none; }
+  .mt-stars { opacity: 0.6; transform: none; }
+}

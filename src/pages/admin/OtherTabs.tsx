@@ -1,108 +1,82 @@
 import React, { useRef, useState } from 'react';
-import { AVAILABLE_COUPONS, CATALOG_PRODUCTS, Coupon } from '../../data/mockData';
+import { CustomSelect } from '../../components/CustomSelect';
+import { useToast } from '../../components/ToastContext';
+import { AVAILABLE_COUPONS, Coupon } from '../../data/mockData';
 import { THEME_CONFIG } from '../../components/HeroCapa';
 import {
-  applyBulkDiscount,
-  changeAdminPassword,
-  clearBulkDiscount,
   CustomBanner,
+  deleteCoupon,
   deleteCustomBanner,
-  exportData,
   BannerImages,
   HeroTexts,
   HeroTheme,
-  importData,
-  resetAll,
   saveCoupon,
   saveThemeBanner,
   SITE_CONFIG,
   setActiveBanner,
   useSiteData,
 } from '../../lib/siteStore';
-import { Card, Field, fmtBRL, ghostBtn, inputCls, Modal, Notice, primaryBtn, STORAGE_FULL_MSG } from './ui';
+import { Card, Field, fmtBRL, ghostBtn, inputCls, Modal, Notice, Pagination, primaryBtn, STORAGE_FULL_MSG } from './ui';
+import { ConfirmDialog } from './controls';
 import BannerCanvasEditor from './BannerCanvasEditor';
 
 type Msg = { kind: 'ok' | 'error'; text: string } | null;
 
-const CATS = [
-  { value: 'armacoes', label: 'Armações' },
-  { value: 'oculos-de-sol', label: 'Óculos de Sol' },
-  { value: 'lentes-de-grau', label: 'Lentes de Grau' },
-  { value: 'rayban-meta', label: 'Ray-Ban Meta' },
-];
-
-export const DiscountsTab: React.FC = () => {
-  useSiteData();
-  const [scope, setScope] = useState('all');
-  const [percent, setPercent] = useState(10);
-  const [msg, setMsg] = useState<Msg>(null);
-  const ids = CATALOG_PRODUCTS.filter((p) => scope === 'all' || p.category === scope).map((p) => p.id);
-
-  const run = (ok: boolean, text: string) => setMsg(ok ? { kind: 'ok', text } : { kind: 'error', text: STORAGE_FULL_MSG });
-
-  return (
-    <div className="space-y-5">
-      {msg && <Notice kind={msg.kind}>{msg.text}</Notice>}
-      <Card title="Desconto em massa" subtitle="Aplica um percentual sobre o preço original de vários produtos de uma vez.">
-        <div className="grid md:grid-cols-3 gap-5 items-end">
-          <Field label="Aplicar em">
-            <select className={inputCls} value={scope} onChange={(e) => setScope(e.target.value)}>
-              <option value="all">Todos os produtos</option>
-              {CATS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
-          </Field>
-          <Field label="Desconto (%)">
-            <input type="number" min={1} max={90} className={inputCls} value={percent} onChange={(e) => setPercent(Number(e.target.value))} />
-          </Field>
-          <p className="text-sm text-[#767680] pb-2.5">{ids.length} produtos afetados</p>
-        </div>
-        <div className="flex flex-wrap gap-3 mt-6">
-          <button
-            className={primaryBtn}
-            onClick={() => {
-              if (!(percent > 0 && percent < 100)) return setMsg({ kind: 'error', text: 'Informe um percentual entre 1 e 99.' });
-              run(applyBulkDiscount(ids, percent), `${percent}% aplicado em ${ids.length} produtos.`);
-            }}
-          >
-            Aplicar desconto
-          </button>
-          <button className={ghostBtn} onClick={() => run(clearBulkDiscount(ids), 'Descontos removidos.')}>Remover descontos</button>
-        </div>
-        {CATALOG_PRODUCTS.length > 0 && (
-          <p className="text-xs text-[#767680] mt-4">
-            Exemplo: {CATALOG_PRODUCTS[0].name} — {fmtBRL(CATALOG_PRODUCTS[0].price)}
-          </p>
-        )}
-      </Card>
-    </div>
-  );
-};
+export { default as DiscountsTab } from './DiscountPoliciesTab';
 
 const blankCoupon = (): Coupon => ({ discountPercent: 10, desc: '', active: true });
 
 export const CouponsTab: React.FC = () => {
   useSiteData();
+  const toast = useToast();
   const [editing, setEditing] = useState<{ code: string; coupon: Coupon; prev?: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<Msg>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
+  const [couponToDelete, setCouponToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const coupons = Object.entries(AVAILABLE_COUPONS);
+  const pageCount = Math.max(1, Math.ceil(coupons.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const visibleCoupons = coupons.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
     const code = editing.code.trim().toUpperCase();
     const c = editing.coupon;
-    if (!code) return setError('Informe o código.');
-    if (code !== editing.prev && AVAILABLE_COUPONS[code]) return setError('Já existe um cupom com esse código.');
-    if (!(c.discountPercent || c.discountAmount)) return setError('Informe um desconto.');
-    if (c.discountPercent && c.discountPercent > 100) return setError('Percentual máximo é 100.');
+    if (!code) return toast.error('Código obrigatório', 'Informe o código do cupom.');
+    if (code !== editing.prev && AVAILABLE_COUPONS[code]) return toast.error('Cupom já existe', 'Já existe um cupom com esse código.');
+    if (!(c.discountPercent || c.discountAmount)) return toast.error('Desconto obrigatório', 'Informe um desconto para o cupom.');
+    if (c.discountPercent && c.discountPercent > 100) return toast.error('Desconto inválido', 'O percentual máximo é 100%.');
     const clean: Coupon = { ...c, minSubtotal: c.minSubtotal || undefined, expiresAt: c.expiresAt || undefined };
-    if (!saveCoupon(code, clean, editing.prev)) return setError(STORAGE_FULL_MSG);
+    const isNew = !editing.prev;
+    if (!saveCoupon(code, clean, editing.prev)) {
+      toast.error('Não foi possível salvar o cupom', STORAGE_FULL_MSG);
+      return;
+    }
     setEditing(null);
-    setError(null);
+    setPage(isNew ? Math.ceil(Object.keys(AVAILABLE_COUPONS).length / pageSize) : 1);
+    toast.success(isNew ? 'Cupom criado' : 'Cupom atualizado', code);
   };
 
   const patch = (p: Partial<Coupon>) => setEditing((prev) => (prev ? { ...prev, coupon: { ...prev.coupon, ...p } } : prev));
   const numOrUndef = (v: string) => (v === '' ? undefined : Number(v));
+
+  const confirmDeleteCoupon = () => {
+    if (!couponToDelete) return;
+    setDeleting(true);
+    try {
+      if (!deleteCoupon(couponToDelete)) {
+        toast.error('Não foi possível excluir o cupom', STORAGE_FULL_MSG);
+        return;
+      }
+      toast.success('Cupom excluído', couponToDelete);
+      setCouponToDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -111,46 +85,66 @@ export const CouponsTab: React.FC = () => {
         title="Cupons"
         subtitle="Usados no resumo do pedido."
         action={
-          <button className={primaryBtn} onClick={() => { setError(null); setEditing({ code: '', coupon: blankCoupon() }); }}>
+          <button className={primaryBtn} onClick={() => { setEditing({ code: '', coupon: blankCoupon() }); }}>
             <span className="material-symbols-outlined text-[18px]">add</span>Novo cupom
           </button>
         }
       >
         <ul className="grid gap-3">
-          {Object.entries(AVAILABLE_COUPONS).map(([code, c]) => (
+          {visibleCoupons.map(([code, c]) => (
             <li key={code}>
-              <button
-                type="button"
-                className={`w-full flex items-center gap-4 text-left p-4 rounded-2xl border border-dashed cursor-pointer hover:border-[#4156b8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4156b8] ${c.active === false ? 'border-[#c6c5d0] bg-[#f7f9fb] opacity-70' : 'border-[#4156b8]/40 bg-[#f4f6ff]'}`}
-                onClick={() => { setError(null); setEditing({ code, coupon: { ...c }, prev: code }); }}
-              >
-                <div className="w-14 h-14 rounded-xl bg-[#061748] text-[#dbee2c] flex items-center justify-center font-black text-sm text-center leading-tight">
-                  {c.discountPercent ? `${c.discountPercent}%` : 'R$'}
-                </div>
-                <div>
-                  <p className="font-black tracking-wider text-[#061748]">
-                    {code}
-                    <span className={`ml-2 text-[10px] px-2 py-0.5 rounded-full ${c.active === false ? 'bg-[#eceef0] text-[#767680]' : 'bg-[#C4D600] text-[#061748]'}`}>
-                      {c.active === false ? 'Inativo' : 'Ativo'}
-                    </span>
-                  </p>
-                  <p className="text-xs text-[#767680]">
-                    {c.discountPercent ? `${c.discountPercent}%` : fmtBRL(c.discountAmount ?? 0)} • {c.desc || 'sem descrição'}
-                    {c.minSubtotal ? ` • mín. ${fmtBRL(c.minSubtotal)}` : ''}
-                    {c.expiresAt ? ` • até ${c.expiresAt}` : ''}
-                  </p>
-                </div>
-              </button>
+              <div className={`flex items-center gap-2 rounded-2xl border border-dashed p-2 ${c.active === false ? 'border-[#c6c5d0] bg-[#f7f9fb] opacity-70' : 'border-[#4156b8]/40 bg-[#f4f6ff]'}`}>
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 rounded-xl p-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4156b8]"
+                  onClick={() => { setEditing({ code, coupon: { ...c }, prev: code }); }}
+                >
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#061748] text-center text-sm font-black leading-tight text-[#dbee2c]">
+                    {c.discountPercent ? `${c.discountPercent}%` : 'R$'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-black tracking-wider text-[#061748]">
+                      {code}
+                      <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] ${c.active === false ? 'bg-[#eceef0] text-[#767680]' : 'bg-[#C4D600] text-[#061748]'}`}>
+                        {c.active === false ? 'Inativo' : 'Ativo'}
+                      </span>
+                    </p>
+                    <p className="text-xs text-[#767680]">
+                      {c.discountPercent ? `${c.discountPercent}%` : fmtBRL(c.discountAmount ?? 0)} • {c.desc || 'sem descrição'}
+                      {c.minSubtotal ? ` • mín. ${fmtBRL(c.minSubtotal)}` : ''}
+                      {c.expiresAt ? ` • até ${c.expiresAt}` : ''}
+                    </p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Excluir cupom ${code}`}
+                  title={`Excluir cupom ${code}`}
+                  onClick={() => setCouponToDelete(code)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-red-600 transition hover:cursor-pointer hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                >
+                  <span className="material-symbols-outlined text-[20px]">delete</span>
+                </button>
+              </div>
             </li>
           ))}
         </ul>
-        {Object.keys(AVAILABLE_COUPONS).length === 0 && <p className="text-sm text-[#767680]">Nenhum cupom.</p>}
+        {coupons.length === 0 && <p className="text-sm text-[#767680]">Nenhum cupom.</p>}
+        <Pagination
+          page={currentPage}
+          pageSize={pageSize}
+          total={coupons.length}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+        />
       </Card>
 
       {editing && (
         <Modal title={editing.prev ? 'Editar cupom' : 'Novo cupom'} onClose={() => setEditing(null)}>
           <form onSubmit={submit} className="space-y-5">
-            {error && <Notice kind="error">{error}</Notice>}
             <Field label="Código">
               <input className={`${inputCls} uppercase`} value={editing.code} onChange={(e) => setEditing({ ...editing, code: e.target.value })} />
             </Field>
@@ -181,6 +175,20 @@ export const CouponsTab: React.FC = () => {
             </div>
           </form>
         </Modal>
+      )}
+      {couponToDelete && (
+        <ConfirmDialog
+          title="Excluir cupom?"
+          heading="O cupom deixará de estar disponível"
+          message="Essa ação remove o cupom da loja e não pode ser desfeita."
+          subjectLabel="Cupom selecionado"
+          subject={couponToDelete}
+          confirmLabel="Excluir cupom"
+          cancelLabel="Manter cupom"
+          busy={deleting}
+          onConfirm={confirmDeleteCoupon}
+          onClose={() => setCouponToDelete(null)}
+        />
       )}
     </div>
   );
@@ -389,6 +397,7 @@ const BannerImageFields: React.FC<{ images: BannerImages; onChange: (images: Ban
 );
 
 const ThemeEditor: React.FC<{ theme: HeroTheme; title: string }> = ({ theme, title }) => {
+  const toast = useToast();
   const defaults = THEME_CONFIG[theme] as unknown as Record<string, string>;
   const [ann, setAnn] = useState(SITE_CONFIG.announcements[theme].join('\n'));
   const [hero, setHero] = useState<Record<string, string>>(() => {
@@ -415,6 +424,8 @@ const ThemeEditor: React.FC<{ theme: HeroTheme; title: string }> = ({ theme, tit
     const items = ann.split('\n').map((s) => s.trim()).filter(Boolean);
     const ok = saveThemeBanner(theme, hero as unknown as Partial<HeroTexts>, items, images);
     setMsg(ok ? { kind: 'ok', text: 'Banner salvo.' } : { kind: 'error', text: STORAGE_FULL_MSG });
+    if (ok) toast.success('Tema atualizado', title);
+    else toast.error('Não foi possível salvar o tema', STORAGE_FULL_MSG);
   };
 
   return (
@@ -447,8 +458,59 @@ const ThemeEditor: React.FC<{ theme: HeroTheme; title: string }> = ({ theme, tit
   );
 };
 
+const CustomBannerPreview: React.FC<{ banner: CustomBanner }> = ({ banner }) => (
+  <div
+    className="relative aspect-[16/6] min-h-28 overflow-hidden rounded-xl bg-[#061748] text-white"
+    style={{
+      backgroundColor: banner.canvasBackgroundColor || '#061748',
+      backgroundImage: banner.images.background ? `url("${banner.images.background}")` : undefined,
+      backgroundPosition: 'center',
+      backgroundSize: 'cover',
+      containerType: 'inline-size',
+    }}
+  >
+    {banner.images.background && <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-transparent" />}
+    {(banner.elements ?? []).length > 0 ? (
+      banner.elements?.map((element) => (
+        <div
+          key={element.id}
+          className="absolute flex items-center justify-center overflow-hidden whitespace-pre-wrap text-center leading-tight"
+          style={{
+            left: `${element.x}%`,
+            top: `${element.y}%`,
+            width: `${element.width}%`,
+            height: `${element.height}%`,
+            transform: `rotate(${element.rotation ?? 0}deg)`,
+            color: element.color || '#fff',
+            backgroundColor: element.type === 'shape' || element.type === 'button' ? element.backgroundColor : undefined,
+            borderRadius: element.type === 'shape' && element.shape === 'circle' ? '50%' : `${element.borderRadius ?? 0}px`,
+            fontSize: `${((element.fontSize ?? 24) / 1440) * 100}cqw`,
+            fontWeight: element.fontWeight ?? 700,
+          }}
+        >
+          {(element.type === 'image' || element.type === 'logo') && element.src
+            ? <img src={element.src} alt="" className="h-full w-full object-contain" />
+            : (element.type === 'text' || element.type === 'button') ? element.text : null}
+        </div>
+      ))
+    ) : (
+      <div className="absolute inset-0 flex flex-col justify-center p-[6%]">
+        <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#dbee2c]">{banner.hero.brandBadge || 'ÓTICAS BRASIL'}</span>
+        <span className="mt-1 max-w-[70%] text-[clamp(12px,3cqw,24px)] font-black leading-tight">
+          {banner.hero.headlineCom || 'Sua próxima composição começa aqui'}
+        </span>
+        <span className="mt-1 text-[clamp(9px,1.6cqw,14px)] text-white/80">{banner.hero.subtitle || 'Um banner pronto para personalizar'}</span>
+      </div>
+    )}
+    <span className="absolute bottom-2 right-2 rounded-full border border-white/20 bg-black/35 px-2 py-1 text-[9px] font-semibold text-white/85 backdrop-blur-sm">
+      {banner.elements?.length ?? 0} {(banner.elements?.length ?? 0) === 1 ? 'elemento' : 'elementos'}
+    </span>
+  </div>
+);
+
 export const BannersTab: React.FC = () => {
   useSiteData();
+  const toast = useToast();
   const [msg, setMsg] = useState<Msg>(null);
   const [canvasBanner, setCanvasBanner] = useState<CustomBanner | null | undefined>(undefined);
   if (canvasBanner !== undefined) {
@@ -463,115 +525,236 @@ export const BannersTab: React.FC = () => {
 
   const changeActiveBanner = (id: string) => {
     const next = id || null;
-    setMsg(setActiveBanner(next) ? { kind: 'ok', text: 'Exibição dos banners atualizada.' } : { kind: 'error', text: STORAGE_FULL_MSG });
+    const saved = setActiveBanner(next);
+    setMsg(saved ? { kind: 'ok', text: 'Exibição dos banners atualizada.' } : { kind: 'error', text: STORAGE_FULL_MSG });
+    if (saved) toast.success('Banner atualizado', 'A campanha em exibição foi alterada.');
+    else toast.error('Não foi possível atualizar o banner', STORAGE_FULL_MSG);
   };
 
+  const activeBanner = SITE_CONFIG.customBanners.find((banner) => banner.id === SITE_CONFIG.activeBannerId);
+  const activeLabel = activeBanner?.name
+    || (SITE_CONFIG.activeBannerId === 'default' ? 'Banner padrão'
+      : SITE_CONFIG.activeBannerId === 'blackfriday' ? 'Banner Black Friday'
+        : SITE_CONFIG.activeBannerId === '__rotation__' ? 'Alternância automática'
+          : 'Alternância atual da loja');
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {msg && <Notice kind={msg.kind}>{msg.text}</Notice>}
-      <Card title="Banner da loja" subtitle="Escolha um banner personalizado ou mantenha a alternância atual entre os temas padrão.">
-        <Field label="Banner em exibição">
-          <select className={inputCls} value={SITE_CONFIG.activeBannerId ?? ''} onChange={(event) => changeActiveBanner(event.target.value)}>
-            <option value="">Alternância atual da loja</option>
-            <option value="default">Banner padrão</option>
-            <option value="blackfriday">Banner Black Friday</option>
-            {SITE_CONFIG.customBanners.map((banner) => <option key={banner.id} value={banner.id}>{banner.name || 'Banner sem nome'}</option>)}
-            {SITE_CONFIG.customBanners.length > 1 && <option value="__rotation__">Alternar banners personalizados automaticamente</option>}
-          </select>
-        </Field>
-        <button className={`${primaryBtn} mt-4`} onClick={() => setCanvasBanner(null)}>
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          Criar banner do zero
-        </button>
-      </Card>
-      <Card title="Meus banners" subtitle="Edite seus layouts personalizados no canvas.">
+      <header className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-[#061748] via-[#10265e] to-[#263e83] px-5 py-6 text-white shadow-[0_16px_40px_rgba(6,23,72,0.16)] sm:px-8 sm:py-8">
+        <div aria-hidden="true" className="absolute -right-12 -top-24 -z-10 h-64 w-64 rounded-full bg-[#dbee2c]/10 blur-3xl" />
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#e7f17a]">
+              <span className="material-symbols-outlined text-[15px]">campaign</span>
+              Marketing da loja
+            </span>
+            <h1 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">Banners e vitrines</h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/70">
+              Controle o banner em exibição, crie campanhas personalizadas e mantenha a comunicação da loja sempre atualizada.
+            </p>
+          </div>
+          <button type="button" className={`${primaryBtn} shrink-0 !rounded-xl !bg-[#dbee2c] !px-5 !py-3 !text-[#061748] shadow-lg shadow-black/10 hover:!bg-[#e8f56b]`} onClick={() => setCanvasBanner(null)}>
+            <span className="material-symbols-outlined text-[19px]">add</span>
+            Criar banner
+          </button>
+        </div>
+        <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/10 pt-5">
+          <div className="flex items-center gap-2 text-xs text-white/70">
+            <span className="h-2 w-2 rounded-full bg-[#dbee2c] shadow-[0_0_12px_rgba(219,238,44,0.7)]" />
+            Em exibição: <strong className="max-w-[220px] truncate text-white">{activeLabel}</strong>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-white/70">
+            <span className="material-symbols-outlined text-[16px] text-white/50">wallpaper</span>
+            {SITE_CONFIG.customBanners.length} {SITE_CONFIG.customBanners.length === 1 ? 'banner personalizado' : 'banners personalizados'}
+          </div>
+        </div>
+      </header>
+
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.8fr)]">
+        <div className="overflow-hidden rounded-2xl border border-[#e5e9f0] bg-white shadow-[0_2px_10px_rgba(20,35,68,0.04)]">
+          <div className="flex items-start gap-3 border-b border-[#edf0f5] px-5 py-4 sm:px-6">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eef1fb] text-[#4156b8]">
+              <span className="material-symbols-outlined">visibility</span>
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-[#142344]">Banner em exibição</h2>
+              <p className="mt-1 text-xs text-[#7b8497]">Escolha a campanha que aparece na página inicial.</p>
+            </div>
+          </div>
+          <div className="grid gap-5 p-5 sm:p-6 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.8fr)] md:items-center">
+            <div className="overflow-hidden rounded-xl border border-[#e6eaf0] bg-[#f5f7fb]">
+              {activeBanner ? (
+                <CustomBannerPreview banner={activeBanner} />
+              ) : (
+                <div className="flex aspect-[16/6] min-h-28 items-center justify-center gap-3 bg-gradient-to-br from-[#071a45] to-[#263e83] px-4 text-center text-white">
+                  <span className="material-symbols-outlined text-3xl text-[#dbee2c]">auto_awesome</span>
+                  <div>
+                    <p className="text-sm font-bold">{activeLabel}</p>
+                    <p className="mt-1 text-[11px] text-white/65">A loja alterna entre os temas configurados.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div>
+              <Field label="Selecionar campanha">
+                <CustomSelect
+                  className={inputCls}
+                  value={SITE_CONFIG.activeBannerId ?? ''}
+                  onChange={changeActiveBanner}
+                  options={[
+                    { value: '', label: 'Alternância atual da loja' },
+                    { value: 'default', label: 'Banner padrão' },
+                    { value: 'blackfriday', label: 'Banner Black Friday' },
+                    ...SITE_CONFIG.customBanners.map((banner) => ({ value: banner.id, label: banner.name || 'Banner sem nome' })),
+                    ...(SITE_CONFIG.customBanners.length > 1
+                      ? [{ value: '__rotation__', label: 'Alternar banners personalizados automaticamente' }]
+                      : []),
+                  ]}
+                />
+              </Field>
+              <p className="mt-3 text-[11px] leading-relaxed text-[#8992a4]">
+                A alteração é salva imediatamente e pode ser trocada a qualquer momento.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[#e5e9f0] bg-white p-5 shadow-[0_2px_10px_rgba(20,35,68,0.04)] sm:p-6">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f3f5d7] text-[#728000]">
+              <span className="material-symbols-outlined">tips_and_updates</span>
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-[#142344]">Dica de campanha</h2>
+              <p className="mt-1 text-xs text-[#7b8497]">Destaque uma mensagem por vez.</p>
+            </div>
+          </div>
+          <p className="mt-4 text-sm leading-relaxed text-[#657087]">
+            Use imagens horizontais de boa resolução e chamadas curtas. Você pode criar um layout no canvas e selecionar a campanha assim que salvar.
+          </p>
+          <button type="button" onClick={() => setCanvasBanner(null)} className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#4156b8] transition hover:text-[#061748]">
+            Abrir estúdio de criação
+            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+          </button>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-[#142344]">Meus banners</h2>
+            <p className="mt-1 text-sm text-[#7b8497]">Gerencie os layouts criados para as campanhas da loja.</p>
+          </div>
+          {SITE_CONFIG.customBanners.length > 0 && (
+            <span className="rounded-full bg-[#eef1fb] px-3 py-1 text-xs font-semibold text-[#4156b8]">
+              {SITE_CONFIG.customBanners.length} {SITE_CONFIG.customBanners.length === 1 ? 'layout' : 'layouts'}
+            </span>
+          )}
+        </div>
         {SITE_CONFIG.customBanners.length === 0 ? (
-          <p className="text-sm text-[#767680]">Nenhum banner personalizado criado.</p>
+          <div className="rounded-2xl border border-dashed border-[#ccd4e2] bg-white px-5 py-10 text-center shadow-[0_2px_10px_rgba(20,35,68,0.03)]">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef1fb] text-[#4156b8]">
+              <span className="material-symbols-outlined text-[28px]">wallpaper</span>
+            </span>
+            <h3 className="mt-4 text-base font-bold text-[#142344]">Sua biblioteca está vazia</h3>
+            <p className="mx-auto mt-1 max-w-md text-sm text-[#7b8497]">Crie seu primeiro banner personalizado para divulgar novidades, ofertas e campanhas.</p>
+            <button type="button" className={`${primaryBtn} mt-5`} onClick={() => setCanvasBanner(null)}>
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Criar primeiro banner
+            </button>
+          </div>
         ) : (
-          <ul className="grid gap-3">
-            {SITE_CONFIG.customBanners.map((banner) => (
-              <li key={banner.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#eceef0] p-4">
-                <div>
-                  <p className="font-bold text-[#061748]">{banner.name || 'Banner sem nome'}</p>
-                  <p className="text-xs text-[#767680]">{banner.theme === 'blackfriday' ? 'Black Friday' : 'Padrão'} · {banner.elements?.length ?? 0} elementos</p>
-                </div>
-                <div className="flex gap-2">
-                  <button type="button" className={ghostBtn} onClick={() => setCanvasBanner(banner)}>Editar no canvas</button>
-                  <button
-                    type="button"
-                    className="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50"
-                    onClick={() => {
-                      if (!window.confirm(`Excluir o banner "${banner.name}"?`)) return;
-                      setMsg(deleteCustomBanner(banner.id) ? { kind: 'ok', text: 'Banner excluído.' } : { kind: 'error', text: STORAGE_FULL_MSG });
-                    }}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </li>
-            ))}
+          <ul className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            {SITE_CONFIG.customBanners.map((banner) => {
+              const isActive = SITE_CONFIG.activeBannerId === banner.id;
+              return (
+                <li key={banner.id} className="group overflow-hidden rounded-2xl border border-[#e5e9f0] bg-white shadow-[0_2px_10px_rgba(20,35,68,0.04)] transition hover:-translate-y-0.5 hover:border-[#c7d0e2] hover:shadow-[0_10px_28px_rgba(20,35,68,0.09)]">
+                  <div className="p-3">
+                    <CustomBannerPreview banner={banner} />
+                  </div>
+                  <div className="px-4 pb-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-bold text-[#142344]">{banner.name || 'Banner sem nome'}</h3>
+                        <p className="mt-1 text-xs text-[#8992a4]">
+                          {banner.theme === 'blackfriday' ? 'Tema Black Friday' : 'Tema padrão'}
+                          <span className="mx-1.5 text-[#c6cbd5]">·</span>
+                          {banner.elements?.length ?? 0} elementos
+                        </p>
+                      </div>
+                      {isActive && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#f3f7dc] px-2.5 py-1 text-[10px] font-bold text-[#637000]">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#a4b400]" />
+                          Em exibição
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-4 flex items-center gap-2 border-t border-[#edf0f5] pt-3">
+                      <button type="button" className={`${primaryBtn} flex-1 !py-2`} onClick={() => setCanvasBanner(banner)}>
+                        <span className="material-symbols-outlined text-[17px]">edit</span>
+                        Editar layout
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Excluir ${banner.name || 'banner sem nome'}`}
+                        title="Excluir banner"
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#f0dada] text-[#b54747] transition hover:bg-red-50"
+                        onClick={() => {
+                          if (!window.confirm(`Excluir o banner "${banner.name}"?`)) return;
+                          const deleted = deleteCustomBanner(banner.id);
+                          setMsg(deleted ? { kind: 'ok', text: 'Banner excluído.' } : { kind: 'error', text: STORAGE_FULL_MSG });
+                          if (deleted) toast.success('Banner excluído', banner.name || 'Banner sem nome');
+                          else toast.error('Não foi possível excluir o banner', STORAGE_FULL_MSG);
+                        }}
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
-      </Card>
-      <ThemeEditor theme="default" title="Banner padrão" />
-      <ThemeEditor theme="blackfriday" title="Banner Black Friday" />
-    </div>
-  );
-};
+      </section>
 
-export const SettingsTab: React.FC = () => {
-  const [msg, setMsg] = useState<Msg>(null);
-  const [pw, setPw] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const download = () => {
-    const url = URL.createObjectURL(new Blob([exportData()], { type: 'application/json' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'oticas-backup.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const onImport = async (f?: File) => {
-    if (!f) return;
-    const ok = importData(await f.text());
-    setMsg(ok ? { kind: 'ok', text: 'Backup importado.' } : { kind: 'error', text: 'Arquivo inválido ou grande demais.' });
-    if (fileRef.current) fileRef.current.value = '';
-  };
-
-  return (
-    <div className="space-y-5">
-      {msg && <Notice kind={msg.kind}>{msg.text}</Notice>}
-      <Card title="Backup" subtitle="Exporte suas alterações ou leve-as para outro navegador.">
-        <div className="flex flex-wrap gap-3">
-          <button className={primaryBtn} onClick={download}>Exportar JSON</button>
-          <button className={ghostBtn} onClick={() => fileRef.current?.click()}>Importar JSON</button>
-          <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => onImport(e.target.files?.[0])} />
-          <button
-            className="px-4 py-2.5 rounded-xl text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 cursor-pointer"
-            onClick={() => window.confirm('Apagar TODAS as alterações e voltar ao original?') && (resetAll(), setMsg({ kind: 'ok', text: 'Dados restaurados.' }))}
-          >
-            Restaurar original
-          </button>
+      <section className="space-y-4 border-t border-[#e5e9f0] pt-6">
+        <div>
+          <h2 className="text-lg font-bold tracking-tight text-[#142344]">Temas da loja</h2>
+          <p className="mt-1 text-sm text-[#7b8497]">Personalize os banners padrão que ficam disponíveis na alternância automática.</p>
         </div>
-      </Card>
-      <Card title="Senha do painel">
-        <div className="flex flex-wrap gap-3 max-w-md">
-          <input type="password" className={inputCls} placeholder="Nova senha (mín. 6)" value={pw} onChange={(e) => setPw(e.target.value)} />
-          <button
-            className={primaryBtn}
-            onClick={() => {
-              if (pw.length < 6) return setMsg({ kind: 'error', text: 'A senha precisa ter ao menos 6 caracteres.' });
-              changeAdminPassword(pw);
-              setPw('');
-              setMsg({ kind: 'ok', text: 'Senha alterada.' });
-            }}
-          >
-            Alterar
-          </button>
-        </div>
-      </Card>
+        <details className="group rounded-2xl border border-[#e5e9f0] bg-white shadow-[0_2px_10px_rgba(20,35,68,0.04)]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef1fb] text-[#4156b8]">
+                <span className="material-symbols-outlined">light_mode</span>
+              </span>
+              <span>
+                <span className="block text-sm font-bold text-[#142344]">Banner padrão</span>
+                <span className="mt-1 block text-xs text-[#7b8497]">Identidade visual principal da loja</span>
+              </span>
+            </span>
+            <span className="material-symbols-outlined text-[#8992a4] transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div className="border-t border-[#edf0f5] p-3 sm:p-5"><ThemeEditor theme="default" title="Banner padrão" /></div>
+        </details>
+        <details className="group rounded-2xl border border-[#e5e9f0] bg-white shadow-[0_2px_10px_rgba(20,35,68,0.04)]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#fff2e7] text-[#b86627]">
+                <span className="material-symbols-outlined">local_fire_department</span>
+              </span>
+              <span>
+                <span className="block text-sm font-bold text-[#142344]">Banner Black Friday</span>
+                <span className="mt-1 block text-xs text-[#7b8497]">Tema promocional para campanhas especiais</span>
+              </span>
+            </span>
+            <span className="material-symbols-outlined text-[#8992a4] transition-transform group-open:rotate-180">expand_more</span>
+          </summary>
+          <div className="border-t border-[#edf0f5] p-3 sm:p-5"><ThemeEditor theme="blackfriday" title="Banner Black Friday" /></div>
+        </details>
+      </section>
     </div>
   );
 };

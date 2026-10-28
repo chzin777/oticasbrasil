@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { CustomSelect } from '../components/CustomSelect';
 import { CATALOG_PRODUCTS } from '../data/mockData';
 import { EyewearProduct } from '../types';
 
@@ -372,15 +373,15 @@ export const TaxasAsaasPage: React.FC = () => {
             <div className="mt-4 grid grid-cols-1 gap-3">
               <label className="block">
                 <span className="text-xs font-semibold text-[#061748]">Produto</span>
-                <select
+                <CustomSelect
                   value={selectedProductId}
-                  onChange={(e) => setSelectedProductId(e.target.value)}
+                  onChange={setSelectedProductId}
                   className="mt-1 w-full rounded-lg border border-[#dfe3ea] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#061748] focus:ring-2 focus:ring-[#061748]/10"
-                >
-                  {CATALOG_PRODUCTS.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name} — {brl(p.price)}</option>
-                  ))}
-                </select>
+                  options={CATALOG_PRODUCTS.map((product) => ({
+                    value: product.id,
+                    label: `${product.name} — ${brl(product.price)}`,
+                  }))}
+                />
               </label>
               <label className="block">
                 <span className="text-xs font-semibold text-[#061748]">Quantidade</span>
@@ -457,19 +458,15 @@ export const TaxasAsaasPage: React.FC = () => {
                       </label>
                       <label className="block">
                         <span className="text-[10px] font-semibold text-[#6b7280]">Método</span>
-                        <select
+                        <CustomSelect
                           value={row.method}
-                          onChange={(e) => {
-                            const m = e.target.value as PaymentMethodKey;
+                          onChange={(m) => {
                             const opt = PAYMENT_OPTIONS.find(o => o.key === m);
                             updateRow(row.id, { method: m, installments: opt?.installments ?? 1 });
                           }}
-                          className="mt-0.5 w-full rounded-md border border-[#dfe3ea] bg-white px-2 py-1.5 text-xs outline-none focus:border-[#061748]"
-                        >
-                          {PAYMENT_OPTIONS.map((o) => (
-                            <option key={o.key} value={o.key}>{o.short}</option>
-                          ))}
-                        </select>
+                          className="mt-0.5 !min-h-0 w-full rounded-md border border-[#dfe3ea] bg-white px-2 py-1.5 text-xs outline-none focus:border-[#061748]"
+                          options={PAYMENT_OPTIONS.map((option) => ({ value: option.key, label: option.short }))}
+                        />
                       </label>
                     </div>
                     {row.method.startsWith('credit') && (

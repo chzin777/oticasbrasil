@@ -4,6 +4,7 @@ import { CATALOG_PRODUCTS } from '../data/mockData';
 import { EyewearProduct } from '../types';
 import { WishlistButton } from '../components/WishlistContext';
 import { FilterSection, CheckboxItem } from '../components/FilterParts';
+import { getEditableFilterOptions, useSiteData } from '../lib/siteStore';
 
 interface SunglassesPageProps {
   onSelectProductForCheckout: (product: EyewearProduct, lensType: string) => void;
@@ -44,23 +45,24 @@ export const SunglassesPage: React.FC<SunglassesPageProps> = ({
   onSelectProductForCheckout,
   onNavigateHome,
 }) => {
+  const storeVersion = useSiteData();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const sunglassesProducts = useMemo(() => CATALOG_PRODUCTS.filter((p) => p.category === 'oculos-de-sol'), []);
+  const sunglassesProducts = useMemo(() => CATALOG_PRODUCTS.filter((p) => p.category === 'oculos-de-sol'), [storeVersion]);
 
   // Extract unique filter options from products
   const filterOptions = useMemo(() => {
-    const brands = Array.from(new Set(sunglassesProducts.map((p) => p.brand))).sort();
-    const shapes = Array.from(new Set(sunglassesProducts.map((p) => p.shape))).sort();
-    const materials = Array.from(new Set(sunglassesProducts.map((p) => p.material.split(' ')[0]))).sort();
-    const frameColors = Array.from(new Set(sunglassesProducts.map((p) => p.colorName))).sort();
-    const bridgeSizes = Array.from(new Set(sunglassesProducts.map((p) => p.specs.bridgeWidth))).sort();
+    const brands = getEditableFilterOptions('brand', Array.from(new Set(sunglassesProducts.map((p) => p.brand))).sort());
+    const shapes = getEditableFilterOptions('shape', Array.from(new Set(sunglassesProducts.map((p) => p.shape))).sort());
+    const materials = getEditableFilterOptions('material', Array.from(new Set(sunglassesProducts.map((p) => p.material.split(' ')[0]))).sort());
+    const frameColors = getEditableFilterOptions('frameColor', Array.from(new Set(sunglassesProducts.map((p) => p.colorName))).sort());
+    const bridgeSizes = getEditableFilterOptions('bridgeSize', Array.from(new Set(sunglassesProducts.map((p) => p.specs.bridgeWidth))).sort());
     const maxPrice = Math.max(...sunglassesProducts.map((p) => p.price));
     return { brands, shapes, materials, frameColors, bridgeSizes, maxPrice };
-  }, [sunglassesProducts]);
+  }, [sunglassesProducts, storeVersion]);
 
   const toggleFilter = (category: keyof Filters, value: string) => {
     setFilters((prev) => {

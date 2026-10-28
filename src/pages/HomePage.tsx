@@ -4,7 +4,8 @@ import { EyewearProduct } from '../types';
 import HeroCapa, { type HeroTheme } from '../components/HeroCapa';
 import CustomBannerHero from '../components/CustomBannerHero';
 import SectionShapes from '../components/SectionShapes';
-import { SITE_CONFIG, useSiteData } from '../lib/siteStore';
+import { getPageEditorConfig, SITE_CONFIG, useSiteData } from '../lib/siteStore';
+import { getNativeSectionLayout, PageBuilderRender } from '../lib/pageBuilder';
 import '../components/HeroCapa.css';
 
 interface HomePageProps {
@@ -27,6 +28,10 @@ export const HomePage: React.FC<HomePageProps> = ({
   onOpenCatalog
 }) => {
   useSiteData();
+  const pageEditor = getPageEditorConfig();
+  const pageLayout = getNativeSectionLayout(pageEditor.puck.home, 'home');
+  const sectionOrder = (id: string) => pageLayout.order[id] ?? 0;
+  const sectionHidden = (id: string) => pageLayout.isHidden(id);
   const [internalHeroTheme, setInternalHeroTheme] = useState<HeroTheme>('default');
   const setHeroTheme = onSetHeroTheme ?? setInternalHeroTheme;
   const selectedHeroTheme = externalHeroTheme ?? internalHeroTheme;
@@ -268,31 +273,33 @@ export const HomePage: React.FC<HomePageProps> = ({
   return (
     <div className="w-full flex flex-col bg-white">
       {/* 1. HERO SECTION — HeroCapa (estilo DAPS com parallax multicamada) */}
-      {activeCustomBanner ? (
-        <CustomBannerHero banner={activeCustomBanner} onOpenCatalog={onOpenCatalog} />
-      ) : (
-        <HeroCapa
-          onSelectProduct={onSelectProduct}
-          onOpenCatalog={onOpenCatalog}
-          theme={heroTheme}
-        />
-      )}
+      <div style={{ order: sectionOrder('hero') }} hidden={sectionHidden('hero')}>
+        {activeCustomBanner ? (
+          <CustomBannerHero banner={activeCustomBanner} onOpenCatalog={onOpenCatalog} />
+        ) : (
+          <HeroCapa
+            onSelectProduct={onSelectProduct}
+            onOpenCatalog={onOpenCatalog}
+            theme={heroTheme}
+          />
+        )}
 
-      {/* Botão de alternância de tema do Hero */}
-      {activeBannerId === null && (
-        <button
-          type="button"
-          onClick={() => setHeroTheme(heroTheme === 'default' ? 'blackfriday' : 'default')}
-          className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-50 max-w-[calc(100vw-1.5rem)] bg-[#061748] text-white px-3 sm:px-4 py-2 rounded-full shadow-lg hover:bg-[#0a2366] transition-colors text-xs sm:text-sm font-medium flex items-center gap-2"
-          aria-label={`Alternar para tema ${heroTheme === 'default' ? 'Black Friday' : 'padrão'}`}
-        >
-          <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
-          {heroTheme === 'default' ? 'Modo Black Friday' : 'Modo Padrão'}
-        </button>
-      )}
+        {/* Botão de alternância de tema do Hero */}
+        {activeBannerId === null && (
+          <button
+            type="button"
+            onClick={() => setHeroTheme(heroTheme === 'default' ? 'blackfriday' : 'default')}
+            className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-50 max-w-[calc(100vw-1.5rem)] bg-[#061748] text-white px-3 sm:px-4 py-2 rounded-full shadow-lg hover:bg-[#0a2366] transition-colors text-xs sm:text-sm font-medium flex items-center gap-2"
+            aria-label={`Alternar para tema ${heroTheme === 'default' ? 'Black Friday' : 'padrão'}`}
+          >
+            <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
+            {heroTheme === 'default' ? 'Modo Black Friday' : 'Modo Padrão'}
+          </button>
+        )}
+      </div>
 
       {/* 2. CURADORIA DE ALTA MODA ÓPTICA */}
-      <section className="bg-white py-16 sm:py-20 relative z-0">
+      <section style={{ order: sectionOrder('featured') }} hidden={sectionHidden('featured')} className="bg-white py-16 sm:py-20 relative z-0">
         <SectionShapes variant="diamonds" bg="white" />
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 mb-10">
           <div className="text-center max-w-2xl mx-auto">
@@ -555,7 +562,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       </section>
 
       {/* 3. BENEFÍCIOS / DIFERENCIAIS */}
-      <section className="w-full bg-[#061748] py-24 sm:py-32 relative before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[clamp(60px,10vh,120px)] before:bg-gradient-to-b before:from-white before:to-transparent before:pointer-events-none">
+      <section style={{ order: sectionOrder('benefits') }} hidden={sectionHidden('benefits')} className="w-full bg-[#061748] py-24 sm:py-32 relative before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[clamp(60px,10vh,120px)] before:bg-gradient-to-b before:from-white before:to-transparent before:pointer-events-none">
         <SectionShapes variant="arcs" bg="navy" />
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-12">
@@ -613,7 +620,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       </section>
 
       {/* 4. CONHEÇA A LINHA EXCLUSIVA */}
-      <section className="bg-white py-16 sm:py-20 relative">
+      <section style={{ order: sectionOrder('exclusive') }} hidden={sectionHidden('exclusive')} className="bg-white py-16 sm:py-20 relative">
         <SectionShapes variant="circles" bg="white" />
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 mb-10 relative z-10">
           <div className="text-center max-w-2xl mx-auto">
@@ -742,7 +749,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       </section>
 
       {/* 5. NEWSLETTER SECTION */}
-      <section className="w-full bg-[#061748] py-16 sm:py-20 relative overflow-hidden">
+      <section style={{ order: sectionOrder('newsletter') }} hidden={sectionHidden('newsletter')} className="w-full bg-[#061748] py-16 sm:py-20 relative overflow-hidden">
         <SectionShapes variant="mixed" bg="navy" />
         {/* Decorative background element */}
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#C4D600]/10 rounded-full blur-[100px] pointer-events-none" />
@@ -782,7 +789,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       </section>
 
       {/* 6. MAIS PRODUTOS — Nova seção após newsletter */}
-      <section className="bg-white py-16 sm:py-20 relative">
+      <section style={{ order: sectionOrder('collection') }} hidden={sectionHidden('collection')} className="bg-white py-16 sm:py-20 relative">
         <SectionShapes variant="mixed" bg="white" />
         <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12 mb-10 relative z-10">
           <div className="text-center max-w-2xl mx-auto">
@@ -1078,6 +1085,8 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       </div>
     </section>
+
+      <PageBuilderRender data={pageEditor.puck.home} interleave />
 
       {editingProductId && (() => {
         const product = CATALOG_PRODUCTS.find((p) => p.id === editingProductId);

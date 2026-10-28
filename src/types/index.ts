@@ -73,6 +73,8 @@ export interface EyewearProduct {
   availableCalibres: string[];
   description: string;
   fullStory?: string;
+  seoTitle?: string;
+  seoDescription?: string;
   specs: {
     lensWidth: string;
     bridgeWidth: string;

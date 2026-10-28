@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { CustomSelect } from './CustomSelect';
 import { PaymentMethod } from '../types';
+import { useStoreSettings } from '../lib/storeSettings';
 
 interface StepPaymentProps {
   paymentMethod: PaymentMethod;
@@ -22,6 +24,17 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
   const [cardExpiry, setCardExpiry] = useState('08/29');
   const [cardCvv, setCardCvv] = useState('842');
   const [installments, setInstallments] = useState('10');
+
+  const settings = useStoreSettings();
+  const { pix, card, boleto } = settings.payment;
+  const maxInstallments = card.maxInstallments;
+  const installmentOptions = Array.from({ length: maxInstallments }, (_, index) => maxInstallments - index).map((count) => ({
+    value: String(count),
+    label: count === 1
+      ? `1x de R$ ${totalRegular.toFixed(2).replace('.', ',')} à vista`
+      : `${count}x de R$ ${(totalRegular / count).toFixed(2).replace('.', ',')} sem juros${count === maxInstallments ? ` (Total: R$ ${totalRegular.toFixed(2).replace('.', ',')})` : ''}`,
+  }));
+  const selectedInstallments = Number(installments) > maxInstallments ? String(maxInstallments) : installments;
 
   const demoPixCode = '00020126580014br.gov.bcb.pix0136ob-98241-otica-brasil-pix-instant5204000053039865405845.505802BR5913OTICAS BRASIL6009SAO PAULO62070503***6304E8A2';
 
@@ -60,6 +73,7 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
       {/* Payment Tabs */}
       <div className="flex flex-wrap gap-2 bg-[#f2f4f6] p-1.5 rounded-full">
         {/* Pix Button */}
+        {pix.enabled && (
         <button
           type="button"
           onClick={() => onSelectPaymentMethod('pix')}
@@ -71,12 +85,16 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
         >
           <span className="material-symbols-outlined text-[18px]">qr_code_2</span>
           <span>Pix Instantâneo</span>
-          <span className="bg-[#F7915E] text-white text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold">
-            5% OFF
-          </span>
+          {pix.discountPercent > 0 && (
+            <span className="bg-[#F7915E] text-white text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold">
+              {pix.discountPercent}% OFF
+            </span>
+          )}
         </button>
+        )}
 
         {/* Card Button */}
+        {card.enabled && (
         <button
           type="button"
           onClick={() => onSelectPaymentMethod('card')}
@@ -88,10 +106,12 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
         >
           <span className="material-symbols-outlined text-[18px]">credit_card</span>
           <span>Cartão de Crédito</span>
-          <span className="font-normal text-[11px] text-[#7481b7] hidden sm:inline">(em até 10x)</span>
+          {maxInstallments > 1 && <span className="font-normal text-[11px] text-[#7481b7] hidden sm:inline">(em até {maxInstallments}x)</span>}
         </button>
+        )}
 
         {/* Boleto Button */}
+        {boleto.enabled && (
         <button
           type="button"
           onClick={() => onSelectPaymentMethod('boleto')}
@@ -104,6 +124,7 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
           <span className="material-symbols-outlined text-[18px]">barcode</span>
           <span>Boleto</span>
         </button>
+        )}
       </div>
 
       {/* PIX Content Panel */}
@@ -215,17 +236,13 @@ export const StepPayment: React.FC<StepPaymentProps> = ({
             {/* Installments */}
             <div className="md:col-span-2 flex flex-col gap-1">
               <label className="text-xs font-semibold text-[#45464f]">Opções de Parcelamento</label>
-              <select
-                value={installments}
-                onChange={(e) => setInstallments(e.target.value)}
+              <CustomSelect
+                aria-label="Opções de Parcelamento"
+                value={selectedInstallments}
+                onChange={setInstallments}
                 className="w-full bg-[#f2f4f6] px-4 py-2.5 rounded-full text-sm text-[#191c1e] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#4156b8]/40 cursor-pointer border border-transparent font-medium"
-              >
-                <option value="10">10x de R$ {(totalRegular / 10).toFixed(2).replace('.', ',')} sem juros (Total: R$ {totalRegular.toFixed(2).replace('.', ',')})</option>
-                <option value="8">8x de R$ {(totalRegular / 8).toFixed(2).replace('.', ',')} sem juros</option>
-                <option value="6">6x de R$ {(totalRegular / 6).toFixed(2).replace('.', ',')} sem juros</option>
-                <option value="3">3x de R$ {(totalRegular / 3).toFixed(2).replace('.', ',')} sem juros</option>
-                <option value="1">1x de R$ {totalRegular.toFixed(2).replace('.', ',')} à vista</option>
-              </select>
+                options={installmentOptions}
+              />
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { CATALOG_PRODUCTS } from '../data/mockData';
 import { EyewearProduct } from '../types';
 import { WishlistButton } from '../components/WishlistContext';
 import { FilterSection, CheckboxItem } from '../components/FilterParts';
+import { getEditableFilterOptions, useSiteData } from '../lib/siteStore';
 
 interface RayBanMetaPageProps {
   onSelectProductForCheckout: (product: EyewearProduct, lensType: string) => void;
@@ -44,22 +45,23 @@ export const RayBanMetaPage: React.FC<RayBanMetaPageProps> = ({
   onSelectProductForCheckout,
   onNavigateHome,
 }) => {
+  const storeVersion = useSiteData();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const metaProducts = useMemo(() => CATALOG_PRODUCTS.filter((p) => p.category === 'rayban-meta'), []);
+  const metaProducts = useMemo(() => CATALOG_PRODUCTS.filter((p) => p.category === 'rayban-meta'), [storeVersion]);
 
   // Extract unique filter options from products
   const filterOptions = useMemo(() => {
-    const brands = Array.from(new Set(metaProducts.map((p) => p.brand))).sort();
-    const shapes = Array.from(new Set(metaProducts.map((p) => p.shape))).sort();
-    const materials = Array.from(new Set(metaProducts.map((p) => p.material.split(' ')[0]))).sort();
-    const frameColors = Array.from(new Set(metaProducts.map((p) => p.colorName))).sort();
-    const bridgeSizes = Array.from(new Set(metaProducts.map((p) => p.specs.bridgeWidth))).sort();
+    const brands = getEditableFilterOptions('brand', Array.from(new Set(metaProducts.map((p) => p.brand))).sort());
+    const shapes = getEditableFilterOptions('shape', Array.from(new Set(metaProducts.map((p) => p.shape))).sort());
+    const materials = getEditableFilterOptions('material', Array.from(new Set(metaProducts.map((p) => p.material.split(' ')[0]))).sort());
+    const frameColors = getEditableFilterOptions('frameColor', Array.from(new Set(metaProducts.map((p) => p.colorName))).sort());
+    const bridgeSizes = getEditableFilterOptions('bridgeSize', Array.from(new Set(metaProducts.map((p) => p.specs.bridgeWidth))).sort());
     const maxPrice = Math.max(...metaProducts.map((p) => p.price));
     return { brands, shapes, materials, frameColors, bridgeSizes, maxPrice };
-  }, [metaProducts]);
+  }, [metaProducts, storeVersion]);
 
   const toggleFilter = (category: keyof Filters, value: string) => {
     setFilters((prev) => {

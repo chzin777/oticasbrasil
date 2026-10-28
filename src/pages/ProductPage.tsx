@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { EyewearProduct, OrderItem } from '../types';
 import { LENS_OPTIONS, CATALOG_PRODUCTS } from '../data/mockData';
 import { WishlistButton, WishlistToggle } from '../components/WishlistContext';
+import { getPageEditorConfig, useSiteData } from '../lib/siteStore';
+import { getNativeSectionLayout, PageBuilderRender } from '../lib/pageBuilder';
 
 interface ProductPageProps {
   product: EyewearProduct;
@@ -20,6 +22,11 @@ export const ProductPage: React.FC<ProductPageProps> = ({
   onSelectProduct,
   onGoToCheckoutWithProduct
 }) => {
+  useSiteData();
+  const pageEditor = getPageEditorConfig();
+  const pageLayout = getNativeSectionLayout(pageEditor.puck.product, 'product');
+  const sectionOrder = (id: string) => pageLayout.order[id] ?? 0;
+  const sectionHidden = (id: string) => pageLayout.isHidden(id);
   const similarRef = useRef<HTMLDivElement>(null);
   const isScrollingProgrammatically = useRef(false);
 
@@ -90,6 +97,93 @@ export const ProductPage: React.FC<ProductPageProps> = ({
   const images = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
   const totalPrice = product.price + selectedLens.includedPrice;
   const pixPrice = totalPrice * 0.95;
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    const restoreMeta: (() => void)[] = [];
+    const setMeta = (selector: string, attribute: 'name' | 'property', key: string, content: string) => {
+      let element = document.head.querySelector<HTMLMetaElement>(selector);
+      const existed = Boolean(element);
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute(attribute, key);
+        document.head.appendChild(element);
+      }
+      const previousContent = element.getAttribute('content');
+      element.setAttribute('content', content);
+      restoreMeta.push(() => {
+        if (!element) return;
+        if (existed && previousContent !== null) element.setAttribute('content', previousContent);
+        else element.remove();
+      });
+    };
+
+    const title = product.seoTitle?.trim() || `${product.name} | Óticas Brasil`;
+    const description = product.seoDescription?.trim() || product.description || `${product.name} disponível na Óticas Brasil.`;
+    const canonicalUrl = `${window.location.origin}/produto/${encodeURIComponent(product.id)}`;
+    const imageUrl = new URL(product.image, window.location.origin).href;
+
+    document.title = title;
+    setMeta('meta[name="description"]', 'name', 'description', description);
+    setMeta('meta[property="og:title"]', 'property', 'og:title', title);
+    setMeta('meta[property="og:description"]', 'property', 'og:description', description);
+    setMeta('meta[property="og:type"]', 'property', 'og:type', 'product');
+    setMeta('meta[property="og:url"]', 'property', 'og:url', canonicalUrl);
+    setMeta('meta[property="og:image"]', 'property', 'og:image', imageUrl);
+    setMeta('meta[name="twitter:title"]', 'name', 'twitter:title', title);
+    setMeta('meta[name="twitter:description"]', 'name', 'twitter:description', description);
+    setMeta('meta[name="twitter:image"]', 'name', 'twitter:image', imageUrl);
+
+    let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    const hadCanonical = Boolean(canonical);
+    const previousCanonical = canonical?.getAttribute('href') ?? null;
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = canonicalUrl;
+
+    const structuredData: Record<string, unknown> = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description,
+      image: [imageUrl],
+      sku: product.id,
+      brand: { '@type': 'Brand', name: product.brand },
+      offers: {
+        '@type': 'Offer',
+        url: canonicalUrl,
+        priceCurrency: 'BRL',
+        price: product.price.toFixed(2),
+        availability: 'https://schema.org/InStock',
+        itemCondition: 'https://schema.org/NewCondition',
+      },
+    };
+    if (product.rating > 0 && product.reviewCount > 0) {
+      structuredData.aggregateRating = {
+        '@type': 'AggregateRating',
+        ratingValue: product.rating,
+        reviewCount: product.reviewCount,
+      };
+    }
+    const schemaScript = document.createElement('script');
+    schemaScript.type = 'application/ld+json';
+    schemaScript.dataset.productSeo = 'true';
+    schemaScript.textContent = JSON.stringify(structuredData);
+    document.head.appendChild(schemaScript);
+
+    return () => {
+      document.title = previousTitle;
+      restoreMeta.forEach((restore) => restore());
+      if (canonical) {
+        if (hadCanonical && previousCanonical !== null) canonical.setAttribute('href', previousCanonical);
+        else canonical.remove();
+      }
+      schemaScript.remove();
+    };
+  }, [product]);
 
   const handleBuyNow = () => {
     const item: OrderItem = {
@@ -227,7 +321,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({
             </div>
 
             {/* Description Block - Below Info Cards */}
-            <section className="flex flex-col gap-3 mt-6 bg-white p-6 rounded-2xl border border-[#eceef0]">
+            <section style={{ order: sectionOrder('description') }} hidden={sectionHidden('description')} className="flex flex-col gap-3 mt-6 bg-white p-6 rounded-2xl border border-[#eceef0]">
               <h2 className="text-xl font-bold text-[#061748]">Sobre o Produto</h2>
               <p className="text-[#45464f] leading-relaxed text-sm">
                 {product.fullStory || product.description}
@@ -235,7 +329,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({
             </section>
 
             {/* Technical Specifications Grid - Redesigned */}
-            <section className="flex flex-col gap-4 mt-6">
+            <section style={{ order: sectionOrder('specifications') }} hidden={sectionHidden('specifications')} className="flex flex-col gap-4 mt-6">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#4156b8] text-[20px]">description</span>
                 <h2 className="text-lg font-bold text-[#061748]">Ficha Técnica</h2>
@@ -272,7 +366,7 @@ export const ProductPage: React.FC<ProductPageProps> = ({
 
             {/* Similar Products Carousel — Below Ficha Técnica */}
             {similarProducts.length > 0 && (
-              <section className="mt-10 flex flex-col gap-4">
+              <section style={{ order: sectionOrder('similar') }} hidden={sectionHidden('similar')} className="mt-10 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-[#4156b8] text-[20px]">storefront</span>
@@ -515,6 +609,8 @@ export const ProductPage: React.FC<ProductPageProps> = ({
           </div>
         </div>
       </div>
+
+      <PageBuilderRender data={pageEditor.puck.product} />
 
       {/* Mobile sticky buy bar */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-[#eceef0] px-4 py-3 flex items-center gap-3 shadow-[0_-4px_16px_rgba(6,23,72,0.08)]">

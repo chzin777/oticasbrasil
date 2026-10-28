@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { OrderItem, PaymentMethod, DeliveryMethod } from '../types';
 import { AVAILABLE_COUPONS } from '../data/mockData';
+import { useStoreSettings } from '../lib/storeSettings';
 
 interface OrderSummaryProps {
   items: OrderItem[];
@@ -30,9 +31,10 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const baseSubtotalAfterCoupon = Math.max(0, subtotal - couponDiscount);
+  const { payment } = useStoreSettings();
+  const installmentsMax = payment.card.maxInstallments;
   
-  // 5% Pix discount
-  const pixDiscount = paymentMethod === 'pix' ? baseSubtotalAfterCoupon * 0.05 : 0;
+  const pixDiscount = paymentMethod === 'pix' ? baseSubtotalAfterCoupon * (payment.pix.discountPercent / 100) : 0;
   const finalTotal = baseSubtotalAfterCoupon - pixDiscount;
   const totalRegular = baseSubtotalAfterCoupon;
 
@@ -190,18 +192,18 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             </div>
           )}
 
-          {deliveryMethod !== 'pickup' && (
+          {deliveryMethod !== 'boutique' && (
             <div className="flex justify-between text-[#45464f]">
               <span>Frete Correios com Seguro</span>
               <span className="text-[#4156b8] font-bold">Grátis</span>
             </div>
           )}
 
-          {paymentMethod === 'pix' && (
+          {paymentMethod === 'pix' && pixDiscount > 0 && (
             <div className="flex justify-between items-center text-[#F7915E] font-semibold">
               <span className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-[16px]">local_offer</span>
-                <span>Desconto Especial Pix (5%)</span>
+                <span>Desconto Especial Pix ({payment.pix.discountPercent}%)</span>
               </span>
               <span>- R$ {pixDiscount.toFixed(2).replace('.', ',')}</span>
             </div>
@@ -218,10 +220,12 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               R$ {finalTotal.toFixed(2).replace('.', ',')}
             </span>
           </div>
-          <p className="text-xs text-[#45464f] text-right">
-            ou <strong className="text-[#191c1e]">R$ {totalRegular.toFixed(2).replace('.', ',')}</strong> em até{' '}
-            <strong className="text-[#191c1e]">10x de R$ {(totalRegular / 10).toFixed(2).replace('.', ',')}</strong> sem juros no cartão
-          </p>
+          {payment.card.enabled && installmentsMax > 1 && (
+            <p className="text-xs text-[#45464f] text-right">
+              ou <strong className="text-[#191c1e]">R$ {totalRegular.toFixed(2).replace('.', ',')}</strong> em até{' '}
+              <strong className="text-[#191c1e]">{installmentsMax}x de R$ {(totalRegular / installmentsMax).toFixed(2).replace('.', ',')}</strong> sem juros no cartão
+            </p>
+          )}
         </div>
 
         {/* High-Converting Primary CTA Button (Electric Lime #C4D600) */}

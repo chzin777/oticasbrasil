@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AVAILABLE_COUPONS, CATALOG_PRODUCTS } from '../../data/mockData';
 import { useSiteData } from '../../lib/siteStore';
 import { fmtBRL } from './ui';
@@ -10,16 +10,49 @@ const CATEGORY_META: { value: string; label: string; color: string }[] = [
   { value: 'rayban-meta', label: 'Ray-Ban Meta', color: '#9aa5d6' },
 ];
 
+type AnalyticsPeriod = '7d' | '30d' | '90d';
+
+const PERFORMANCE_DATA: Record<AnalyticsPeriod, { labels: string[]; visits: number[]; orders: number[] }> = {
+  '7d': {
+    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+    visits: [42, 58, 51, 76, 63, 94, 82],
+    orders: [8, 12, 10, 18, 15, 23, 20],
+  },
+  '30d': {
+    labels: ['1', '4', '7', '10', '13', '16', '19', '22', '25', '28'],
+    visits: [48, 66, 55, 82, 71, 96, 78, 108, 92, 124],
+    orders: [9, 14, 11, 18, 16, 22, 19, 27, 23, 31],
+  },
+  '90d': {
+    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6', 'Sem 7', 'Sem 8', 'Sem 9', 'Sem 10', 'Sem 11', 'Sem 12'],
+    visits: [45, 54, 49, 67, 61, 73, 68, 86, 78, 99, 91, 116],
+    orders: [9, 11, 10, 14, 13, 16, 15, 19, 18, 22, 21, 26],
+  },
+};
+
+const chartPath = (values: number[], max: number) => {
+  const points = values.map((value, index) => ({
+    x: 44 + (index * 576) / Math.max(values.length - 1, 1),
+    y: 12 + 150 - (value / max) * 150,
+  }));
+  if (!points.length) return '';
+  return points.slice(1).reduce((path, point, index) => {
+    const previous = points[index];
+    const controlX = (previous.x + point.x) / 2;
+    return `${path} C ${controlX} ${previous.y}, ${controlX} ${point.y}, ${point.x} ${point.y}`;
+  }, `M ${points[0].x} ${points[0].y}`);
+};
+
 const Panel: React.FC<{ title: string; subtitle?: string; className?: string; children: React.ReactNode }> = ({
   title,
   subtitle,
   className = '',
   children,
 }) => (
-  <section className={`bg-white rounded-3xl border border-[#eceef0] shadow-sm p-6 ${className}`}>
-    <h3 className="text-base font-bold text-[#061748]">{title}</h3>
-    {subtitle && <p className="text-xs text-[#767680] mt-0.5">{subtitle}</p>}
-    <div className="mt-5">{children}</div>
+  <section className={`bg-white rounded-2xl border border-[#e8ebf1] shadow-[0_1px_3px_rgba(20,35,68,0.04)] p-4 sm:p-5 ${className}`}>
+    <h3 className="text-sm font-semibold text-[#142344]">{title}</h3>
+    {subtitle && <p className="text-xs text-[#7b8497] mt-1">{subtitle}</p>}
+    <div className="mt-4">{children}</div>
   </section>
 );
 
@@ -30,7 +63,7 @@ const Kpi: React.FC<{ icon: string; label: string; value: string; sub: string; t
   sub,
   tone = 'navy',
 }) => (
-  <div className="bg-white rounded-3xl border border-[#eceef0] shadow-sm p-5">
+  <div className="bg-white rounded-2xl border border-[#e8ebf1] shadow-[0_1px_3px_rgba(20,35,68,0.04)] p-4">
     <div className="flex items-center justify-between">
       <p className="text-[11px] font-bold uppercase tracking-wider text-[#767680]">{label}</p>
       <span
@@ -41,8 +74,8 @@ const Kpi: React.FC<{ icon: string; label: string; value: string; sub: string; t
         <span className="material-symbols-outlined text-[20px]">{icon}</span>
       </span>
     </div>
-    <p className="text-3xl font-black text-[#061748] mt-3 tracking-tight">{value}</p>
-    <p className="text-xs text-[#767680] mt-1">{sub}</p>
+    <p className="text-2xl font-bold text-[#142344] mt-2.5 tracking-tight">{value}</p>
+    <p className="text-[11px] text-[#7b8497] mt-1">{sub}</p>
   </div>
 );
 
@@ -137,6 +170,7 @@ const VBars: React.FC<{ rows: { label: string; value: number }[] }> = ({ rows })
 
 export const DashboardTab: React.FC = () => {
   useSiteData();
+  const [period, setPeriod] = useState<AnalyticsPeriod>('30d');
   const products = CATALOG_PRODUCTS;
   const n = products.length || 1;
 
@@ -183,10 +217,29 @@ export const DashboardTab: React.FC = () => {
 
   const topDiscounts = [...discounted].sort((a, b) => discountPct(b) - discountPct(a)).slice(0, 5);
   const topRated = [...rated].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount).slice(0, 5);
+  const performance = PERFORMANCE_DATA[period];
+  const chartMax = Math.ceil(Math.max(...performance.visits) / 20) * 20;
+  const visitsPath = chartPath(performance.visits, chartMax);
+  const ordersPath = chartPath(performance.orders, chartMax);
+  const chartPoints = performance.visits.map((_, index) => ({
+    x: 44 + (index * 576) / Math.max(performance.visits.length - 1, 1),
+    label: performance.labels[index],
+  }));
 
   return (
     <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <h2 className="text-sm font-semibold text-[#142344]">Desempenho da loja</h2>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e8ebf1] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#737d91]">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+          Dados demonstrativos · últimos 30 dias
+        </span>
+      </div>
       <div className="grid grid-cols-1 min-[480px]:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+        <Kpi icon="payments" label="Vendas" value="R$ 48.290" sub="Mockup de faturamento" tone="lime" />
+        <Kpi icon="visibility" label="Visitas" value="12.840" sub="Mockup de acessos à loja" />
+        <Kpi icon="conversion_path" label="Conversão" value="3,8%" sub="Mockup de visitas convertidas" tone="lime" />
+        <Kpi icon="ads_click" label="Cliques em produtos" value="2.416" sub="Mockup de interesse no catálogo" />
         <Kpi icon="inventory_2" label="Produtos" value={String(products.length)} sub={`${brands.size} marcas no catálogo`} />
         <Kpi icon="payments" label="Preço médio" value={fmtBRL(avgPrice)} sub={`Catálogo somado: ${fmtBRL(totalValue)}`} />
         <Kpi
@@ -208,7 +261,64 @@ export const DashboardTab: React.FC = () => {
         <Kpi icon="category" label="Categorias" value={String(slices.length)} sub="Com produtos publicados" />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1 pt-2">
+        <div>
+          <h2 className="text-base font-bold text-[#142344]">Desempenho da loja</h2>
+          <p className="mt-1 text-xs text-[#8992a4]">Tendência de visitas e pedidos ao longo do tempo.</p>
+        </div>
+        <div className="inline-flex rounded-xl border border-[#e4e8f0] bg-white p-1" aria-label="Período do gráfico">
+          {([
+            ['7d', '7 dias'],
+            ['30d', '30 dias'],
+            ['90d', '90 dias'],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={period === value}
+              onClick={() => setPeriod(value)}
+              className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                period === value ? 'bg-[#071a45] text-white shadow-sm' : 'text-[#737d91] hover:bg-[#f4f6fa] hover:text-[#34415e]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <Panel title="Visitas e pedidos" subtitle={`Série demonstrativa · últimos ${period === '7d' ? '7' : period === '30d' ? '30' : '90'} dias`}>
+        <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-[#737d91]">
+          <span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#4156b8]" />Visitas</span>
+          <span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#22a699]" />Pedidos</span>
+          <span className="ml-auto text-[11px] font-medium text-[#9aa2b1]">Dados fictícios</span>
+        </div>
+        <div className="w-full overflow-x-auto">
+          <svg viewBox="0 0 640 205" role="img" aria-label={`Gráfico demonstrativo de visitas e pedidos nos últimos ${period === '7d' ? '7' : period === '30d' ? '30' : '90'} dias`} className="w-full min-w-[460px]">
+            <defs>
+              <linearGradient id="dashboard-visits-area" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#4156b8" stopOpacity=".16" />
+                <stop offset="100%" stopColor="#4156b8" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {[0, 1, 2, 3].map((line) => {
+              const y = 12 + (150 * line) / 3;
+              return <line key={line} x1="44" x2="620" y1={y} y2={y} stroke="#edf0f5" strokeDasharray="4 5" />;
+            })}
+            <path d={`${visitsPath} L 620 162 L 44 162 Z`} fill="url(#dashboard-visits-area)" />
+            <path d={visitsPath} fill="none" stroke="#4156b8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={ordersPath} fill="none" stroke="#22a699" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            {chartPoints.map((point, index) => (
+              <g key={`${point.label}-${index}`}>
+                <circle cx={point.x} cy={12 + 150 - (performance.visits[index] / chartMax) * 150} r="3.5" fill="white" stroke="#4156b8" strokeWidth="2" />
+                <circle cx={point.x} cy={12 + 150 - (performance.orders[index] / chartMax) * 150} r="3.5" fill="white" stroke="#22a699" strokeWidth="2" />
+                <text x={point.x} y="190" textAnchor="middle" fill="#8992a4" fontSize="10">{point.label}</text>
+              </g>
+            ))}
+          </svg>
+        </div>
+      </Panel>
+
+      <div className="grid lg:grid-cols-2 gap-4">
         <Panel title="Produtos por categoria" subtitle="Distribuição do catálogo">
           <Donut slices={slices} />
         </Panel>
@@ -222,7 +332,7 @@ export const DashboardTab: React.FC = () => {
         </Panel>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="grid lg:grid-cols-2 gap-4">
         <Panel title="Preço médio por categoria">
           <HBars rows={avgByCategory} />
         </Panel>
@@ -231,7 +341,7 @@ export const DashboardTab: React.FC = () => {
         </Panel>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-5">
+      <div className="grid lg:grid-cols-2 gap-4">
         <Panel title="Maiores descontos" subtitle="Produtos com maior percentual off">
           {topDiscounts.length === 0 ? (
             <p className="text-sm text-[#767680]">Nenhum produto em promoção. Use a aba Descontos.</p>
@@ -272,7 +382,7 @@ export const DashboardTab: React.FC = () => {
       </div>
 
       <p className="text-xs text-[#767680] px-1">
-        Os indicadores são calculados a partir do catálogo atual. Vendas e visitas ainda não aparecem aqui porque o site não tem backend de pedidos.
+        Vendas, visitas, conversão e cliques são valores fictícios para demonstração, não dados reais. Os demais indicadores são calculados a partir do catálogo atual.
       </p>
     </div>
   );

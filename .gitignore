@@ -7,3 +7,4 @@ coverage/
 .env*
 !.env.example
 oticasbrasil-temp/
+server/catalog-seed.json

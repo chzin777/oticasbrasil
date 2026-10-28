@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { CheckoutAccount, type AccountUser } from '../components/CheckoutAccount';
+import { useToast } from '../components/ToastContext';
 import { StepIdentification } from '../components/StepIdentification';
 import { StepDelivery } from '../components/StepDelivery';
 import { StepPrescription } from '../components/StepPrescription';
 import { StepPayment } from '../components/StepPayment';
 import { OrderSummary } from '../components/OrderSummary';
+import { useStoreSettings } from '../lib/storeSettings';
 import {
   CustomerData,
   AddressData,
@@ -41,6 +44,9 @@ interface CheckoutPageProps {
   onOpenSupportModal: () => void;
   onOpenLensCustomizer: () => void;
   onGoBackToProduct: () => void;
+  account: AccountUser | null;
+  authLoading: boolean;
+  onAuthenticated: (user: AccountUser) => void;
 }
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({
@@ -63,17 +69,52 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   onOpenCepModal,
   onOpenSupportModal,
   onOpenLensCustomizer,
-  onGoBackToProduct
+  onGoBackToProduct,
+  account,
+  authLoading,
+  onAuthenticated,
 }) => {
   const [activeStep, setActiveStep] = useState(0);
+  const toast = useToast();
+  const { payment } = useStoreSettings();
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const baseSubtotalAfterCoupon = Math.max(0, subtotal - couponDiscount);
-  const pixDiscountAmount = paymentMethod === 'pix' ? baseSubtotalAfterCoupon * 0.05 : 0;
+  const pixDiscountAmount = paymentMethod === 'pix' ? baseSubtotalAfterCoupon * (payment.pix.discountPercent / 100) : 0;
   const totalAmount = baseSubtotalAfterCoupon - pixDiscountAmount;
 
-  const goToNext = () => setActiveStep((s) => Math.min(s + 1, STEPS.length - 1));
+  const goToNext = () => {
+    if (activeStep === 0) {
+      if (!customer.name.trim() || !customer.email.trim() || customer.cpf.replace(/\D/g, '').length !== 11 || customer.phone.replace(/\D/g, '').length < 10) {
+        toast.error('Confira seus dados', 'Informe nome, CPF e telefone válidos para continuar.');
+        return;
+      }
+    }
+    if (activeStep === 1 && deliveryMethod === 'sedex') {
+      if (!address.cep.trim() || !address.street.trim() || !address.number.trim() || !address.city.trim() || !address.state.trim()) {
+        toast.error('Endereço incompleto', 'Preencha o endereço de entrega antes de continuar.');
+        return;
+      }
+    }
+    setActiveStep((step) => Math.min(step + 1, STEPS.length - 1));
+  };
   const goToPrev = () => setActiveStep((s) => Math.max(s - 1, 0));
+
+  if (authLoading) {
+    return (
+      <div className="mx-auto flex min-h-[55vh] w-full max-w-[1440px] items-center justify-center px-4">
+        <p className="text-sm font-semibold text-[#4156b8]">Verificando sua conta...</p>
+      </div>
+    );
+  }
+
+  if (!account) {
+    return (
+      <div className="mx-auto flex min-h-[55vh] w-full max-w-[1440px] items-center justify-center px-4 py-10">
+        <CheckoutAccount onAuthenticated={onAuthenticated} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full pb-10">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CustomerData, AddressData } from '../types';
 import { CATALOG_PRODUCTS } from '../data/mockData';
 import { useWishlist } from '../components/WishlistContext';
+import { useToast } from '../components/ToastContext';
 
 interface ProfilePageProps {
   customer: CustomerData;
@@ -35,12 +36,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   onOpenCart,
 }) => {
   const navigate = useNavigate();
+  const toast = useToast();
   const { ids, remove } = useWishlist();
   const [tab, setTab] = useState<Tab>('dados');
   const [editing, setEditing] = useState(false);
   const [draftCustomer, setDraftCustomer] = useState(customer);
   const [draftAddress, setDraftAddress] = useState(address);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const favorites = ids
     .map((id) => CATALOG_PRODUCTS.find((p) => p.id === id))
@@ -62,12 +65,41 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     setEditing(true);
   };
 
-  const save = (e: React.FormEvent) => {
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateCustomer(draftCustomer);
-    onUpdateAddress(draftAddress);
-    setEditing(false);
-    setSaved(true);
+    setSaving(true);
+    try {
+      const response = await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...draftCustomer, address: draftAddress }),
+      });
+      const result = await response.json() as {
+        user?: { name: string; email: string; cpf?: string | null; phone?: string | null };
+        error?: string;
+      };
+      if (!response.ok || !result.user) {
+        throw new Error(result.error || 'Não foi possível salvar seus dados.');
+      }
+      onUpdateCustomer({
+        name: result.user.name,
+        email: result.user.email,
+        cpf: result.user.cpf || '',
+        phone: result.user.phone || '',
+      });
+      onUpdateAddress(draftAddress);
+      setEditing(false);
+      setSaved(true);
+      toast.success('Perfil atualizado', 'Seus dados e endereço foram salvos.');
+    } catch (error) {
+      toast.error(
+        'Não foi possível atualizar o perfil',
+        error instanceof Error ? error.message : 'Tente novamente.',
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const c = editing ? draftCustomer : customer;
@@ -91,9 +123,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       </button>
       <button
         type="submit"
-        className="px-6 py-3 rounded-xl text-sm font-bold bg-[#061748] text-white hover:bg-[#0a2060] active:scale-95 transition-all cursor-pointer"
+        disabled={saving}
+        className="px-6 py-3 rounded-xl text-sm font-bold bg-[#061748] text-white hover:bg-[#0a2060] active:scale-95 transition-all cursor-pointer disabled:opacity-60"
       >
-        Salvar alterações
+        {saving ? 'Salvando...' : 'Salvar alterações'}
       </button>
     </div>
   ) : null;

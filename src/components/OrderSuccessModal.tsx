@@ -5,6 +5,7 @@ import { CustomerData, AddressData, OrderItem, PaymentMethod, PrescriptionData }
 interface OrderSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
+  orderId: string | null;
   customer: CustomerData;
   address: AddressData;
   items: OrderItem[];
@@ -16,6 +17,7 @@ interface OrderSuccessModalProps {
 export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
   isOpen,
   onClose,
+  orderId,
   customer,
   address,
   items,
@@ -35,8 +37,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
 
   if (!isOpen) return null;
 
-  const orderNumber = 'OB-98241';
-  const pixCopyCode = '00020126580014br.gov.bcb.pix0136ob-98241-otica-brasil-pix-instant5204000053039865405845.505802BR5913OTICAS BRASIL6009SAO PAULO62070503***6304E8A2';
+  const orderNumber = orderId ? orderId.slice(0, 8).toUpperCase() : 'PENDENTE';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
@@ -55,13 +56,13 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
             </div>
             <div>
               <span className="text-xs uppercase tracking-widest text-[#dbee2c] font-bold">
-                Pedido Finalizado com Sucesso
+                Pedido registrado • pagamento pendente
               </span>
               <h2 className="text-xl md:text-2xl font-bold tracking-tight">
                 Obrigado, {customer.name.split(' ')[0]}!
               </h2>
               <p className="text-xs text-[#b6c4fe] mt-0.5">
-                Pedido #{orderNumber} • Notificações enviadas para {customer.phone}
+                Pedido #{orderNumber} • Conta: {customer.email}
               </p>
             </div>
           </div>
@@ -81,11 +82,11 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
                   Etapa 1 • Concluída
                 </span>
                 <span className="font-bold text-[#061748]">Pedido Recebido</span>
-                <span className="text-[11px] text-[#45464f]">Pagamento em processamento</span>
+                <span className="text-[11px] text-[#45464f]">Aguardando pagamento</span>
               </div>
               <div className="flex flex-col gap-1 items-start bg-white p-2.5 rounded-xl border border-[#4156b8]/40 shadow-xs">
                 <span className="text-[10px] font-bold text-[#4156b8] bg-[#dde1ff] px-2 py-0.5 rounded-full">
-                  Etapa 2 • Em Andamento
+                  Etapa 2 • Pendente
                 </span>
                 <span className="font-bold text-[#061748]">Conferência da Receita</span>
                 <span className="text-[11px] text-[#45464f]">
@@ -109,52 +110,18 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
             </div>
           </div>
 
-          {/* Pix Instructions if Pix was selected */}
-          {paymentMethod === 'pix' && (
-            <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-2xl flex flex-col sm:flex-row items-center gap-4">
-              <div className="w-28 h-28 bg-white p-2 rounded-xl shadow-xs border border-amber-300 flex items-center justify-center flex-shrink-0">
-                <svg className="w-24 h-24 text-[#061748]" fill="currentColor" viewBox="0 0 100 100">
-                  <rect height="25" rx="3" width="25" x="10" y="10" />
-                  <rect height="25" rx="3" width="25" x="65" y="10" />
-                  <rect height="25" rx="3" width="25" x="10" y="65" />
-                  <rect height="10" width="10" x="45" y="45" />
-                  <rect height="10" width="10" x="40" y="15" />
-                  <rect height="15" width="10" x="75" y="45" />
-                  <rect height="10" width="20" x="45" y="75" />
-                  <rect height="15" width="15" x="70" y="70" />
-                </svg>
-              </div>
-              <div className="flex-1 flex flex-col gap-1.5 text-center sm:text-left">
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <span className="text-xs font-bold text-[#061748]">Pague via Pix para faturamento instantâneo:</span>
-                  <span className="text-xs font-extrabold text-[#061748] bg-[#dbee2c] px-2 py-0.5 rounded-full">
-                    R$ {totalAmount.toFixed(2).replace('.', ',')}
-                  </span>
-                </div>
-                <p className="text-xs text-[#45464f]">
-                  Abra o aplicativo do seu banco, escolha &ldquo;Pagar com Pix&rdquo; e aponte a câmera para o QR Code ou cole o código abaixo:
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+            <div className="flex items-start gap-3">
+              <span className="material-symbols-outlined text-amber-700">info</span>
+              <div className="text-xs leading-5 text-[#45464f]">
+                <p className="font-bold text-[#061748]">Pedido registrado em modo demonstrativo</p>
+                <p>
+                  Nenhuma cobrança foi realizada. A integração de pagamento ainda não está ativa.
+                  Forma selecionada: {paymentMethod.toUpperCase()} • Valor demonstrativo: R$ {totalAmount.toFixed(2).replace('.', ',')}.
                 </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <input
-                    type="text"
-                    readOnly
-                    value={pixCopyCode}
-                    className="flex-1 bg-white border border-amber-300 px-3 py-1.5 rounded-lg text-xs font-mono text-[#061748] truncate"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(pixCopyCode);
-                      alert('Código Pix Copia e Cola copiado para sua área de transferência!');
-                    }}
-                    className="bg-[#061748] text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:brightness-125 cursor-pointer whitespace-nowrap"
-                  >
-                    Copiar Código
-                  </button>
-                </div>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Items & Shipping Address recap */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">

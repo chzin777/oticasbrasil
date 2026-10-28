@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useToast } from './ToastContext';
 
 const STORAGE_KEY = 'oticas-wishlist';
 
@@ -23,6 +24,7 @@ const load = (): string[] => {
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [ids, setIds] = useState<string[]>(load);
+  const toast = useToast();
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
@@ -30,11 +32,22 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const has = useCallback((id: string) => ids.includes(id), [ids]);
   const toggle = useCallback(
-    (id: string) => setIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id])),
-    []
+    (id: string) => {
+      const removing = ids.includes(id);
+      setIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+      toast.success(removing ? 'Removido da lista de desejos' : 'Adicionado à lista de desejos');
+    },
+    [ids, toast]
   );
-  const remove = useCallback((id: string) => setIds((prev) => prev.filter((i) => i !== id)), []);
-  const clear = useCallback(() => setIds([]), []);
+  const remove = useCallback((id: string) => {
+    setIds((prev) => prev.filter((i) => i !== id));
+    toast.success('Removido da lista de desejos');
+  }, [toast]);
+  const clear = useCallback(() => {
+    if (ids.length === 0) return;
+    setIds([]);
+    toast.success('Lista de desejos limpa');
+  }, [ids.length, toast]);
 
   const value = useMemo(() => ({ ids, has, toggle, remove, clear }), [ids, has, toggle, remove, clear]);
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AddressData, DeliveryMethod } from '../types';
+import { useStoreSettings } from '../lib/storeSettings';
 
 interface StepDeliveryProps {
   address: AddressData;
@@ -16,6 +17,7 @@ export const StepDelivery: React.FC<StepDeliveryProps> = ({
   onSelectDeliveryMethod,
   onOpenCepModal
 }) => {
+  const { delivery } = useStoreSettings();
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [cepInput, setCepInput] = useState(address.cep);
   const [tempAddress, setTempAddress] = useState(address);
@@ -92,6 +94,7 @@ export const StepDelivery: React.FC<StepDeliveryProps> = ({
       {/* Shipping Options Selection */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
         {/* Option 1: Sedex Especial (Selected by default) */}
+        {delivery.homeEnabled && (
         <label
           onClick={() => onSelectDeliveryMethod('sedex')}
           className={`cursor-pointer relative p-4 rounded-xl flex flex-col gap-2 transition-all border ${
@@ -123,8 +126,10 @@ export const StepDelivery: React.FC<StepDeliveryProps> = ({
             <span>Seguro total contra extravio</span>
           </div>
         </label>
+        )}
 
         {/* Option 2: Store Pickup */}
+        {delivery.pickupEnabled && (
         <label
           onClick={() => onSelectDeliveryMethod('boutique')}
           className={`cursor-pointer relative p-4 rounded-xl flex flex-col gap-2 transition-all border ${
@@ -156,6 +161,7 @@ export const StepDelivery: React.FC<StepDeliveryProps> = ({
             <span>Ajuste óptico presencial</span>
           </div>
         </label>
+        )}
       </div>
 
       {/* Street Address Confirmation Preview or Edit form */}

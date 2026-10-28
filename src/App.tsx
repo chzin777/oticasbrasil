@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { HomePage } from './pages/HomePage';
@@ -28,12 +28,13 @@ import { CepModal } from './components/CepModal';
 import { SupportModal } from './components/SupportModal';
 import { CartDrawer } from './components/CartDrawer';
 import { SpecialistChat } from './components/SpecialistChat';
+import { useStoreSettings } from './lib/storeSettings';
 import { Footer } from './components/Footer';
+import { MaintenancePage } from './components/MaintenancePage';
+import { useToast } from './components/ToastContext';
+import { CheckoutAccount, type AccountUser } from './components/CheckoutAccount';
 
 import {
-  INITIAL_CUSTOMER,
-  INITIAL_ADDRESS,
-  INITIAL_ORDER_ITEM,
   INITIAL_PRESCRIPTION,
   CATALOG_PRODUCTS
 } from './data/mockData';
@@ -61,6 +62,16 @@ const getPageFromPath = (pathname: string): AppPage => {
   if (pathname === '/checkout') return 'checkout';
   if (pathname === '/taxas') return 'taxas';
   return 'home';
+};
+
+const EMPTY_ADDRESS: AddressData = {
+  cep: '',
+  street: '',
+  number: '',
+  complement: '',
+  neighborhood: '',
+  city: '',
+  state: '',
 };
 
 // Wrapper component to handle product slug lookup
@@ -98,22 +109,44 @@ function ProductPageRoute({
 
 export default function App() {
   const { pathname } = useLocation();
+  const settings = useStoreSettings();
   if (pathname.startsWith('/admin')) return <AdminPage />;
+  if (settings.maintenance.enabled) {
+    return <MaintenancePage storeName={settings.store.name} message={settings.maintenance.message} />;
+  }
   return <SiteApp />;
 }
 
 function SiteApp() {
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
+  const settings = useStoreSettings();
   const currentPage = getPageFromPath(location.pathname);
 
-  // Shared state remains in App to be passed down or managed globally later
-  const [customer, setCustomer] = useState<CustomerData>(INITIAL_CUSTOMER);
-  const [address, setAddress] = useState<AddressData>(INITIAL_ADDRESS);
+  const [customer, setCustomer] = useState<CustomerData>({ name: '', cpf: '', email: '', phone: '' });
+  const [account, setAccount] = useState<AccountUser | null>(null);
+  const requiresAccount = location.pathname === '/checkout' || location.pathname === '/minha-conta';
+  const [authLoading, setAuthLoading] = useState(requiresAccount);
+  const [cartReadyFor, setCartReadyFor] = useState<string | null>(null);
+  const [address, setAddress] = useState<AddressData>(EMPTY_ADDRESS);
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('sedex');
   const [prescription, setPrescription] = useState<PrescriptionData>(INITIAL_PRESCRIPTION);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
-  const [items, setItems] = useState<OrderItem[]>([INITIAL_ORDER_ITEM]);
+  const [items, setItems] = useState<OrderItem[]>([]);
+
+  // Mantém a seleção válida quando a loja desativa uma forma de pagamento ou entrega
+  useEffect(() => {
+    const { pix, card, boleto } = settings.payment;
+    const enabledPayments: PaymentMethod[] = [];
+    if (pix.enabled) enabledPayments.push('pix');
+    if (card.enabled) enabledPayments.push('card');
+    if (boleto.enabled) enabledPayments.push('boleto');
+    if (enabledPayments.length && !enabledPayments.includes(paymentMethod)) setPaymentMethod(enabledPayments[0]);
+    const { homeEnabled, pickupEnabled } = settings.delivery;
+    if (deliveryMethod === 'sedex' && !homeEnabled && pickupEnabled) setDeliveryMethod('boutique');
+    if (deliveryMethod === 'boutique' && !pickupEnabled && homeEnabled) setDeliveryMethod('sedex');
+  }, [settings, paymentMethod, deliveryMethod]);
 
   // Coupon state
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
@@ -121,6 +154,7 @@ function SiteApp() {
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   // Modals
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -136,6 +170,127 @@ function SiteApp() {
 
   // Hero theme state (shared between HomePage and Header)
   const [heroTheme, setHeroTheme] = useState<'default' | 'blackfriday'>('default');
+
+  useEffect(() => {
+    if (location.pathname !== '/checkout' && location.pathname !== '/minha-conta') return;
+    let active = true;
+    setAuthLoading(true);
+    fetch('/api/auth/session', { credentials: 'same-origin' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Não foi possível verificar sua conta.');
+        return response.json() as Promise<{ user: AccountUser | null }>;
+      })
+      .then(({ user }) => {
+        if (!active || !user) return;
+        setAccount(user);
+        setCustomer((current) => ({
+          ...current,
+          name: user.name,
+          email: user.email,
+          cpf: user.cpf || current.cpf,
+          phone: user.phone || current.phone,
+        }));
+        if (user.address) setAddress({ ...EMPTY_ADDRESS, ...user.address });
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        toast.error(
+          'Não foi possível verificar sua conta',
+          error instanceof Error ? error.message : 'Tente recarregar a página.',
+        );
+      })
+      .finally(() => {
+        if (active) setAuthLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [location.pathname, toast]);
+
+  useEffect(() => {
+    if (!account) {
+      setCartReadyFor(null);
+      return;
+    }
+    let active = true;
+    const loadCart = async () => {
+      const response = await fetch('/api/cart', { credentials: 'same-origin' });
+      const cartResult = await response.json() as {
+        items?: Array<{ productId: string; quantity: number; options?: Record<string, string> }>;
+        error?: string;
+      };
+      if (!response.ok) throw new Error(cartResult.error || 'Não foi possível carregar seu carrinho.');
+      if (!Array.isArray(cartResult.items) || cartResult.items.length === 0) {
+        if (active) setCartReadyFor(account.id);
+        return;
+      }
+
+      const productResponse = await fetch('/api/store/products');
+      const productResult = await productResponse.json() as { products?: EyewearProduct[] };
+      if (!productResponse.ok || !Array.isArray(productResult.products)) {
+        throw new Error('Não foi possível carregar os produtos do carrinho.');
+      }
+      const products = new Map(productResult.products.map((product) => [product.id, product]));
+      const restoredItems = cartResult.items.flatMap((cartItem) => {
+        const product = products.get(cartItem.productId);
+        if (!product) return [];
+        const color = cartItem.options?.color || product.colorName || 'Padrão';
+        const size = cartItem.options?.size || product.calibre || 'Único';
+        return [{
+          id: product.id,
+          name: product.name,
+          subtitle: `${color} • Calibre ${size}`,
+          color,
+          size,
+          lensType: cartItem.options?.lensType || 'Sem personalização',
+          price: Number(product.price),
+          image: product.image,
+          quantity: cartItem.quantity,
+        }];
+      });
+      if (!active) return;
+      setItems(restoredItems);
+      setCartReadyFor(account.id);
+    };
+
+    loadCart().catch((error: unknown) => {
+      if (!active) return;
+      toast.error(
+        'Não foi possível carregar seu carrinho',
+        error instanceof Error ? error.message : 'Tente novamente.',
+      );
+      setCartReadyFor(account.id);
+    });
+    return () => {
+      active = false;
+    };
+  }, [account, toast]);
+
+  useEffect(() => {
+    if (!account || cartReadyFor !== account.id) return;
+    fetch('/api/cart', {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: items.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+          options: { color: item.color, size: item.size, lensType: item.lensType },
+        })),
+      }),
+    }).then(async (response) => {
+      if (!response.ok) {
+        const result = await response.json() as { error?: string };
+        throw new Error(result.error || 'Não foi possível salvar seu carrinho.');
+      }
+    }).catch((error: unknown) => {
+      toast.error(
+        'Não foi possível salvar seu carrinho',
+        error instanceof Error ? error.message : 'Tente novamente.',
+      );
+    });
+  }, [account, cartReadyFor, items, toast]);
 
   // Navigation helper with scroll to top
   const navigateTo = (page: AppPage, productId?: string) => {
@@ -157,7 +312,7 @@ function SiteApp() {
   // Calculations
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const baseSubtotalAfterCoupon = Math.max(0, subtotal - couponDiscount);
-  const pixDiscountAmount = paymentMethod === 'pix' ? baseSubtotalAfterCoupon * 0.05 : 0;
+  const pixDiscountAmount = paymentMethod === 'pix' ? baseSubtotalAfterCoupon * (settings.payment.pix.discountPercent / 100) : 0;
   const totalAmount = baseSubtotalAfterCoupon - pixDiscountAmount;
 
   // Handlers
@@ -174,12 +329,71 @@ function SiteApp() {
     setCouponDiscount(discountAmount);
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    if (!account) {
+      toast.error('Entre na sua conta', 'É necessário acessar uma conta antes de finalizar o pedido.');
+      return;
+    }
+    if (!items.length) {
+      toast.error('Seu carrinho está vazio', 'Adicione um produto antes de finalizar a compra.');
+      return;
+    }
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      const profileResponse = await fetch('/api/auth/profile', {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customer),
+      });
+      const profileResult = await profileResponse.json() as { user?: AccountUser; error?: string };
+      if (!profileResponse.ok || !profileResult.user) {
+        throw new Error(profileResult.error || 'Não foi possível salvar seus dados.');
+      }
+      setAccount(profileResult.user);
+      const orderResponse = await fetch('/api/orders', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            options: { color: item.color, size: item.size, lensType: item.lensType },
+          })),
+          address,
+          deliveryMethod,
+          paymentMethod,
+          couponCode: appliedCoupon,
+          prescription: {
+            fileName: prescription.fileName || '',
+            sendViaWhatsApp: prescription.sendViaWhatsApp,
+            manualEntered: prescription.manualEntered,
+            odSph: prescription.odSph,
+            odCyl: prescription.odCyl,
+            odAxis: prescription.odAxis,
+            oeSph: prescription.oeSph,
+            oeCyl: prescription.oeCyl,
+            oeAxis: prescription.oeAxis,
+            dnp: prescription.dnp,
+          },
+        }),
+      });
+      const orderResult = await orderResponse.json() as { order?: { id: string }; error?: string };
+      if (!orderResponse.ok || !orderResult.order) {
+        throw new Error(orderResult.error || 'Não foi possível registrar o pedido.');
+      }
+      setOrderId(orderResult.order.id);
       setIsSubmitting(false);
       setIsSuccessModalOpen(true);
-    }, 850);
+    } catch (error) {
+      toast.error(
+        'Não foi possível finalizar o pedido',
+        error instanceof Error ? error.message : 'Tente novamente.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSelectProduct = (product: EyewearProduct) => {
@@ -223,7 +437,7 @@ function SiteApp() {
 
   const handleAddAccessory = (name: string, price: number, image: string) => {
     const accessoryItem: OrderItem = {
-      id: 'acc-' + Date.now(),
+      id: 'accessory-zeiss-lens-care',
       name,
       subtitle: 'Acessório de Proteção Óptica',
       color: 'Standard',
@@ -260,6 +474,16 @@ function SiteApp() {
         onOpenCart={() => setIsCartDrawerOpen(true)}
         onOpenWishlist={() => { navigate('/lista-de-desejos'); window.scrollTo({ top: 0, behavior: 'instant' }); }}
         onOpenProfile={() => { navigate('/minha-conta'); window.scrollTo({ top: 0, behavior: 'instant' }); }}
+        userName={account?.name}
+        onLogout={() => {
+          fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' })
+            .catch(() => {})
+            .finally(() => {
+              setAccount(null);
+              navigate('/');
+              window.scrollTo({ top: 0, behavior: 'instant' });
+            });
+        }}
       />
 
       {/* Main Content Area based on Current Page */}
@@ -315,18 +539,49 @@ function SiteApp() {
               onNavigateHome={() => navigateTo('home')}
             />
           } />
-          <Route path="/oculos-de-sol" element={<SunglassesPage />} />
-          <Route path="/lentes-de-grau" element={<LensesPage />} />
+          <Route path="/oculos-de-sol" element={
+            <SunglassesPage
+              onSelectProductForCheckout={handleGoToCheckoutWithProduct}
+              onNavigateHome={() => navigateTo('home')}
+            />
+          } />
+          <Route path="/lentes-de-grau" element={
+            <LensesPage
+              onSelectProductForCheckout={handleGoToCheckoutWithProduct}
+              onNavigateHome={() => navigateTo('home')}
+            />
+          } />
           <Route path="/lista-de-desejos" element={<WishlistPage />} />
           <Route path="/minha-conta" element={
-            <ProfilePage
-              customer={customer}
-              address={address}
-              cartCount={items.reduce((acc, i) => acc + i.quantity, 0)}
-              onUpdateCustomer={handleUpdateCustomer}
-              onUpdateAddress={setAddress}
-              onOpenCart={() => setIsCartDrawerOpen(true)}
-            />
+            account ? (
+              <ProfilePage
+                customer={customer}
+                address={address}
+                cartCount={items.reduce((acc, i) => acc + i.quantity, 0)}
+                onUpdateCustomer={handleUpdateCustomer}
+                onUpdateAddress={setAddress}
+                onOpenCart={() => setIsCartDrawerOpen(true)}
+              />
+            ) : authLoading ? (
+              <div className="mx-auto flex min-h-[55vh] items-center justify-center text-sm font-semibold text-[#4156b8]">
+                Verificando sua conta...
+              </div>
+            ) : (
+              <CheckoutAccount
+                context="profile"
+                onAuthenticated={(user) => {
+                  setAccount(user);
+                  setCustomer((current) => ({
+                    ...current,
+                    name: user.name,
+                    email: user.email,
+                    cpf: user.cpf || current.cpf,
+                    phone: user.phone || current.phone,
+                  }));
+                  if (user.address) setAddress({ ...EMPTY_ADDRESS, ...user.address });
+                }}
+              />
+            )
           } />
 
           <Route path="/taxas" element={<TaxasAsaasPage />} />
@@ -350,6 +605,19 @@ function SiteApp() {
               couponDiscount={couponDiscount}
               onCheckout={handleCheckout}
               isSubmitting={isSubmitting}
+              account={account}
+              authLoading={authLoading}
+              onAuthenticated={(user) => {
+                setAccount(user);
+                setCustomer((current) => ({
+                  ...current,
+                  name: user.name,
+                  email: user.email,
+                  cpf: user.cpf || current.cpf,
+                  phone: user.phone || current.phone,
+                }));
+                if (user.address) setAddress({ ...EMPTY_ADDRESS, ...user.address });
+              }}
               onOpenCepModal={() => setIsCepOpen(true)}
               onOpenSupportModal={() => setIsSupportOpen(true)}
               onOpenLensCustomizer={() => {
@@ -381,7 +649,12 @@ function SiteApp() {
       {/* Supporting Interactive Modals */}
       <OrderSuccessModal
         isOpen={isSuccessModalOpen}
-        onClose={() => setIsSuccessModalOpen(false)}
+        onClose={() => {
+          setIsSuccessModalOpen(false);
+          setOrderId(null);
+          setItems([]);
+        }}
+        orderId={orderId}
         customer={customer}
         address={address}
         items={items}

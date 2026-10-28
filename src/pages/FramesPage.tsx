@@ -4,6 +4,7 @@ import { CATALOG_PRODUCTS } from '../data/mockData';
 import { EyewearProduct } from '../types';
 import { WishlistButton } from '../components/WishlistContext';
 import { FilterSection, CheckboxItem } from '../components/FilterParts';
+import { getEditableFilterOptions, useSiteData } from '../lib/siteStore';
 
 interface FramesPageProps {
   onSelectProductForCheckout: (product: EyewearProduct, lensType: string) => void;
@@ -46,32 +47,33 @@ export const FramesPage: React.FC<FramesPageProps> = ({
   onNavigateHome,
   showAll = false,
 }) => {
+  const storeVersion = useSiteData();
   const navigate = useNavigate();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const framesProducts = useMemo(
     () => (showAll ? CATALOG_PRODUCTS : CATALOG_PRODUCTS.filter((p) => p.category === 'armacoes')),
-    [showAll]
+    [showAll, storeVersion]
   );
 
   const priceCap = useMemo(
     () => Math.max(2000, Math.ceil(Math.max(...framesProducts.map((p) => p.price)) / 100) * 100),
-    [framesProducts]
+    [framesProducts, storeVersion]
   );
   const initialFilters = useMemo<Filters>(() => ({ ...INITIAL_FILTERS, priceRange: [0, priceCap] }), [priceCap]);
   const [filters, setFilters] = useState<Filters>(initialFilters);
 
   // Extract unique filter options from products
   const filterOptions = useMemo(() => {
-    const brands = Array.from(new Set(framesProducts.map((p) => p.brand))).sort();
-    const shapes = Array.from(new Set(framesProducts.map((p) => p.shape))).sort();
-    const materials = Array.from(new Set(framesProducts.map((p) => p.material.split(' ')[0]))).sort();
-    const frameColors = Array.from(new Set(framesProducts.map((p) => p.colorName))).sort();
-    const bridgeSizes = Array.from(new Set(framesProducts.map((p) => p.specs.bridgeWidth))).sort();
+    const brands = getEditableFilterOptions('brand', Array.from(new Set(framesProducts.map((p) => p.brand))).sort());
+    const shapes = getEditableFilterOptions('shape', Array.from(new Set(framesProducts.map((p) => p.shape))).sort());
+    const materials = getEditableFilterOptions('material', Array.from(new Set(framesProducts.map((p) => p.material.split(' ')[0]))).sort());
+    const frameColors = getEditableFilterOptions('frameColor', Array.from(new Set(framesProducts.map((p) => p.colorName))).sort());
+    const bridgeSizes = getEditableFilterOptions('bridgeSize', Array.from(new Set(framesProducts.map((p) => p.specs.bridgeWidth))).sort());
     const maxPrice = Math.max(...framesProducts.map((p) => p.price));
     return { brands, shapes, materials, frameColors, bridgeSizes, maxPrice };
-  }, [framesProducts]);
+  }, [framesProducts, storeVersion]);
 
   const toggleFilter = (category: keyof Filters, value: string) => {
     setFilters((prev) => {
