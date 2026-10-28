@@ -43,39 +43,54 @@ const chartPath = (values: number[], max: number) => {
   }, `M ${points[0].x} ${points[0].y}`);
 };
 
-const Panel: React.FC<{ title: string; subtitle?: string; className?: string; children: React.ReactNode }> = ({
+const Panel: React.FC<{ title: string; subtitle?: string; className?: string; action?: React.ReactNode; children: React.ReactNode }> = ({
   title,
   subtitle,
   className = '',
+  action,
   children,
 }) => (
-  <section className={`bg-white rounded-2xl border border-[#e8ebf1] shadow-[0_1px_3px_rgba(20,35,68,0.04)] p-4 sm:p-5 ${className}`}>
-    <h3 className="text-sm font-semibold text-[#142344]">{title}</h3>
-    {subtitle && <p className="text-xs text-[#7b8497] mt-1">{subtitle}</p>}
-    <div className="mt-4">{children}</div>
+  <section className={`bg-white rounded-2xl border border-[#e8ebf1] shadow-[0_1px_3px_rgba(20,35,68,0.04)] p-5 sm:p-6 ${className}`}>
+    <div className="flex items-start justify-between gap-3 mb-4">
+      <div>
+        <h3 className="text-sm font-bold text-[#142344]">{title}</h3>
+        {subtitle && <p className="text-xs text-[#7b8497] mt-0.5">{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+    {children}
   </section>
 );
 
-const Kpi: React.FC<{ icon: string; label: string; value: string; sub: string; tone?: 'navy' | 'lime' }> = ({
-  icon,
-  label,
-  value,
-  sub,
-  tone = 'navy',
-}) => (
-  <div className="bg-white rounded-2xl border border-[#e8ebf1] shadow-[0_1px_3px_rgba(20,35,68,0.04)] p-4">
-    <div className="flex items-center justify-between">
-      <p className="text-[11px] font-bold uppercase tracking-wider text-[#767680]">{label}</p>
+const KpiCard: React.FC<{
+  icon: string;
+  label: string;
+  value: string;
+  sub: string;
+  trend?: { value: string; positive: boolean };
+  tone?: 'navy' | 'lime';
+}> = ({ icon, label, value, sub, trend, tone = 'navy' }) => (
+  <div className="bg-white rounded-2xl border border-[#e8ebf1] shadow-[0_1px_3px_rgba(20,35,68,0.04)] p-5 flex flex-col justify-between min-h-[140px]">
+    <div className="flex items-center justify-between mb-3">
       <span
-        className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
           tone === 'lime' ? 'bg-[#f4f9d0] text-[#061748]' : 'bg-[#eef1fb] text-[#4156b8]'
         }`}
       >
-        <span className="material-symbols-outlined text-[20px]">{icon}</span>
+        <span className="material-symbols-outlined text-[22px]">{icon}</span>
       </span>
+      {trend && (
+        <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${trend.positive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+          <span className="material-symbols-outlined text-[14px]">{trend.positive ? 'trending_up' : 'trending_down'}</span>
+          {trend.value}
+        </span>
+      )}
     </div>
-    <p className="text-2xl font-bold text-[#142344] mt-2.5 tracking-tight">{value}</p>
-    <p className="text-[11px] text-[#7b8497] mt-1">{sub}</p>
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-[#767680] mb-1">{label}</p>
+      <p className="text-3xl font-black text-[#142344] tracking-tight leading-none">{value}</p>
+      <p className="text-[11px] text-[#7b8497] mt-2">{sub}</p>
+    </div>
   </div>
 );
 
@@ -185,8 +200,6 @@ export const DashboardTab: React.FC = () => {
   const coupons = Object.entries(AVAILABLE_COUPONS);
   const activeCoupons = coupons.filter(([, c]) => c.active !== false);
   const brands = new Set(products.map((p) => p.brand));
-  const cheapest = products.reduce((a, b) => (b.price < a.price ? b : a), products[0]);
-  const priciest = products.reduce((a, b) => (b.price > a.price ? b : a), products[0]);
 
   const slices = CATEGORY_META.map((c) => ({
     label: c.label,
@@ -227,70 +240,113 @@ export const DashboardTab: React.FC = () => {
   }));
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-        <h2 className="text-sm font-semibold text-[#142344]">Desempenho da loja</h2>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e8ebf1] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#737d91]">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+    <div className="space-y-6 pb-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+        <div>
+          <h2 className="text-xl font-black text-[#142344]">Visão Geral</h2>
+          <p className="text-sm text-[#7b8497] mt-0.5">Acompanhe métricas e desempenho da loja</p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e8ebf1] bg-white px-3 py-1.5 text-xs font-semibold text-[#737d91] shadow-sm self-start sm:self-auto">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
           Dados demonstrativos · últimos 30 dias
         </span>
       </div>
-      <div className="grid grid-cols-1 min-[480px]:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-        <Kpi icon="payments" label="Vendas" value="R$ 48.290" sub="Mockup de faturamento" tone="lime" />
-        <Kpi icon="visibility" label="Visitas" value="12.840" sub="Mockup de acessos à loja" />
-        <Kpi icon="conversion_path" label="Conversão" value="3,8%" sub="Mockup de visitas convertidas" tone="lime" />
-        <Kpi icon="ads_click" label="Cliques em produtos" value="2.416" sub="Mockup de interesse no catálogo" />
-        <Kpi icon="inventory_2" label="Produtos" value={String(products.length)} sub={`${brands.size} marcas no catálogo`} />
-        <Kpi icon="payments" label="Preço médio" value={fmtBRL(avgPrice)} sub={`Catálogo somado: ${fmtBRL(totalValue)}`} />
-        <Kpi
-          icon="sell"
-          label="Em promoção"
-          value={`${discounted.length}`}
-          sub={`${Math.round((discounted.length / n) * 100)}% do catálogo • média ${avgDiscount.toFixed(0)}% off`}
+
+      {/* Primary KPIs - Revenue Focus */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <KpiCard
+          icon="payments"
+          label="Faturamento Estimado"
+          value="R$ 48.290"
+          sub="Volume total de vendas"
           tone="lime"
+          trend={{ value: '+12,5%', positive: true }}
         />
-        <Kpi icon="star" label="Avaliação média" value={avgRating.toFixed(1)} sub={`${totalReviews.toLocaleString('pt-BR')} avaliações`} tone="lime" />
-        <Kpi
-          icon="confirmation_number"
-          label="Cupons ativos"
-          value={`${activeCoupons.length}/${coupons.length}`}
-          sub={coupons.length - activeCoupons.length > 0 ? `${coupons.length - activeCoupons.length} inativo(s)` : 'Todos ativos'}
+        <KpiCard
+          icon="visibility"
+          label="Visitantes Únicos"
+          value="12.840"
+          sub="Tráfego qualificado na loja"
+          trend={{ value: '+8,2%', positive: true }}
         />
-        <Kpi icon="arrow_downward" label="Mais barato" value={cheapest ? fmtBRL(cheapest.price) : '—'} sub={cheapest?.name ?? ''} />
-        <Kpi icon="arrow_upward" label="Mais caro" value={priciest ? fmtBRL(priciest.price) : '—'} sub={priciest?.name ?? ''} />
-        <Kpi icon="category" label="Categorias" value={String(slices.length)} sub="Com produtos publicados" />
+        <KpiCard
+          icon="conversion_path"
+          label="Taxa de Conversão"
+          value="3,8%"
+          sub="Pedidos por visita"
+          tone="lime"
+          trend={{ value: '-0,4%', positive: false }}
+        />
+        <KpiCard
+          icon="shopping_cart"
+          label="Ticket Médio"
+          value={fmtBRL(avgPrice)}
+          sub={`${brands.size} marcas ativas`}
+        />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1 pt-2">
-        <div>
-          <h2 className="text-base font-bold text-[#142344]">Desempenho da loja</h2>
-          <p className="mt-1 text-xs text-[#8992a4]">Tendência de visitas e pedidos ao longo do tempo.</p>
+      {/* Secondary KPIs - Catalog Health */}
+      <div className="grid grid-cols-2 min-[480px]:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="bg-white rounded-xl border border-[#e8ebf1] p-3.5 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#767680] mb-1">Produtos</p>
+          <p className="text-xl font-black text-[#142344]">{products.length}</p>
         </div>
-        <div className="inline-flex rounded-xl border border-[#e4e8f0] bg-white p-1" aria-label="Período do gráfico">
-          {([
-            ['7d', '7 dias'],
-            ['30d', '30 dias'],
-            ['90d', '90 dias'],
-          ] as const).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={period === value}
-              onClick={() => setPeriod(value)}
-              className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                period === value ? 'bg-[#071a45] text-white shadow-sm' : 'text-[#737d91] hover:bg-[#f4f6fa] hover:text-[#34415e]'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="bg-white rounded-xl border border-[#e8ebf1] p-3.5 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#767680] mb-1">Em Promoção</p>
+          <p className="text-xl font-black text-[#142344]">{discounted.length}</p>
+          <p className="text-[10px] text-[#7b8497]">{avgDiscount.toFixed(0)}% off médio</p>
+        </div>
+        <div className="bg-white rounded-xl border border-[#e8ebf1] p-3.5 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#767680] mb-1">Avaliação</p>
+          <p className="text-xl font-black text-[#142344]">{avgRating.toFixed(1)}</p>
+          <p className="text-[10px] text-[#7b8497]">{totalReviews} reviews</p>
+        </div>
+        <div className="bg-white rounded-xl border border-[#e8ebf1] p-3.5 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#767680] mb-1">Cupons Ativos</p>
+          <p className="text-xl font-black text-[#142344]">{activeCoupons.length}</p>
+          <p className="text-[10px] text-[#7b8497]">de {coupons.length} totais</p>
+        </div>
+        <div className="bg-white rounded-xl border border-[#e8ebf1] p-3.5 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#767680] mb-1">Categorias</p>
+          <p className="text-xl font-black text-[#142344]">{slices.length}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-[#e8ebf1] p-3.5 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#767680] mb-1">Valor Total</p>
+          <p className="text-xl font-black text-[#142344]">{fmtBRL(totalValue).replace('R$ ', '')}</p>
         </div>
       </div>
-      <Panel title="Visitas e pedidos" subtitle={`Série demonstrativa · últimos ${period === '7d' ? '7' : period === '30d' ? '30' : '90'} dias`}>
-        <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-[#737d91]">
+
+      {/* Main Chart Section */}
+      <Panel
+        title="Tendência de Tráfego e Vendas"
+        subtitle="Evolução de visitas e pedidos ao longo do tempo"
+        action={
+          <div className="inline-flex rounded-lg border border-[#e4e8f0] bg-[#f8f9fc] p-0.5" aria-label="Período do gráfico">
+            {([
+              ['7d', '7D'],
+              ['30d', '30D'],
+              ['90d', '90D'],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={period === value}
+                onClick={() => setPeriod(value)}
+                className={`rounded-md px-3 py-1.5 text-[11px] font-bold transition ${
+                  period === value ? 'bg-[#071a45] text-white shadow-sm' : 'text-[#737d91] hover:text-[#34415e]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        }
+      >
+        <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-[#737d91]">
           <span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#4156b8]" />Visitas</span>
           <span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-[#22a699]" />Pedidos</span>
-          <span className="ml-auto text-[11px] font-medium text-[#9aa2b1]">Dados fictícios</span>
+          <span className="ml-auto text-[10px] font-medium text-[#9aa2b1] italic">Dados fictícios para demonstração</span>
         </div>
         <div className="w-full overflow-x-auto">
           <svg viewBox="0 0 640 205" role="img" aria-label={`Gráfico demonstrativo de visitas e pedidos nos últimos ${period === '7d' ? '7' : period === '30d' ? '30' : '90'} dias`} className="w-full min-w-[460px]">
@@ -318,11 +374,12 @@ export const DashboardTab: React.FC = () => {
         </div>
       </Panel>
 
+      {/* Analytics Grid */}
       <div className="grid lg:grid-cols-2 gap-4">
-        <Panel title="Produtos por categoria" subtitle="Distribuição do catálogo">
+        <Panel title="Distribuição por Categoria" subtitle="Composição do catálogo ativo">
           <Donut slices={slices} />
         </Panel>
-        <Panel title="Faixas de preço" subtitle="Quantidade de produtos por faixa">
+        <Panel title="Faixas de Preço" subtitle="Concentração de produtos por valor">
           <VBars rows={buckets} />
           <div className="flex gap-3 mt-2">
             {buckets.map((b) => (
@@ -333,57 +390,71 @@ export const DashboardTab: React.FC = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
-        <Panel title="Preço médio por categoria">
+        <Panel title="Preço Médio por Categoria" subtitle="Comparativo de posicionamento">
           <HBars rows={avgByCategory} />
         </Panel>
-        <Panel title="Principais marcas" subtitle="Por número de produtos">
+        <Panel title="Principais Marcas" subtitle="Top marcas por volume de produtos">
           <HBars rows={brandRows} color="#061748" />
         </Panel>
       </div>
 
+      {/* Top Products Section */}
       <div className="grid lg:grid-cols-2 gap-4">
-        <Panel title="Maiores descontos" subtitle="Produtos com maior percentual off">
+        <Panel title="Maiores Descontos" subtitle="Produtos com maior agressividade promocional">
           {topDiscounts.length === 0 ? (
-            <p className="text-sm text-[#767680]">Nenhum produto em promoção. Use a aba Descontos.</p>
+            <div className="py-8 text-center">
+              <span className="material-symbols-outlined text-4xl text-[#e8ebf1] mb-2">local_offer</span>
+              <p className="text-sm text-[#767680]">Nenhum produto em promoção no momento.</p>
+            </div>
           ) : (
             <ul className="divide-y divide-[#eceef0]">
               {topDiscounts.map((p) => (
-                <li key={p.id} className="flex items-center gap-3 py-2.5">
-                  <img src={p.image} alt="" className="w-12 h-10 rounded-lg object-cover bg-[#eceef0]" />
+                <li key={p.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <img src={p.image} alt="" className="w-14 h-12 rounded-lg object-cover bg-[#eceef0] border border-[#e8ebf1]" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-[#061748] truncate">{p.name}</p>
-                    <p className="text-xs text-[#767680]">
-                      <s>{fmtBRL(p.originalPrice!)}</s> → {fmtBRL(p.price)}
+                    <p className="text-xs text-[#767680] mt-0.5">
+                      <s className="opacity-60">{fmtBRL(p.originalPrice!)}</s> <span className="text-[#061748] font-semibold">→ {fmtBRL(p.price)}</span>
                     </p>
                   </div>
-                  <span className="text-xs font-black bg-[#C4D600] text-[#061748] px-2.5 py-1 rounded-full">-{discountPct(p).toFixed(0)}%</span>
+                  <span className="text-xs font-black bg-[#C4D600] text-[#061748] px-2.5 py-1 rounded-full whitespace-nowrap">-{discountPct(p).toFixed(0)}%</span>
                 </li>
               ))}
             </ul>
           )}
         </Panel>
-        <Panel title="Mais bem avaliados" subtitle="Nota e quantidade de avaliações">
-          <ul className="divide-y divide-[#eceef0]">
-            {topRated.map((p) => (
-              <li key={p.id} className="flex items-center gap-3 py-2.5">
-                <img src={p.image} alt="" className="w-12 h-10 rounded-lg object-cover bg-[#eceef0]" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-[#061748] truncate">{p.name}</p>
-                  <p className="text-xs text-[#767680]">{p.reviewCount} avaliações</p>
-                </div>
-                <span className="flex items-center gap-1 text-sm font-black text-[#061748]">
-                  <span className="material-symbols-outlined text-[16px] text-[#C4D600]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                  {p.rating.toFixed(1)}
-                </span>
-              </li>
-            ))}
-          </ul>
+        <Panel title="Melhores Avaliados" subtitle="Produtos com maior satisfação dos clientes">
+          {topRated.length === 0 ? (
+            <div className="py-8 text-center">
+              <span className="material-symbols-outlined text-4xl text-[#e8ebf1] mb-2">star_off</span>
+              <p className="text-sm text-[#767680]">Nenhum produto avaliado ainda.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-[#eceef0]">
+              {topRated.map((p) => (
+                <li key={p.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <img src={p.image} alt="" className="w-14 h-12 rounded-lg object-cover bg-[#eceef0] border border-[#e8ebf1]" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-[#061748] truncate">{p.name}</p>
+                    <p className="text-xs text-[#767680] mt-0.5">{p.reviewCount} avaliações</p>
+                  </div>
+                  <span className="flex items-center gap-1 text-sm font-black text-[#061748] bg-[#f8f9fc] px-2.5 py-1 rounded-lg">
+                    <span className="material-symbols-outlined text-[16px] text-[#C4D600]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                    {p.rating.toFixed(1)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Panel>
       </div>
 
-      <p className="text-xs text-[#767680] px-1">
-        Vendas, visitas, conversão e cliques são valores fictícios para demonstração, não dados reais. Os demais indicadores são calculados a partir do catálogo atual.
-      </p>
+      {/* Footer Disclaimer */}
+      <div className="bg-[#f8f9fc] rounded-xl border border-[#e8ebf1] p-4 mt-4">
+        <p className="text-[11px] text-[#767680] leading-relaxed">
+          <span className="font-bold text-[#45464f]">Nota:</span> Métricas de vendas, visitas, conversão e cliques são valores fictícios para fins de demonstração da interface. Indicadores de catálogo (produtos, preços, avaliações, cupons) são calculados em tempo real a partir dos dados atuais.
+        </p>
+      </div>
     </div>
   );
 };
