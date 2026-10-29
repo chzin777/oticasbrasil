@@ -236,8 +236,10 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
             <span className="material-symbols-outlined text-[19px]">arrow_back</span>
           </button>
           <div>
-            <p className="text-[11px] font-medium text-[#8992a4]">Produtos <span className="mx-1 text-[#c6cbd5]">/</span> {isNew ? 'Novo produto' : 'Editar produto'}</p>
-            <h2 className="mt-0.5 text-lg font-semibold text-[#142344]">{isNew ? 'Cadastrar produto' : 'Editar produto'}</h2>
+            {!isNew && (
+              <p className="text-[11px] font-medium text-[#8992a4]">Produtos <span className="mx-1 text-[#c6cbd5]">/</span> Editar produto</p>
+            )}
+            <h2 className={`text-lg font-semibold text-[#142344] ${isNew ? '' : 'mt-0.5'}`}>{isNew ? 'Cadastrar produto' : 'Editar produto'}</h2>
           </div>
         </div>
         {isNew && (
