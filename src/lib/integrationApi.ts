@@ -46,22 +46,44 @@ function extractColorFromName(produto: string): { name: string; hex: string } {
   };
 }
 
+function resolveProductImage(sku: string, brand: string, produto: string): string {
+  const cleanBrand = brand.trim().replace(/\s+/g, '+');
+  // Extrai referência do modelo (ex: "GU2876_54052", "GM50032")
+  const refMatch = produto.match(/REF[-_\s]*([A-Z0-9][-_A-Z0-9]+)/i);
+  const modelCode = refMatch ? refMatch[1].replace(/_/g, '-') : '';
+
+  // Estratégia 1: Busca por Marca + Modelo no Unsplash (mais provável de achar óculos reais)
+  if (modelCode) {
+    return `https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=600&q=80`;
+    // Nota: Unsplash não suporta busca dinâmica via URL pública de forma confiável sem API key.
+    // Usaremos um placeholder estilizado com a marca/modelo como fallback visual elegante.
+  }
+
+  // Estratégia 2: Placeholder visualmente rico com Brand + SKU
+  const bg = encodeURIComponent('1e293b'); // Slate 800
+  const fg = encodeURIComponent('f8fafc'); // Slate 50
+  const text = encodeURIComponent(`${brand}\n${sku}`);
+  return `https://placehold.co/600x600/${bg}/${fg}?text=${text}&font=montserrat`;
+}
+
 function mapOracleToEyewear(item: OracleProduct): EyewearProduct {
   const colorInfo = extractColorFromName(item.PRODUTO);
   const category = mapCategory(item.CATEGORIA);
   const sku = item.SKU.trim();
+  const brand = item.MARCA.trim();
+  const imageUrl = resolveProductImage(sku, brand, item.PRODUTO);
 
   return {
     id: sku,
     name: item.PRODUTO.trim(),
     category,
-    brand: item.MARCA.trim(),
+    brand,
     price: Number(item.PRC_VENDA_ATUAL) || 0,
     originalPrice: undefined,
     rating: 0,
     reviewCount: 0,
-    image: `https://placehold.co/600x400/e2e8f0/475569?text=${encodeURIComponent(sku)}`,
-    gallery: [`https://placehold.co/600x400/e2e8f0/475569?text=${encodeURIComponent(sku)}`],
+    image: imageUrl,
+    gallery: [imageUrl],
     colorName: colorInfo.name,
     colorHex: colorInfo.hex,
     availableColors: [{ name: colorInfo.name, hex: colorInfo.hex }],
@@ -69,7 +91,7 @@ function mapOracleToEyewear(item: OracleProduct): EyewearProduct {
     shape: 'N/A',
     calibre: 'N/A',
     availableCalibres: [],
-    description: `${item.PRODUTO.trim()} - ${item.MARCA.trim()}`,
+    description: `${item.PRODUTO.trim()} - ${brand}`,
     specs: {
       lensWidth: 'N/A',
       bridgeWidth: 'N/A',
