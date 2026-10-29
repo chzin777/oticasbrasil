@@ -1,8 +1,7 @@
 import type { EyewearProduct } from '../types';
 import { CATALOG_PRODUCTS } from '../data/mockData';
 
-const API_URL = import.meta.env.VITE_INTEGRATION_API_URL || 'http://172.30.20.15:4000';
-const API_KEY = import.meta.env.VITE_INTEGRATION_API_KEY || 'otk_int_9f3a7c2e1b8d4f6a0c5e2d9b7a1f4e8c3d6b0a5f2e9c7d1b4a8f6e3c0d5b2a9';
+const API_BASE = '/api/integration';
 
 interface OracleProduct {
   CATEGORIA: string;
@@ -84,11 +83,9 @@ function mapOracleToEyewear(item: OracleProduct): EyewearProduct {
 
 export async function fetchProducts(): Promise<EyewearProduct[]> {
   try {
-    const response = await fetch(`${API_URL}/v1/products`, {
-      headers: {
-        'x-api-key': API_KEY,
-        'Content-Type': 'application/json',
-      },
+    const params = new URLSearchParams({ limit: '500' });
+    const response = await fetch(`${API_BASE}/products?${params.toString()}`, {
+      headers: { 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {

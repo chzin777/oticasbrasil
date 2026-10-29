@@ -290,6 +290,27 @@ app.get('/api/store/products', async (_req, res, next) => {
   }
 });
 
+const INTEGRATION_API_URL = process.env.INTEGRATION_API_URL || 'http://oticas-integration-api:4000';
+const INTEGRATION_API_KEY = process.env.INTEGRATION_API_KEY || '';
+
+app.get('/api/integration/products', async (req, res, next) => {
+  if (!INTEGRATION_API_KEY) return jsonError(res, 503, 'Chave da API de integração não configurada.');
+  try {
+    const url = new URL('/v1/products', INTEGRATION_API_URL);
+    if (req.query.limit) url.searchParams.set('limit', String(req.query.limit));
+    if (req.query.offset) url.searchParams.set('offset', String(req.query.offset));
+    const response = await fetch(url.toString(), {
+      headers: { 'x-api-key': INTEGRATION_API_KEY },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) throw new Error(`API respondeu HTTP ${response.status}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post('/api/integrations/crm/events', async (req, res, next) => {
   if (!integrationSecretMatches(req.get('authorization'))) {
     return jsonError(res, integrationConfigured ? 401 : 503, 'Integração não autenticada ou não configurada.');
