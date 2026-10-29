@@ -1,7 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { CustomSelect } from '../../components/CustomSelect';
 import { useToast } from '../../components/ToastContext';
-import { CATALOG_PRODUCTS } from '../../data/mockData';
 import { EyewearProduct } from '../../types';
 import {
   createProduct,
@@ -12,6 +11,7 @@ import {
   isCustomProduct,
   restoreProduct,
   saveProduct,
+  useCatalogProducts,
   useSiteData,
 } from '../../lib/siteStore';
 import { Card, Field, fmtBRL, ghostBtn, inputCls, Modal, Notice, Pagination, primaryBtn, STORAGE_FULL_MSG } from './ui';
@@ -187,7 +187,7 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
 
     if (isNew) {
       let id = slugify(next.name) || `produto-${Date.now()}`;
-      if (CATALOG_PRODUCTS.some((x) => x.id === id)) id = `${id}-${Date.now().toString(36)}`;
+      if (catalogProducts.some((x) => x.id === id)) id = `${id}-${Date.now().toString(36)}`;
       next.id = id;
     }
 
@@ -648,6 +648,7 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
 
 export const ProductsTab: React.FC = () => {
   useSiteData();
+  const { products: catalogProducts } = useCatalogProducts();
   const toast = useToast();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
@@ -661,17 +662,17 @@ export const ProductsTab: React.FC = () => {
 
   const q = query.trim().toLowerCase();
   const kpis = [
-    { id: 'all', label: 'Todos os produtos', value: CATALOG_PRODUCTS.length, icon: 'inventory_2', color: 'blue' },
-    { id: 'discounted', label: 'Em promoção', value: CATALOG_PRODUCTS.filter((p) => p.originalPrice && p.originalPrice > p.price).length, icon: 'sell', color: 'lime' },
+    { id: 'all', label: 'Todos os produtos', value: catalogProducts.length, icon: 'inventory_2', color: 'blue' },
+    { id: 'discounted', label: 'Em promoção', value: catalogProducts.filter((p) => p.originalPrice && p.originalPrice > p.price).length, icon: 'sell', color: 'lime' },
     ...CATEGORIES.map((c) => ({
       id: c.value,
       label: c.label,
-      value: CATALOG_PRODUCTS.filter((p) => p.category === c.value).length,
+      value: catalogProducts.filter((p) => p.category === c.value).length,
       icon: c.value === 'armacoes' ? 'eyeglasses' : c.value === 'oculos-de-sol' ? 'light_mode' : c.value === 'lentes-de-grau' ? 'visibility' : 'smart_toy',
       color: 'blue',
     })),
   ];
-  const products = CATALOG_PRODUCTS.filter(
+  const products = catalogProducts.filter(
     (p) =>
       (category === 'all' || p.category === category) &&
       (quickFilter === 'all' ||
@@ -683,7 +684,7 @@ export const ProductsTab: React.FC = () => {
   const pageCount = Math.max(1, Math.ceil(products.length / pageSize));
   const currentPage = Math.min(page, pageCount);
   const visibleProducts = products.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const removed = useMemo(() => getRemovedProducts(), [products.length, CATALOG_PRODUCTS.length]);
+  const removed = useMemo(() => getRemovedProducts(), [products.length, catalogProducts.length]);
 
   const remove = () => {
     if (!confirmDelete) return;
