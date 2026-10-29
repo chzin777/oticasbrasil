@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import { useSyncExternalStore } from 'react';
 import type { Data } from '@puckeditor/core';
 import { AVAILABLE_COUPONS, CATALOG_PRODUCTS, Coupon } from '../data/mockData';
 import { EyewearProduct } from '../types';
 import type { AdminUser } from './adminApi';
+import { fetchProducts } from './integrationApi';
 import { emptyPageBuilderData, hasNativeSectionLayout, NATIVE_SECTIONS, nativeSectionTypes, type PageBuilderData } from './pageBuilder';
 
 const STORAGE_KEY = 'oticas-admin-data-v1';
@@ -1057,3 +1059,56 @@ export const fileToDataUrl = (file: File, maxSize = 1000): Promise<string> =>
     };
     reader.readAsDataURL(file);
   });
+
+/* ---------- Catálogo via API de Integração ---------- */
+
+let catalogCache: EyewearProduct[] | null = null;
+let catalogLoading = false;
+let catalogError = false;
+
+const hydrateCatalogFromApi = async (): Promise<void> => {
+  if (catalogCache || catalogLoading) return;
+  catalogLoading = true;
+  try {
+    const products = await fetchProducts();
+    catalogCache = products;
+    // Mescla produtos da API com overrides/custom locais já persistidos
+    const merged = [
+      ...products.filter((p) => !data.removed.includes(p.id)).map((p) => data.overrides[p.id] ?? p),
+      ...data.custom,
+    ];
+    CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length, ...clone(merged));
+    notifyStoreChanged();
+  } catch {
+    catalogError = true;
+  } finally {
+    catalogLoading = false;
+  }
+};
+
+void hydrateCatalogFromApi();
+
+export const useCatalogProducts = (): { products: EyewearProduct[]; loading: boolean; error: boolean } => {
+  useSiteData();
+  const [state, setState] = useState<{ products: EyewearProduct[]; loading: boolean; error: boolean }>({
+    products: catalogCache ?? CATALOG_PRODUCTS,
+    loading: !catalogCache && catalogLoading,
+    error: catalogError,
+  });
+
+  useEffect(() => {
+    if (catalogCache) {
+      setState({ products: CATALOG_PRODUCTS, loading: false, error: false });
+      return;
+    }
+    void hydrateCatalogFromApi().then(() => {
+      setState({
+        products: catalogCache ?? CATALOG_PRODUCTS,
+        loading: false,
+        error: catalogError,
+      });
+    });
+  }, []);
+
+  return state;
+};
