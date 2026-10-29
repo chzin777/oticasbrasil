@@ -378,7 +378,7 @@ export const DashboardTab: React.FC = () => {
           <SectionTitle title="Destaques" subtitle="Maiores descontos e melhores avaliados" />
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-teal-600 mb-3">🔥 Maiores Descontos</p>
+              <div className="flex items-center gap-1.5 mb-3"><span className="material-symbols-outlined text-[14px] text-teal-600">local_fire_department</span><p className="text-[10px] font-bold uppercase tracking-widest text-teal-600">Maiores Descontos</p></div>
               {topDisc.length === 0 ? (
                 <p className="text-sm text-slate-400 py-4 text-center">Nenhum produto em promoção.</p>
               ) : (
@@ -391,7 +391,7 @@ export const DashboardTab: React.FC = () => {
               )}
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 mb-3">⭐ Melhores Avaliados</p>
+              <div className="flex items-center gap-1.5 mb-3"><span className="material-symbols-outlined text-[14px] text-amber-600" style={{fontVariationSettings:"'FILL' 1"}}>star</span><p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Melhores Avaliados</p></div>
               {topRated.length === 0 ? (
                 <p className="text-sm text-slate-400 py-4 text-center">Nenhum produto avaliado.</p>
               ) : (
