@@ -433,6 +433,22 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
             <Field label="Selo" className="col-span-2 md:col-span-4">
               <input className={inputCls} placeholder="Ex.: Mais Vendido (opcional)" value={p.badge ?? ''} onChange={(e) => set('badge', e.target.value)} />
             </Field>
+            <div className="col-span-2 md:col-span-4 flex items-center gap-3 pt-2">
+              <label className="inline-flex cursor-pointer items-center gap-2 select-none">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={p.active !== false}
+                  onChange={(e) => set('active', e.target.checked)}
+                />
+                <div className="relative h-6 w-11 rounded-full bg-slate-200 transition peer-checked:bg-emerald-500 peer-focus:ring-2 peer-focus:ring-emerald-300">
+                  <div className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition ${p.active !== false ? 'translate-x-5' : 'translate-x-0'}`} />
+                </div>
+                <span className={`text-sm font-bold ${p.active !== false ? 'text-emerald-700' : 'text-slate-500'}`}>
+                  {p.active !== false ? 'Produto ativo na loja' : 'Produto inativo'}
+                </span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -864,6 +880,7 @@ export const ProductsTab: React.FC = () => {
                 <th className="px-2 py-2 font-bold">Marca</th>
                 <th className="px-2 py-2 font-bold">Custo</th>
                 <th className="px-2 py-2 font-bold">Estoque</th>
+                <th className="px-2 py-2 font-bold">Status</th>
                 <th className="px-2 py-2 font-bold">Preço</th>
               </tr>
             </thead>
@@ -904,6 +921,17 @@ export const ProductsTab: React.FC = () => {
                       <span className={`text-[11px] font-bold ${p.stock != null && p.stock > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                         {p.stock ?? 0}
                       </span>
+                    </td>
+                    <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => saveProduct({ ...p, active: p.active === false }, [])}
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition ${p.active !== false ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                        title={p.active !== false ? 'Clique para inativar' : 'Clique para ativar'}
+                      >
+                        <span className="material-symbols-outlined text-[14px]">{p.active !== false ? 'check_circle' : 'cancel'}</span>
+                        {p.active !== false ? 'Ativo' : 'Inativo'}
+                      </button>
                     </td>
                     <td className="px-2 py-3">
                       <span className="font-bold text-[#061748]">{fmtBRL(p.price)}</span>

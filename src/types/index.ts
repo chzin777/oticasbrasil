@@ -88,6 +88,7 @@ export interface EyewearProduct {
     origin: string;
   };
   badge?: string;
+  active?: boolean;
 }
 
 export interface OpticalStore {

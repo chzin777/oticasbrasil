@@ -85,6 +85,7 @@ function mapOracleToEyewear(item: OracleProduct): EyewearProduct {
     originalPrice: undefined,
     rating: 0,
     reviewCount: 0,
+    active: true,
     image: imageUrl,
     gallery: [imageUrl],
     colorName: colorInfo.name,
