@@ -662,7 +662,7 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
 
 export const ProductsTab: React.FC = () => {
   useSiteData();
-  const { products: catalogProducts } = useCatalogProducts();
+  const { products: catalogProducts, loading: catalogLoading } = useCatalogProducts();
   const toast = useToast();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
@@ -847,6 +847,12 @@ export const ProductsTab: React.FC = () => {
           />
         </div>
 
+        {catalogLoading && catalogProducts.length === 0 ? (
+          <div className="rounded-2xl border border-[#e7ebf1] bg-white p-8 text-center text-sm text-[#7b8495]">
+            <span className="material-symbols-outlined animate-spin text-3xl text-[#4156b8] mb-2 block">progress_activity</span>
+            Carregando produtos...
+          </div>
+        ) : (
         <div className="overflow-x-auto -mx-2">
           <table className="w-full text-sm min-w-[640px]">
             <thead>
@@ -910,8 +916,9 @@ export const ProductsTab: React.FC = () => {
               })}
             </tbody>
           </table>
-          {products.length === 0 && <p className="text-center text-sm text-[#767680] py-10">Nenhum produto encontrado.</p>}
+          {products.length === 0 && !catalogLoading && <p className="text-center text-sm text-[#767680] py-10">Nenhum produto encontrado.</p>}
         </div>
+)}
         <Pagination
           page={currentPage}
           pageSize={pageSize}
