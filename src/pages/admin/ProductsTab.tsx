@@ -334,6 +334,9 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
                 }}
               />
             </Field>
+            <Field label="SKU" className="col-span-1 md:col-span-3">
+              <input className={inputCls} placeholder="Código SKU" value={p.sku ?? ''} onChange={(e) => set('sku', e.target.value)} />
+            </Field>
             <Field label="Marca" className="col-span-1 md:col-span-3">
               <input className={inputCls} placeholder="Marca do produto" value={p.brand} onChange={(e) => set('brand', e.target.value)} />
             </Field>
@@ -344,6 +347,9 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
                 onChange={(value) => set('category', value)}
                 options={CATEGORIES}
               />
+            </Field>
+            <Field label="Subcategoria" className="col-span-1 md:col-span-3">
+              <input className={inputCls} placeholder="Ex.: ARM ACETATO" value={p.subcategory ?? ''} onChange={(e) => set('subcategory', e.target.value)} />
             </Field>
             <Field label="Preço (R$)" required className="col-span-1 md:col-span-3">
               <input
@@ -402,6 +408,12 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
                   if (price > 0) clearInvalidField('price');
                 }}
               />
+            </Field>
+            <Field label="Custo (R$)" className="col-span-1 md:col-span-3">
+              <input type="number" min={0} step="0.01" className={inputCls} placeholder="Custo unitário" value={p.cost ?? ''} onChange={(e) => set('cost', e.target.value === '' ? undefined : num(e.target.value))} />
+            </Field>
+            <Field label="Estoque" className="col-span-1 md:col-span-2">
+              <input type="number" min={0} step="1" className={inputCls} placeholder="Qtd. disponível" value={p.stock ?? ''} onChange={(e) => set('stock', e.target.value === '' ? undefined : num(e.target.value))} />
             </Field>
             <Field label="Preço original (R$)" className="col-span-1 md:col-span-3">
               <input type="number" min={0} step="0.01" className={inputCls} placeholder="Opcional" value={p.originalPrice ?? ''} onChange={(e) => set('originalPrice', e.target.value === '' ? undefined : num(e.target.value))} />
