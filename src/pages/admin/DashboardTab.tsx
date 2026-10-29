@@ -90,13 +90,30 @@ const HeroKpi: React.FC<{
   );
 };
 
-const MiniStat: React.FC<{ label: string; value: string; sub?: string }> = ({ label, value, sub }) => (
-  <div className="rounded-xl bg-white border border-[#e2e8f0] p-3 text-center hover:border-teal-200 transition-colors">
-    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">{label}</p>
-    <p className="text-lg font-black text-slate-800 leading-tight">{value}</p>
-    {sub && <p className="text-[9px] text-slate-400 mt-0.5">{sub}</p>}
-  </div>
-);
+const MiniStat: React.FC<{ icon: string; label: string; value: string; sub?: string; accent?: 'teal' | 'amber' | 'navy' | 'rose' }> = ({ icon, label, value, sub, accent = 'teal' }) => {
+  const accents = {
+    teal: { bg: T.tealLight, text: T.tealDark },
+    amber: { bg: T.amberLight, text: '#92400e' },
+    navy: { bg: '#e2e8f0', text: T.navy },
+    rose: { bg: '#ffe4e6', text: '#be123c' },
+  };
+  const a = accents[accent];
+  return (
+    <div className="group relative overflow-hidden rounded-xl bg-white border border-[#e2e8f0] p-4 flex items-center gap-3.5 hover:shadow-md hover:border-slate-300 transition-all">
+      <span
+        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+        style={{ background: a.bg, color: a.text }}
+      >
+        <span className="material-symbols-outlined text-[20px]">{icon}</span>
+      </span>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-1">{label}</p>
+        <p className="text-xl font-black text-slate-800 leading-none tracking-tight">{value}</p>
+        {sub && <p className="text-[10px] text-slate-400 mt-1 font-medium leading-none">{sub}</p>}
+      </div>
+    </div>
+  );
+};
 
 const SectionTitle: React.FC<{ title: string; subtitle?: string; action?: React.ReactNode }> = ({ title, subtitle, action }) => (
   <div className="flex items-end justify-between gap-3 mb-4">
@@ -316,14 +333,17 @@ export const DashboardTab: React.FC = () => {
         <AreaChart data={perf.revenue} labels={perf.labels} color={T.teal} height={170} />
       </div>
 
-      {/* MINI STATS */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <MiniStat label="Produtos" value={String(products.length)} />
-        <MiniStat label="Promoções" value={String(discounted.length)} sub={`${avgDisc.toFixed(0)}% off`} />
-        <MiniStat label="Avaliação" value={avgRating.toFixed(1)} sub={`${totalReviews} reviews`} />
-        <MiniStat label="Cupons Ativos" value={String(activeCoupons.length)} sub={`de ${coupons.length}`} />
-        <MiniStat label="Marcas" value={String(brands.size)} />
-        <MiniStat label="Catálogo" value={fmtBRL(totalValue).replace('R$ ', '')} />
+      {/* SAÚDE DO CATÁLOGO */}
+      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
+        <SectionTitle title="Saúde do Catálogo" subtitle="Indicadores em tempo real dos produtos ativos" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <MiniStat icon="inventory_2" label="Produtos" value={String(products.length)} sub="Itens ativos" accent="navy" />
+          <MiniStat icon="local_offer" label="Em Promoção" value={String(discounted.length)} sub={`${avgDisc.toFixed(0)}% off médio`} accent="rose" />
+          <MiniStat icon="star" label="Avaliação Média" value={avgRating.toFixed(1)} sub={`${totalReviews} avaliações`} accent="amber" />
+          <MiniStat icon="confirmation_number" label="Cupons Ativos" value={String(activeCoupons.length)} sub={`de ${coupons.length} criados`} accent="teal" />
+          <MiniStat icon="brand_family" label="Marcas" value={String(brands.size)} sub="Parceiros" accent="navy" />
+          <MiniStat icon="account_balance_wallet" label="Valor Total" value={fmtBRL(totalValue).replace('R$ ', '')} sub="Estoque precificado" accent="teal" />
+        </div>
       </div>
 
       {/* CHART: Visitas vs Pedidos */}
