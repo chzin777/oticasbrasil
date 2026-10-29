@@ -55,10 +55,14 @@ export interface ProductColorOption {
 
 export interface EyewearProduct {
   id: string;
+  sku?: string;
   name: string;
   category: 'armacoes' | 'oculos-de-sol' | 'lentes-de-grau' | 'rayban-meta';
+  subcategory?: string;
   brand: string;
   price: number;
+  cost?: number;
+  stock?: number;
   originalPrice?: number;
   rating: number;
   reviewCount: number;

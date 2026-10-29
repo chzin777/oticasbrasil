@@ -75,10 +75,14 @@ function mapOracleToEyewear(item: OracleProduct): EyewearProduct {
 
   return {
     id: sku,
+    sku,
     name: item.PRODUTO.trim(),
     category,
+    subcategory: item.SUBCATEGORIA?.trim() || undefined,
     brand,
     price: Number(item.PRC_VENDA_ATUAL) || 0,
+    cost: Number(item.CUSTO_ULT_ENT) || undefined,
+    stock: Number(item.QTDE_EST_DISP) || 0,
     originalPrice: undefined,
     rating: 0,
     reviewCount: 0,

@@ -838,7 +838,12 @@ export const ProductsTab: React.FC = () => {
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wider text-[#767680]">
                 <th className="px-2 py-2 font-bold">Produto</th>
+                <th className="px-2 py-2 font-bold">SKU</th>
                 <th className="px-2 py-2 font-bold">Categoria</th>
+                <th className="px-2 py-2 font-bold">Subcategoria</th>
+                <th className="px-2 py-2 font-bold">Marca</th>
+                <th className="px-2 py-2 font-bold">Custo</th>
+                <th className="px-2 py-2 font-bold">Estoque</th>
                 <th className="px-2 py-2 font-bold">Preço</th>
               </tr>
             </thead>
@@ -861,7 +866,24 @@ export const ProductsTab: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-2 py-3">
+                      <span className="text-[11px] font-mono text-[#475569]">{p.sku || p.id}</span>
+                    </td>
+                    <td className="px-2 py-3">
                       <span className="text-[11px] font-bold bg-[#eef1fb] text-[#4156b8] px-2.5 py-1 rounded-full">{categoryLabel(p.category)}</span>
+                    </td>
+                    <td className="px-2 py-3">
+                      <span className="text-[11px] text-[#475569] truncate max-w-[120px] block">{p.subcategory || '—'}</span>
+                    </td>
+                    <td className="px-2 py-3">
+                      <span className="text-[11px] text-[#475569] truncate max-w-[100px] block">{p.brand}</span>
+                    </td>
+                    <td className="px-2 py-3">
+                      <span className="text-[11px] text-[#767680]">{p.cost != null ? fmtBRL(p.cost) : '—'}</span>
+                    </td>
+                    <td className="px-2 py-3">
+                      <span className={`text-[11px] font-bold ${p.stock != null && p.stock > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {p.stock ?? 0}
+                      </span>
                     </td>
                     <td className="px-2 py-3">
                       <span className="font-bold text-[#061748]">{fmtBRL(p.price)}</span>
