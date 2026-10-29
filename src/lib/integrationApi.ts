@@ -1,5 +1,4 @@
 import type { EyewearProduct } from '../types';
-import { CATALOG_PRODUCTS } from '../data/mockData';
 
 const API_BASE = '/api/integration';
 
@@ -121,8 +120,8 @@ export async function fetchProducts(): Promise<EyewearProduct[]> {
     const json: ProductsResponse = await response.json();
     return json.data.map(mapOracleToEyewear);
   } catch (error) {
-    console.warn('[integrationApi] Falha ao buscar produtos da API, usando fallback mock:', error);
-    return CATALOG_PRODUCTS;
+    console.error('[integrationApi] Falha ao buscar produtos da API:', error);
+    return [];
   }
 }
 
@@ -131,6 +130,6 @@ export async function fetchProductBySku(sku: string): Promise<EyewearProduct | n
     const products = await fetchProducts();
     return products.find((p) => p.id === sku) || null;
   } catch {
-    return CATALOG_PRODUCTS.find((p) => p.id === sku) || null;
+    return null;
   }
 }

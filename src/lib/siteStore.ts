@@ -1091,19 +1091,19 @@ void hydrateCatalogFromApi();
 export const useCatalogProducts = (): { products: EyewearProduct[]; loading: boolean; error: boolean } => {
   useSiteData();
   const [state, setState] = useState<{ products: EyewearProduct[]; loading: boolean; error: boolean }>({
-    products: catalogCache ?? CATALOG_PRODUCTS,
+    products: catalogCache ?? [],
     loading: !catalogCache && catalogLoading,
     error: catalogError,
   });
 
   useEffect(() => {
     if (catalogCache) {
-      setState({ products: CATALOG_PRODUCTS, loading: false, error: false });
+      setState({ products: catalogCache, loading: false, error: false });
       return;
     }
     void hydrateCatalogFromApi().then(() => {
       setState({
-        products: catalogCache ?? CATALOG_PRODUCTS,
+        products: catalogCache ?? [],
         loading: false,
         error: catalogError,
       });
