@@ -644,14 +644,17 @@ const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: 
       </Card>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {onDelete && (
+          {!isNew && (
             <button
               type="button"
-              onClick={onDelete}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-red-600 border border-red-200 hover:bg-red-50 transition-colors cursor-pointer sm:mr-auto"
+              onClick={() => {
+                const nextActive = p.active === false;
+                set('active', nextActive);
+              }}
+              className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors cursor-pointer sm:mr-auto ${p.active !== false ? 'text-amber-700 border-amber-200 hover:bg-amber-50' : 'text-emerald-700 border-emerald-200 hover:bg-emerald-50'}`}
             >
-              <span className="material-symbols-outlined text-[18px]">delete</span>
-              Excluir produto
+              <span className="material-symbols-outlined text-[18px]">{p.active !== false ? 'visibility_off' : 'visibility'}</span>
+              {p.active !== false ? 'Inativar produto' : 'Ativar produto'}
             </button>
           )}
           <div className="flex flex-col-reverse gap-2 sm:ml-auto sm:flex-row">
@@ -744,20 +747,20 @@ export const ProductsTab: React.FC = () => {
           }}
         />
         {confirmDelete && (
-          <Modal title="Excluir produto?" onClose={() => {
+          <Modal title="Inativar produto?" onClose={() => {
             setConfirmDelete(null);
             setDeleteError(null);
           }}>
             <div className="space-y-5">
               {deleteError && <Notice kind="error">{deleteError}</Notice>}
-              <div className="flex items-start gap-4 rounded-2xl border border-red-100 bg-red-50/70 p-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-red-600 shadow-sm ring-1 ring-red-100">
-                  <span className="material-symbols-outlined text-[22px]">delete_forever</span>
+              <div className="flex items-start gap-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-amber-700 shadow-sm ring-1 ring-amber-100">
+                  <span className="material-symbols-outlined text-[22px]">visibility_off</span>
                 </span>
                 <div className="min-w-0 pt-0.5">
-                  <p className="text-sm font-bold text-[#8f2525]">Esta ação não pode ser desfeita</p>
-                  <p className="mt-1 text-xs leading-relaxed text-[#785b5b]">
-                    O produto será removido da loja. Produtos do catálogo original podem ser restaurados depois.
+                  <p className="text-sm font-bold text-[#7c4b0c]">O produto deixará de ser exibido na loja</p>
+                  <p className="mt-1 text-xs leading-relaxed text-[#785b2b]">
+                    Ele continuará salvo no banco de dados e poderá ser reativado a qualquer momento pelo painel administrativo.
                   </p>
                 </div>
               </div>
@@ -776,15 +779,24 @@ export const ProductsTab: React.FC = () => {
                     setDeleteError(null);
                   }}
                 >
-                  Manter produto
+                  Cancelar
                 </button>
                 <button
                   type="button"
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#b42318] px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#912018] focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 sm:min-w-36"
-                  onClick={remove}
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#b45309] px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#92400e] focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-2 sm:min-w-36"
+                  onClick={() => {
+                    try {
+                      saveProduct({ ...confirmDelete, active: false }, []);
+                      setConfirmDelete(null);
+                      setDeleteError(null);
+                      toast.success('Produto inativado', confirmDelete.name);
+                    } catch (err) {
+                      setDeleteError(err instanceof Error ? err.message : 'Não foi possível inativar o produto');
+                    }
+                  }}
                 >
-                  <span className="material-symbols-outlined text-[17px]">delete</span>
-                  Excluir produto
+                  <span className="material-symbols-outlined text-[17px]">visibility_off</span>
+                  Inativar produto
                 </button>
               </div>
             </div>

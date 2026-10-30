@@ -1098,12 +1098,12 @@ export const useCatalogProducts = (): { products: EyewearProduct[]; loading: boo
 
   useEffect(() => {
     if (catalogCache) {
-      setState({ products: catalogCache, loading: false, error: false });
+      setState({ products: catalogCache.filter((p) => p.active !== false), loading: false, error: false });
       return;
     }
     void hydrateCatalogFromApi().then(() => {
       setState({
-        products: catalogCache ?? [],
+        products: (catalogCache ?? []).filter((p) => p.active !== false),
         loading: false,
         error: catalogError,
       });
