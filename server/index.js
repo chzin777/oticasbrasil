@@ -293,9 +293,26 @@ app.get('/api/store/products', async (_req, res, next) => {
 const INTEGRATION_API_URL = process.env.INTEGRATION_API_URL || 'http://oticas-integration-api:4000';
 const INTEGRATION_API_KEY = process.env.INTEGRATION_API_KEY || '';
 
+const PRODUCTS_CACHE_KEY = 'integration:products:v1';
+const PRODUCTS_CACHE_TTL_SECONDS = 300; // 5 minutos
+
 app.get('/api/integration/products', async (req, res, next) => {
   if (!INTEGRATION_API_KEY) return jsonError(res, 503, 'Chave da API de integração não configurada.');
   try {
+    // Tenta servir do cache Redis primeiro
+    let cached = null;
+    try {
+      const raw = await redis.get(PRODUCTS_CACHE_KEY);
+      if (raw) cached = JSON.parse(raw);
+    } catch (cacheErr) {
+      console.warn('[products-cache] Falha ao ler cache Redis:', cacheErr.message);
+    }
+
+    if (cached && typeof cached === 'object') {
+      return res.json(cached);
+    }
+
+    // Cache miss: busca na API externa
     const url = new URL('/v1/products', INTEGRATION_API_URL);
     if (req.query.limit) url.searchParams.set('limit', String(req.query.limit));
     if (req.query.offset) url.searchParams.set('offset', String(req.query.offset));
@@ -305,6 +322,14 @@ app.get('/api/integration/products', async (req, res, next) => {
     });
     if (!response.ok) throw new Error(`API respondeu HTTP ${response.status}`);
     const data = await response.json();
+
+    // Popula cache para próximas requisições
+    try {
+      await redis.set(PRODUCTS_CACHE_KEY, JSON.stringify(data), { EX: PRODUCTS_CACHE_TTL_SECONDS });
+    } catch (cacheErr) {
+      console.warn('[products-cache] Falha ao escrever cache Redis:', cacheErr.message);
+    }
+
     res.json(data);
   } catch (error) {
     next(error);
