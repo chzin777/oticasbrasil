@@ -74,6 +74,7 @@ const blankProduct = (): EyewearProduct => ({
 
 const ProductForm: React.FC<{ initial: EyewearProduct; isNew: boolean; onClose: () => void; onSaved: (isNew: boolean, name: string) => void; onDelete?: () => void }> = ({ initial, isNew, onClose, onSaved, onDelete }) => {
   useSiteData();
+  const { products: catalogProducts } = useCatalogProducts();
   const toast = useToast();
   const [p, setP] = useState<EyewearProduct>(initial);
   const [priceInput, setPriceInput] = useState(() => initial.price > 0 ? formatPriceInput(initial.price) : '0,00');

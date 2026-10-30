@@ -1107,23 +1107,33 @@ void hydrateCatalogFromApi();
 export const useCatalogProducts = (): { products: EyewearProduct[]; loading: boolean; error: boolean } => {
   useSiteData();
   const [state, setState] = useState<{ products: EyewearProduct[]; loading: boolean; error: boolean }>({
-    products: catalogCache ?? [],
-    loading: !catalogCache && catalogLoading,
+    products: (catalogCache ?? []).filter((p) => p.active !== false),
+    loading: catalogLoading,
     error: catalogError,
   });
 
   useEffect(() => {
-    if (catalogCache) {
-      setState({ products: catalogCache.filter((p) => p.active !== false), loading: false, error: false });
-      return;
-    }
-    void hydrateCatalogFromApi().then(() => {
+    const syncState = () => {
       setState({
         products: (catalogCache ?? []).filter((p) => p.active !== false),
-        loading: false,
+        loading: catalogLoading,
         error: catalogError,
       });
-    });
+    };
+
+    // Sincroniza imediatamente caso o cache já tenha sido populado entre o render e o efeito
+    syncState();
+
+    // Se ainda não há cache, dispara a hidratação
+    if (!catalogCache && !catalogLoading) {
+      void hydrateCatalogFromApi().then(syncState);
+    }
+
+    // Escuta notificações do store para capturar atualizações pós-hidratação
+    listeners.add(syncState);
+    return () => {
+      listeners.delete(syncState);
+    };
   }, []);
 
   return state;
