@@ -875,7 +875,7 @@ export const ProductsTab: React.FC = () => {
           />
         </div>
 
-        {catalogLoading && catalogProducts.length === 0 ? (
+        {catalogLoading ? (
           <div className="rounded-2xl border border-[#e7ebf1] bg-white p-8 text-center text-sm text-[#7b8495]">
             <span className="material-symbols-outlined animate-spin text-3xl text-[#4156b8] mb-2 block">progress_activity</span>
             Carregando produtos...
