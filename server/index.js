@@ -297,12 +297,9 @@ app.get('/api/store/promotions', async (_req, res, next) => {
     const [tagsResult, policiesResult] = await Promise.all([
       pool.query(
         `SELECT t.id::text, t.name, t.color,
-                COALESCE(json_agg(DISTINCT a.product_id) FILTER (WHERE a.product_id IS NOT NULL), '[]'::json) AS assigned_product_ids,
-                COALESCE(json_agg(DISTINCT json_build_object('attribute', r.attribute, 'value', r.value)) FILTER (WHERE r.id IS NOT NULL), '[]'::json) AS rules
+                COALESCE((SELECT json_agg(product_id) FROM (SELECT DISTINCT a2.product_id FROM product_tag_assignments a2 WHERE a2.tag_id = t.id) sub_a), '[]'::json) AS assigned_product_ids,
+                COALESCE((SELECT json_agg(rule_obj) FROM (SELECT DISTINCT json_build_object('attribute', r2.attribute, 'value', r2.value)::text AS rule_obj FROM product_tag_rules r2 WHERE r2.tag_id = t.id) sub_r), '[]'::json) AS rules
          FROM product_tags t
-         LEFT JOIN product_tag_assignments a ON a.tag_id = t.id
-         LEFT JOIN product_tag_rules r ON r.tag_id = t.id
-         GROUP BY t.id
          ORDER BY t.created_at DESC`,
       ),
       pool.query(
@@ -310,12 +307,10 @@ app.get('/api/store/promotions', async (_req, res, next) => {
                 p.value_operator, p.min_cart_value, p.max_cart_value,
                 p.quantity_operator, p.min_items, p.max_items,
                 p.progression_steps,
-                COALESCE(json_agg(DISTINCT dp.product_id) FILTER (WHERE dp.product_id IS NOT NULL), '[]'::json) AS product_ids
+                COALESCE((SELECT json_agg(product_id) FROM (SELECT DISTINCT dp2.product_id FROM discount_policy_products dp2 WHERE dp2.policy_id = p.id) sub_dp), '[]'::json) AS product_ids
          FROM discount_policies p
-         LEFT JOIN discount_policy_products dp ON dp.policy_id = p.id
          WHERE p.active = TRUE
            AND (p.duration_value IS NULL OR p.created_at + (p.duration_value || ' ' || p.duration_unit)::interval > NOW())
-         GROUP BY p.id
          ORDER BY p.created_at DESC`,
       ),
     ]);

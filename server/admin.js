@@ -990,10 +990,14 @@ export const registerAdminRoutes = (app, deps) => {
             COUNT(DISTINCT oi.product_id)::int AS active_products,
             COUNT(DISTINCT oi.product_snapshot->>'brand')::int AS brands_count,
             COALESCE(AVG((oi.product_snapshot->>'price')::numeric), 0)::float AS avg_price,
-            json_agg(DISTINCT json_build_object(
-              'category', oi.product_snapshot->>'category',
-              'count', COUNT(*) OVER (PARTITION BY oi.product_snapshot->>'category')
-            )) FILTER (WHERE oi.product_snapshot->>'category' IS NOT NULL) AS category_mix
+            (SELECT json_agg(json_build_object('category', cat, 'count', cnt))
+             FROM (
+               SELECT oi2.product_snapshot->>'category' AS cat, COUNT(*)::int AS cnt
+               FROM order_items oi2
+               INNER JOIN orders o2 ON o2.id = oi2.order_id AND o2.status <> 'canceled'
+               WHERE oi2.product_snapshot->>'category' IS NOT NULL
+               GROUP BY oi2.product_snapshot->>'category'
+             ) sub) AS category_mix
            FROM order_items oi
            INNER JOIN orders o ON o.id = oi.order_id AND o.status <> 'canceled'`,
         ),
