@@ -1129,6 +1129,31 @@ app.get('/api/orders', requireCustomer, async (req, res, next) => {
   }
 });
 
+app.get('/api/customer/status', requireCustomer, async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT COUNT(*)::int AS order_count,
+              MIN(created_at) AS first_order_at,
+              MAX(created_at) AS last_order_at
+         FROM orders
+        WHERE customer_id = $1`,
+      [req.session.id],
+    );
+    const stats = rows[0] || {};
+    const hasOrders = (stats.order_count || 0) > 0;
+    res.json({
+      hasOrders,
+      orderCount: stats.order_count || 0,
+      isFirstPurchase: !hasOrders,
+      isReturningCustomer: hasOrders && (stats.order_count || 0) > 1,
+      firstOrderAt: stats.first_order_at || null,
+      lastOrderAt: stats.last_order_at || null,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.use('/api', (_req, res) => jsonError(res, 404, 'Endpoint não encontrado.'));
 app.use(express.static(path.join(root, 'dist'), { index: false, maxAge: '1h' }));
 app.get('*', (_req, res) => res.sendFile(path.join(root, 'dist', 'index.html')));

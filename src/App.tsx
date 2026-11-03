@@ -29,7 +29,7 @@ import { SupportModal } from './components/SupportModal';
 import { CartDrawer } from './components/CartDrawer';
 import { SpecialistChat } from './components/SpecialistChat';
 import { useStoreSettings } from './lib/storeSettings';
-import { getDiscountPolicies } from './lib/siteStore';
+import { getDiscountPolicies, getCustomerStatus, invalidateCustomerStatus } from './lib/siteStore';
 import { Footer } from './components/Footer';
 import { MaintenancePage } from './components/MaintenancePage';
 import { useToast } from './components/ToastContext';
@@ -316,74 +316,96 @@ function SiteApp() {
 
   // Automatic policy discount calculation
   useEffect(() => {
-    const policies = getDiscountPolicies();
-    if (!policies.length || !items.length) {
-      setPolicyDiscount(0);
-      setAppliedPolicyId(null);
-      return;
-    }
+    let cancelled = false;
 
-    const currentSubtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-    const productIds = new Set(items.map((i) => i.id));
-
-    // Find best applicable policy (highest discount wins)
-    let bestDiscount = 0;
-    let bestPolicyId: string | null = null;
-
-    for (const policy of policies) {
-      if (!policy.active) continue;
-
-      // Check product scope
-      if (!policy.allProducts && policy.productIds?.length) {
-        const hasMatchingProduct = policy.productIds.some((pid: string) => productIds.has(pid));
-        if (!hasMatchingProduct) continue;
+    const evaluate = async () => {
+      const policies = getDiscountPolicies();
+      if (!policies.length || !items.length) {
+        if (!cancelled) {
+          setPolicyDiscount(0);
+          setAppliedPolicyId(null);
+        }
+        return;
       }
 
-      let applicable = false;
+      const currentSubtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+      const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+      const productIds = new Set(items.map((i) => i.id));
 
-      switch (policy.trigger) {
-        case 'cart_value': {
-          const op = policy.valueOperator || 'minimum';
-          if (op === 'minimum' && currentSubtotal >= (policy.minCartValue || 0)) applicable = true;
-          else if (op === 'maximum' && currentSubtotal <= (policy.maxCartValue || Infinity)) applicable = true;
-          else if (op === 'between' && currentSubtotal >= (policy.minCartValue || 0) && currentSubtotal <= (policy.maxCartValue || Infinity)) applicable = true;
-          break;
+      // Fetch real customer status for client-based triggers
+      const customerStatus = account ? await getCustomerStatus() : null;
+
+      // Find best applicable policy (highest discount wins)
+      let bestDiscount = 0;
+      let bestPolicyId: string | null = null;
+
+      for (const policy of policies) {
+        if (!policy.active) continue;
+
+        // Check expiration
+        if (policy.duration) {
+          const durationMs = policy.duration.value * (policy.duration.unit === 'hours' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000);
+          if (Date.now() > new Date(policy.createdAt).getTime() + durationMs) continue;
         }
-        case 'item_quantity': {
-          const op = policy.quantityOperator || 'minimum';
-          if (op === 'minimum' && totalItems >= (policy.minItems || 0)) applicable = true;
-          else if (op === 'maximum' && totalItems <= (policy.maxItems || Infinity)) applicable = true;
-          else if (op === 'between' && totalItems >= (policy.minItems || 0) && totalItems <= (policy.maxItems || Infinity)) applicable = true;
-          break;
+
+        // Check product scope
+        if (!policy.allProducts && policy.productIds?.length) {
+          const hasMatchingProduct = policy.productIds.some((pid: string) => productIds.has(pid));
+          if (!hasMatchingProduct) continue;
         }
-        case 'first_purchase':
-        case 'new_customer':
-          // These require backend validation (order history), mark as potentially applicable
-          // The backend will validate on order creation
-          applicable = true;
-          break;
-        default:
-          // Other triggers (birthday, abandoned_cart, progressive_time) need backend/session data
-          // Skip for now in frontend-only calculation
-          break;
+
+        let applicable = false;
+
+        switch (policy.trigger) {
+          case 'cart_value': {
+            const op = policy.valueOperator || 'minimum';
+            if (op === 'minimum' && currentSubtotal >= (policy.minCartValue || 0)) applicable = true;
+            else if (op === 'maximum' && currentSubtotal <= (policy.maxCartValue || Infinity)) applicable = true;
+            else if (op === 'between' && currentSubtotal >= (policy.minCartValue || 0) && currentSubtotal <= (policy.maxCartValue || Infinity)) applicable = true;
+            break;
+          }
+          case 'item_quantity': {
+            const op = policy.quantityOperator || 'minimum';
+            if (op === 'minimum' && totalItems >= (policy.minItems || 0)) applicable = true;
+            else if (op === 'maximum' && totalItems <= (policy.maxItems || Infinity)) applicable = true;
+            else if (op === 'between' && totalItems >= (policy.minItems || 0) && totalItems <= (policy.maxItems || Infinity)) applicable = true;
+            break;
+          }
+          case 'first_purchase':
+          case 'new_customer':
+            // Only apply if customer is logged in and has NO previous orders
+            applicable = Boolean(customerStatus?.isFirstPurchase);
+            break;
+          case 'returning_customer':
+            // Only apply if customer has more than one previous order
+            applicable = Boolean(customerStatus?.isReturningCustomer);
+            break;
+          default:
+            // birthday, abandoned_cart, progressive_time require additional backend/session data
+            break;
+        }
+
+        if (applicable) {
+          const discountAmount = policy.discountType === 'percentage'
+            ? (currentSubtotal * policy.discountValue) / 100
+            : policy.discountValue;
+
+          if (discountAmount > bestDiscount) {
+            bestDiscount = discountAmount;
+            bestPolicyId = policy.id;
+          }
+        }
       }
 
-      if (applicable) {
-        const discountAmount = policy.discountType === 'percentage'
-          ? (currentSubtotal * policy.discountValue) / 100
-          : policy.discountValue;
-
-        if (discountAmount > bestDiscount) {
-          bestDiscount = discountAmount;
-          bestPolicyId = policy.id;
-        }
+      if (!cancelled) {
+        setPolicyDiscount(Math.min(bestDiscount, currentSubtotal));
+        setAppliedPolicyId(bestPolicyId);
       }
-    }
+    };
 
-    setPolicyDiscount(Math.min(bestDiscount, currentSubtotal));
-    setAppliedPolicyId(bestPolicyId);
-  }, [items]);
+    evaluate();
+    return () => { cancelled = true; };
+  }, [items, account]);
 
   // Calculations
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -490,6 +512,7 @@ function SiteApp() {
         return;
       }
 
+      invalidateCustomerStatus();
       setOrderId(orderResult.order.id);
       setIsSubmitting(false);
       setIsSuccessModalOpen(true);

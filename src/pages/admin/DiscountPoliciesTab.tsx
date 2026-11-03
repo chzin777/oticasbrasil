@@ -428,12 +428,12 @@ const DiscountPoliciesTab: React.FC = () => {
   return (
     <div className="space-y-5">
       {message && <Notice kind={message.kind}>{message.text}</Notice>}
-      <div className="flex items-start gap-3 rounded-xl border border-[#dfe5f4] bg-[#f5f7fd] p-4">
-        <span className="material-symbols-outlined mt-0.5 text-[19px] text-[#4156b8]">info</span>
+      <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+        <span className="material-symbols-outlined mt-0.5 text-[19px] text-emerald-700">verified</span>
         <div>
-          <p className="text-xs font-semibold text-[#34415e]">Configuração demonstrativa</p>
-          <p className="mt-1 text-xs leading-relaxed text-[#737d91]">
-            As políticas e os produtos vinculados ficam salvos neste navegador. Regras de cliente, carrinho, validade e envio por e-mail/WhatsApp são apenas configuradas aqui; ainda não são aplicadas no checkout nem integradas ao CRM.
+          <p className="text-xs font-semibold text-emerald-900">Políticas ativas no checkout</p>
+          <p className="mt-1 text-xs leading-relaxed text-emerald-800/80">
+            As políticas criadas são aplicadas automaticamente no carrinho e no checkout. Descontos por valor do carrinho, quantidade de itens, primeira compra e cliente recorrente são validados em tempo real com base no histórico do cliente.
           </p>
         </div>
       </div>

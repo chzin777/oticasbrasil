@@ -844,6 +844,34 @@ export const deleteDiscountPolicy = async (id: string): Promise<boolean> => {
   }
 };
 
+export interface CustomerStatus {
+  hasOrders: boolean;
+  orderCount: number;
+  isFirstPurchase: boolean;
+  isReturningCustomer: boolean;
+  firstOrderAt: string | null;
+  lastOrderAt: string | null;
+}
+
+let cachedCustomerStatus: CustomerStatus | null = null;
+
+export const getCustomerStatus = async (): Promise<CustomerStatus | null> => {
+  if (cachedCustomerStatus) return cachedCustomerStatus;
+  try {
+    const response = await fetch('/api/customer/status', { credentials: 'same-origin' });
+    if (!response.ok) return null;
+    const data = (await response.json()) as CustomerStatus;
+    cachedCustomerStatus = data;
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+export const invalidateCustomerStatus = () => {
+  cachedCustomerStatus = null;
+};
+
 /* ---------- Tags (API Relacional) ---------- */
 
 export interface ProductTagRule {
