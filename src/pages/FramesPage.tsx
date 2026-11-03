@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CATALOG_PRODUCTS } from '../data/mockData';
 import { EyewearProduct } from '../types';
 import { WishlistButton } from '../components/WishlistContext';
 import { FilterSection, CheckboxItem } from '../components/FilterParts';
-import { getEditableFilterOptions, useSiteData } from '../lib/siteStore';
+import { getEditableFilterOptions, useSiteData, useCatalogProducts } from '../lib/siteStore';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface FramesPageProps {
   onSelectProductForCheckout: (product: EyewearProduct, lensType: string) => void;
@@ -48,13 +48,14 @@ export const FramesPage: React.FC<FramesPageProps> = ({
   showAll = false,
 }) => {
   const storeVersion = useSiteData();
+  const { products: catalogProducts, loading: catalogLoading } = useCatalogProducts();
   const navigate = useNavigate();
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const framesProducts = useMemo(
-    () => (showAll ? CATALOG_PRODUCTS : CATALOG_PRODUCTS.filter((p) => p.category === 'armacoes')),
-    [showAll, storeVersion]
+    () => (showAll ? catalogProducts : catalogProducts.filter((p) => p.category === 'armacoes')),
+    [catalogProducts, showAll, storeVersion]
   );
 
   const priceCap = useMemo(
@@ -304,7 +305,9 @@ export const FramesPage: React.FC<FramesPageProps> = ({
 
           {/* Product Grid */}
           <main className="flex-1 min-w-0">
-            {filteredProducts.length === 0 ? (
+            {catalogLoading ? (
+              <LoadingSpinner label="Carregando armações..." fullScreen className="min-h-[60vh]" />
+            ) : filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <span className="material-symbols-outlined text-6xl text-[#c6c5d0] mb-4">search_off</span>
                 <h3 className="text-xl font-bold text-[#061748] mb-2">Nenhum produto encontrado</h3>
