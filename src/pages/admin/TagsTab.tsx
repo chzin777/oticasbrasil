@@ -446,12 +446,12 @@ const TagsTab: React.FC = () => {
         </Modal>
       )}
       {createModalOpen && (
-        <Modal title="Criar tag" onClose={closeCreateModal}>
-          <form onSubmit={submit} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <Modal title="Criar tag" onClose={closeCreateModal} wide fixedHeight>
+          <form onSubmit={submit} className="space-y-5 text-sm">
+            <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
               <Field label="Nome da tag">
                 <input
-                  className={inputCls}
+                  className={`${inputCls} text-sm`}
                   maxLength={32}
                   placeholder="Ex.: Novidade"
                   value={name}
@@ -463,49 +463,49 @@ const TagsTab: React.FC = () => {
                 />
               </Field>
               <Field label="Cor">
-                <div className="flex h-[42px] items-center gap-2 rounded-xl border border-[#c6c5d0] bg-white px-3">
+                <div className="flex h-[46px] items-center gap-3 rounded-xl border border-[#c6c5d0] bg-white px-4">
                   <input
                     aria-label="Cor da tag"
                     type="color"
-                    className="h-7 w-8 cursor-pointer border-0 bg-transparent p-0"
+                    className="h-8 w-10 cursor-pointer border-0 bg-transparent p-0"
                     value={color}
                     onChange={(event) => setColor(event.target.value)}
                   />
-                  <span className="text-xs font-medium uppercase text-[#737d91]">{color}</span>
+                  <span className="text-sm font-medium uppercase text-[#737d91]">{color}</span>
                 </div>
               </Field>
             </div>
 
             <div className="rounded-xl border border-[#e8ebf1] bg-[#fafbfc] p-4 space-y-3">
-              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#8992a4]">Vínculo</p>
-              <div className="flex gap-2">
+              <p className="text-sm font-bold uppercase tracking-[0.08em] text-[#8992a4]">Vínculo</p>
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => { setLinkMode('products'); setRuleValue(''); }}
-                  className={`flex-1 rounded-lg border px-3 py-2 text-xs font-bold transition ${linkMode === 'products' ? 'border-[#4156b8] bg-[#eef0ff] text-[#4156b8]' : 'border-[#dfe5f4] bg-white text-[#566176] hover:bg-[#f8f9fc]'}`}
+                  className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold transition ${linkMode === 'products' ? 'border-[#4156b8] bg-[#eef0ff] text-[#4156b8]' : 'border-[#dfe5f4] bg-white text-[#566176] hover:bg-[#f8f9fc]'}`}
                 >
                   Produtos individuais
                 </button>
                 <button
                   type="button"
                   onClick={() => { setLinkMode('attribute'); setSelectedProductIds([]); }}
-                  className={`flex-1 rounded-lg border px-3 py-2 text-xs font-bold transition ${linkMode === 'attribute' ? 'border-[#4156b8] bg-[#eef0ff] text-[#4156b8]' : 'border-[#dfe5f4] bg-white text-[#566176] hover:bg-[#f8f9fc]'}`}
+                  className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold transition ${linkMode === 'attribute' ? 'border-[#4156b8] bg-[#eef0ff] text-[#4156b8]' : 'border-[#dfe5f4] bg-white text-[#566176] hover:bg-[#f8f9fc]'}`}
                 >
                   Por atributo
                 </button>
               </div>
 
               {linkMode === 'products' ? (
-                <div className="max-h-[240px] overflow-y-auto rounded-lg border border-[#e8ebf1] bg-white">
+                <div className="max-h-[400px] overflow-y-auto rounded-lg border border-[#e8ebf1] bg-white">
                   {CATALOG_PRODUCTS.length === 0 ? (
-                    <p className="py-6 text-center text-xs text-[#8992a4]">Nenhum produto disponível.</p>
+                    <p className="py-8 text-center text-sm text-[#8992a4]">Nenhum produto disponível.</p>
                   ) : (
                     <ul className="divide-y divide-[#eceef0]">
                       {CATALOG_PRODUCTS.map((product) => {
                         const checked = selectedProductIds.includes(product.id);
                         return (
                           <li key={product.id}>
-                            <label className="flex cursor-pointer items-center gap-3 px-3 py-2 transition hover:bg-[#f7f8fa]">
+                            <label className="flex cursor-pointer items-center gap-3 px-4 py-3 transition hover:bg-[#f7f8fa]">
                               <input
                                 type="checkbox"
                                 checked={checked}
@@ -514,11 +514,11 @@ const TagsTab: React.FC = () => {
                                     e.target.checked ? [...prev, product.id] : prev.filter((id) => id !== product.id),
                                   );
                                 }}
-                                className="h-4 w-4 accent-[#4156b8]"
+                                className="h-5 w-5 accent-[#4156b8]"
                               />
-                              <img src={product.image} alt="" className="h-8 w-10 rounded border border-[#eceef0] bg-white object-cover" />
-                              <span className="min-w-0 flex-1 truncate text-xs font-medium text-[#34415e]">{product.name}</span>
-                              <span className="shrink-0 text-[10px] text-[#8992a4]">{product.brand}</span>
+                              <img src={product.image} alt="" className="h-10 w-12 rounded border border-[#eceef0] bg-white object-cover" />
+                              <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#34415e]">{product.name}</span>
+                              <span className="shrink-0 text-xs text-[#8992a4]">{product.brand}</span>
                             </label>
                           </li>
                         );
@@ -526,16 +526,16 @@ const TagsTab: React.FC = () => {
                     </ul>
                   )}
                   {selectedProductIds.length > 0 && (
-                    <p className="border-t border-[#eceef0] px-3 py-2 text-[11px] font-semibold text-[#4156b8]">
+                    <p className="border-t border-[#eceef0] px-4 py-3 text-sm font-semibold text-[#4156b8]">
                       {selectedProductIds.length} {selectedProductIds.length === 1 ? 'produto selecionado' : 'produtos selecionados'}
                     </p>
                   )}
                 </div>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                   <Field label="Atributo">
                     <select
-                      className={inputCls}
+                      className={`${inputCls} text-sm`}
                       value={ruleAttr}
                       onChange={(e) => {
                         setRuleAttr(e.target.value as ProductTagRule['attribute']);
@@ -549,7 +549,7 @@ const TagsTab: React.FC = () => {
                   </Field>
                   <Field label="Valor">
                     <select
-                      className={inputCls}
+                      className={`${inputCls} text-sm`}
                       value={ruleValue}
                       onChange={(e) => setRuleValue(e.target.value)}
                       disabled={currentRuleOptions.length === 0}
@@ -564,17 +564,17 @@ const TagsTab: React.FC = () => {
               )}
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-[#eceef0] pt-3">
+            <div className="flex justify-end gap-3 border-t border-[#eceef0] pt-4">
               <button
                 type="button"
                 onClick={closeCreateModal}
                 disabled={saving}
-                className="inline-flex h-[42px] items-center gap-1.5 rounded-lg border border-[#dfe5f4] px-4 text-xs font-semibold text-[#566176] transition hover:bg-[#f4f6ff] disabled:opacity-50"
+                className="inline-flex h-[46px] items-center gap-2 rounded-lg border border-[#dfe5f4] px-5 text-sm font-semibold text-[#566176] transition hover:bg-[#f4f6ff] disabled:opacity-50"
               >
                 Cancelar
               </button>
-              <button type="submit" disabled={saving} className={`${primaryBtn} h-[42px] disabled:opacity-60`}>
-                <span className="material-symbols-outlined text-[18px]">{saving ? 'progress_activity' : 'add'}</span>
+              <button type="submit" disabled={saving} className={`${primaryBtn} h-[46px] px-6 text-sm disabled:opacity-60`}>
+                <span className="material-symbols-outlined text-[20px]">{saving ? 'progress_activity' : 'add'}</span>
                 {saving ? 'Salvando...' : 'Criar tag'}
               </button>
             </div>
