@@ -1075,10 +1075,11 @@ const hydrateCatalogFromApi = async (): Promise<void> => {
     if (products.length > 0) {
       catalogCache = products;
       catalogError = false;
-      // Mescla produtos da API com overrides/custom locais já persistidos
+      // Produtos da API são exibidos integralmente; overrides/custom só aplicam se coincidirem com SKU real
+      const apiIds = new Set(products.map((p) => p.id));
       const merged = [
-        ...products.filter((p) => !data.removed.includes(p.id)).map((p) => data.overrides[p.id] ?? p),
-        ...data.custom,
+        ...products.map((p) => data.overrides[p.id] ?? p),
+        ...data.custom.filter((c) => !apiIds.has(c.id)),
       ];
       CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length, ...clone(merged));
     } else {
