@@ -7,7 +7,7 @@ import type { AdminUser } from './adminApi';
 import { fetchProducts } from './integrationApi';
 import { emptyPageBuilderData, hasNativeSectionLayout, NATIVE_SECTIONS, nativeSectionTypes, type PageBuilderData } from './pageBuilder';
 
-const STORAGE_KEY = 'oticas-admin-data-v1';
+const STORAGE_KEY = 'oticas-admin-data-v2';
 
 export type HeroTheme = 'default' | 'blackfriday';
 
