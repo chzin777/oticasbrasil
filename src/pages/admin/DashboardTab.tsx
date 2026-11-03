@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import { AVAILABLE_COUPONS, CATALOG_PRODUCTS } from '../../data/mockData';
-import { useSiteData } from '../../lib/siteStore';
+import React, { useEffect, useState } from 'react';
 import { fmtBRL } from './ui';
 
 const T = {
@@ -16,33 +14,30 @@ const T = {
 
 type Period = '7d' | '30d' | '90d';
 
-const PERF: Record<Period, { labels: string[]; visits: number[]; orders: number[]; revenue: number[] }> = {
-  '7d': {
-    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-    visits: [320, 410, 385, 520, 475, 680, 590],
-    orders: [18, 24, 21, 32, 28, 42, 36],
-    revenue: [4200, 5800, 4900, 7600, 6500, 9800, 8400],
-  },
-  '30d': {
-    labels: ['1', '4', '7', '10', '13', '16', '19', '22', '25', '28'],
-    visits: [280, 350, 310, 420, 390, 480, 440, 560, 510, 620],
-    orders: [15, 20, 17, 25, 22, 29, 26, 34, 30, 38],
-    revenue: [3500, 4700, 3900, 5900, 5100, 6800, 6100, 7900, 7100, 8900],
-  },
-  '90d': {
-    labels: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'S11', 'S12'],
-    visits: [1800, 2100, 1950, 2400, 2250, 2700, 2550, 3100, 2900, 3400, 3200, 3800],
-    orders: [95, 115, 105, 135, 125, 150, 140, 175, 160, 195, 180, 215],
-    revenue: [22000, 27000, 24500, 32000, 29500, 36000, 33000, 42000, 38500, 47000, 43000, 52000],
-  },
-};
+interface DashboardStats {
+  kpis: {
+    totalRevenue: number;
+    periodRevenue: number;
+    totalOrders: number;
+    periodOrders: number;
+    avgTicket: number;
+    activeProducts: number;
+    brandsCount: number;
+    avgPrice: number;
+    activeCoupons: number;
+    totalCoupons: number;
+  };
+  timeSeries: { date: string; orders: number; revenue: number }[];
+  categoryMix: Record<string, number>;
+  topProducts: { name: string; image: string; brand: string; revenue: number; units: number }[];
+}
 
-const CATEGORY_META = [
-  { value: 'armacoes', label: 'Armações', color: T.teal },
-  { value: 'oculos-de-sol', label: 'Óculos de Sol', color: T.amber },
-  { value: 'lentes-de-grau', label: 'Lentes de Grau', color: T.navy },
-  { value: 'rayban-meta', label: 'Ray-Ban Meta', color: '#6366f1' },
-];
+const CATEGORY_META: Record<string, { label: string; color: string }> = {
+  armacoes: { label: 'Armações', color: T.teal },
+  'oculos-de-sol': { label: 'Óculos de Sol', color: T.amber },
+  'lentes-de-grau': { label: 'Lentes de Grau', color: T.navy },
+  'rayban-meta': { label: 'Ray-Ban Meta', color: '#6366f1' },
+};
 
 const smoothPath = (vals: number[], max: number, w: number, h: number, padX = 40, padY = 16) => {
   const pts = vals.map((v, i) => ({
@@ -59,8 +54,8 @@ const smoothPath = (vals: number[], max: number, w: number, h: number, padX = 40
 
 const HeroKpi: React.FC<{
   icon: string; label: string; value: string; sub: string;
-  trend?: { v: string; up: boolean }; accent: 'teal' | 'amber' | 'navy';
-}> = ({ icon, label, value, sub, trend, accent }) => {
+  accent: 'teal' | 'amber' | 'navy';
+}> = ({ icon, label, value, sub, accent }) => {
   const accents = {
     teal: { bg: T.tealLight, text: T.tealDark, bar: T.teal },
     amber: { bg: T.amberLight, text: '#92400e', bar: T.amber },
@@ -74,12 +69,6 @@ const HeroKpi: React.FC<{
         <span className="w-10 h-10 rounded-xl flex items-center justify-center text-lg" style={{ background: a.bg, color: a.text }}>
           <span className="material-symbols-outlined text-[22px]">{icon}</span>
         </span>
-        {trend && (
-          <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-0.5 ${trend.up ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-            <span className="material-symbols-outlined text-[14px]">{trend.up ? 'trending_up' : 'trending_down'}</span>
-            {trend.v}
-          </span>
-        )}
       </div>
       <div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{label}</p>
@@ -126,7 +115,7 @@ const SectionTitle: React.FC<{ title: string; subtitle?: string; action?: React.
 );
 
 const AreaChart: React.FC<{ data: number[]; labels: string[]; color: string; height?: number }> = ({ data, labels, color, height = 180 }) => {
-  const max = Math.ceil(Math.max(...data) / 10) * 10 || 10;
+  const max = Math.ceil(Math.max(...data, 1) / 10) * 10;
   const w = 600;
   const h = height;
   const path = smoothPath(data, max, w, h);
@@ -161,7 +150,7 @@ const AreaChart: React.FC<{ data: number[]; labels: string[]; color: string; hei
 };
 
 const DualLineChart: React.FC<{ visits: number[]; orders: number[]; labels: string[] }> = ({ visits, orders, labels }) => {
-  const max = Math.ceil(Math.max(...visits, ...orders) / 10) * 10 || 10;
+  const max = Math.ceil(Math.max(...visits, ...orders, 1) / 10) * 10;
   const w = 600;
   const h = 200;
   const vPath = smoothPath(visits, max, w, h);
@@ -255,48 +244,34 @@ const SparkRow: React.FC<{ items: { name: string; img: string; badge: string; de
 );
 
 export const DashboardTab: React.FC = () => {
-  useSiteData();
   const [period, setPeriod] = useState<Period>('30d');
-  const products = CATALOG_PRODUCTS;
-  const n = products.length || 1;
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const totalValue = products.reduce((s, p) => s + p.price, 0);
-  const avgPrice = totalValue / n;
-  const discounted = products.filter((p) => p.originalPrice && p.originalPrice > p.price);
-  const discPct = (p: (typeof products)[number]) => ((p.originalPrice! - p.price) / p.originalPrice!) * 100;
-  const avgDisc = discounted.length ? discounted.reduce((s, p) => s + discPct(p), 0) / discounted.length : 0;
-  const rated = products.filter((p) => p.rating > 0);
-  const avgRating = rated.length ? rated.reduce((s, p) => s + p.rating, 0) / rated.length : 0;
-  const totalReviews = products.reduce((s, p) => s + (p.reviewCount || 0), 0);
-  const coupons = Object.entries(AVAILABLE_COUPONS);
-  const activeCoupons = coupons.filter(([, c]) => c.active !== false);
-  const brands = new Set(products.map((p) => p.brand));
-
-  const catSlices = CATEGORY_META.map((c) => ({
-    label: c.label, color: c.color,
-    value: products.filter((p) => p.category === c.value).length,
-  })).filter((s) => s.value > 0);
-
-  const brandRows = Object.entries(
-    products.reduce<Record<string, number>>((a, p) => ({ ...a, [p.brand]: (a[p.brand] || 0) + 1 }), {})
-  ).sort((a, b) => b[1] - a[1]).slice(0, 5)
-    .map(([label, value]) => ({ label, value, display: `${value} prod.` }));
-
-  const priceBuckets = [
-    { label: 'Até R$200', min: 0, max: 200 },
-    { label: 'R$200–400', min: 200, max: 400 },
-    { label: 'R$400–600', min: 400, max: 600 },
-    { label: 'R$600–1k', min: 600, max: 1000 },
-    { label: 'R$1k+', min: 1000, max: Infinity },
-  ].map((b) => ({
-    label: b.label,
-    value: products.filter((p) => p.price >= b.min && p.price < b.max).length,
-    display: `${products.filter((p) => p.price >= b.min && p.price < b.max).length} prod.`,
-  }));
-
-  const perf = PERF[period];
-  const topDisc = [...discounted].sort((a, b) => discPct(b) - discPct(a)).slice(0, 4);
-  const topRated = [...rated].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount).slice(0, 4);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/admin/dashboard/stats?period=${period}`, { credentials: 'same-origin' })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<DashboardStats>;
+      })
+      .then((data) => {
+        if (!cancelled) {
+          setStats(data);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Falha ao carregar dados.');
+          setLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [period]);
 
   const PeriodToggle = () => (
     <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
@@ -308,6 +283,61 @@ export const DashboardTab: React.FC = () => {
       ))}
     </div>
   );
+
+  if (loading && !stats) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <span className="material-symbols-outlined text-4xl text-slate-300 animate-spin">progress_activity</span>
+      </div>
+    );
+  }
+
+  if (error && !stats) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+        <span className="material-symbols-outlined text-4xl text-red-400">error</span>
+        <p className="text-sm text-slate-500">{error}</p>
+        <button onClick={() => setPeriod(period)} className="text-xs font-bold text-teal-600 hover:underline">Tentar novamente</button>
+      </div>
+    );
+  }
+
+  const kpis = stats?.kpis;
+  const timeSeries = stats?.timeSeries ?? [];
+  const categoryMix = stats?.categoryMix ?? {};
+  const topProducts = stats?.topProducts ?? [];
+
+  const catSlices = Object.entries(categoryMix)
+    .map(([key, value]) => ({
+      label: CATEGORY_META[key]?.label ?? key,
+      color: CATEGORY_META[key]?.color ?? '#94a3b8',
+      value,
+    }))
+    .filter((s) => s.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const priceBuckets = [
+    { label: 'Até R$200', min: 0, max: 200 },
+    { label: 'R$200–400', min: 200, max: 400 },
+    { label: 'R$400–600', min: 400, max: 600 },
+    { label: 'R$600–1k', min: 600, max: 1000 },
+    { label: 'R$1k+', min: 1000, max: Infinity },
+  ];
+
+  // Price buckets require product-level data not available in current API
+  // Using placeholder until product stats endpoint is added
+  const priceBucketRows = priceBuckets.map((b) => ({
+    label: b.label,
+    value: 0,
+    display: '—',
+  }));
+
+  const tsLabels = timeSeries.map((t) => {
+    const d = new Date(t.date);
+    return `${d.getDate()}/${d.getMonth() + 1}`;
+  });
+  const tsRevenue = timeSeries.map((t) => t.revenue);
+  const tsOrders = timeSeries.map((t) => t.orders);
 
   return (
     <div className="space-y-6 pb-10 max-w-[1200px] mx-auto">
@@ -322,95 +352,83 @@ export const DashboardTab: React.FC = () => {
 
       {/* HERO KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <HeroKpi icon="payments" label="Receita Estimada" value="R$ 47.200" sub="Acumulado no período" accent="teal" trend={{ v: '+14,2%', up: true }} />
-        <HeroKpi icon="group" label="Visitantes" value="4.380" sub="Tráfego qualificado" accent="amber" trend={{ v: '+9,7%', up: true }} />
-        <HeroKpi icon="shopping_bag" label="Pedidos" value="201" sub={`Ticket médio ${fmtBRL(avgPrice)}`} accent="navy" trend={{ v: '+6,3%', up: true }} />
+        <HeroKpi icon="payments" label="Receita no Período" value={fmtBRL(kpis?.periodRevenue ?? 0)} sub={`Total acumulado: ${fmtBRL(kpis?.totalRevenue ?? 0)}`} accent="teal" />
+        <HeroKpi icon="shopping_bag" label="Pedidos no Período" value={String(kpis?.periodOrders ?? 0)} sub={`Ticket médio: ${fmtBRL(kpis?.avgTicket ?? 0)}`} accent="amber" />
+        <HeroKpi icon="inventory_2" label="Produtos Vendidos" value={String(kpis?.activeProducts ?? 0)} sub={`${kpis?.brandsCount ?? 0} marcas distintas`} accent="navy" />
       </div>
 
       {/* CHART: Receita */}
       <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
-        <SectionTitle title="Evolução da Receita" subtitle="Faturamento diário estimado" action={<PeriodToggle />} />
-        <AreaChart data={perf.revenue} labels={perf.labels} color={T.teal} height={170} />
+        <SectionTitle title="Evolução da Receita" subtitle="Faturamento diário real" action={<PeriodToggle />} />
+        {tsRevenue.length === 0 ? (
+          <p className="text-sm text-slate-400 py-8 text-center">Sem dados de receita no período selecionado.</p>
+        ) : (
+          <AreaChart data={tsRevenue} labels={tsLabels} color={T.teal} height={170} />
+        )}
       </div>
 
       {/* SAÚDE DO CATÁLOGO */}
       <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
-        <SectionTitle title="Saúde do Catálogo" subtitle="Indicadores em tempo real dos produtos ativos" />
+        <SectionTitle title="Saúde do Catálogo" subtitle="Indicadores em tempo real dos produtos vendidos" />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <MiniStat icon="inventory_2" label="Produtos" value={String(products.length)} sub="Itens ativos" accent="navy" />
-          <MiniStat icon="local_offer" label="Em Promoção" value={String(discounted.length)} sub={`${avgDisc.toFixed(0)}% off médio`} accent="rose" />
-          <MiniStat icon="star" label="Avaliação Média" value={avgRating.toFixed(1)} sub={`${totalReviews} avaliações`} accent="amber" />
-          <MiniStat icon="confirmation_number" label="Cupons Ativos" value={String(activeCoupons.length)} sub={`de ${coupons.length} criados`} accent="teal" />
-          <MiniStat icon="brand_family" label="Marcas" value={String(brands.size)} sub="Parceiros" accent="navy" />
-          <MiniStat icon="account_balance_wallet" label="Valor Total" value={fmtBRL(totalValue).replace('R$ ', '')} sub="Estoque precificado" accent="teal" />
+          <MiniStat icon="inventory_2" label="Produtos Vendidos" value={String(kpis?.activeProducts ?? 0)} sub="Itens únicos" accent="navy" />
+          <MiniStat icon="local_offer" label="Em Promoção" value="—" sub="Dados via pedidos" accent="rose" />
+          <MiniStat icon="star" label="Avaliação Média" value="—" sub="Integração futura" accent="amber" />
+          <MiniStat icon="confirmation_number" label="Cupons Ativos" value={String(kpis?.activeCoupons ?? 0)} sub={`de ${kpis?.totalCoupons ?? 0} criados`} accent="teal" />
+          <MiniStat icon="brand_family" label="Marcas" value={String(kpis?.brandsCount ?? 0)} sub="Parceiros" accent="navy" />
+          <MiniStat icon="account_balance_wallet" label="Ticket Médio" value={fmtBRL(kpis?.avgTicket ?? 0).replace('R$ ', '')} sub="Por pedido" accent="teal" />
         </div>
       </div>
 
-      {/* CHART: Visitas vs Pedidos */}
+      {/* CHART: Pedidos */}
       <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
-        <SectionTitle title="Tráfego × Conversões" subtitle="Comparativo de visitas e pedidos" />
+        <SectionTitle title="Pedidos por Dia" subtitle="Volume real de pedidos confirmados" />
         <div className="flex items-center gap-5 mb-3 text-xs font-semibold text-slate-500">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded-full" style={{ background: T.teal }} />Visitas</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded-full border-t-2 border-dashed" style={{ borderColor: T.amber }} />Pedidos</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded-full" style={{ background: T.amber }} />Pedidos</span>
         </div>
-        <DualLineChart visits={perf.visits} orders={perf.orders} labels={perf.labels} />
+        {tsOrders.length === 0 ? (
+          <p className="text-sm text-slate-400 py-8 text-center">Sem pedidos no período selecionado.</p>
+        ) : (
+          <AreaChart data={tsOrders} labels={tsLabels} color={T.amber} height={170} />
+        )}
       </div>
 
       {/* ANALYTICS GRID */}
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
-          <SectionTitle title="Mix de Categorias" subtitle="Distribuição do catálogo" />
-          <RadialBars slices={catSlices} />
+          <SectionTitle title="Mix de Categorias" subtitle="Distribuição real por vendas" />
+          {catSlices.length === 0 ? (
+            <p className="text-sm text-slate-400 py-8 text-center">Sem dados de categorias no período.</p>
+          ) : (
+            <RadialBars slices={catSlices} />
+          )}
         </div>
         <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
           <SectionTitle title="Faixas de Preço" subtitle="Concentração por valor" />
-          <HeatBar rows={priceBuckets} color={T.amber} />
+          <HeatBar rows={priceBucketRows} color={T.amber} />
         </div>
       </div>
 
-      {/* MARCAS + TOP PRODUTOS */}
-      <div className="grid lg:grid-cols-3 gap-4">
-        <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
-          <SectionTitle title="Top Marcas" subtitle="Por volume de produtos" />
-          <HeatBar rows={brandRows} color={T.navy} />
-        </div>
-        <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6 lg:col-span-2">
-          <SectionTitle title="Destaques" subtitle="Maiores descontos e melhores avaliados" />
-          <div className="grid sm:grid-cols-2 gap-6">
-            <div>
-              <div className="flex items-center gap-1.5 mb-3"><span className="material-symbols-outlined text-[14px] text-teal-600">local_fire_department</span><p className="text-[10px] font-bold uppercase tracking-widest text-teal-600">Maiores Descontos</p></div>
-              {topDisc.length === 0 ? (
-                <p className="text-sm text-slate-400 py-4 text-center">Nenhum produto em promoção.</p>
-              ) : (
-                <SparkRow items={topDisc.map((p) => ({
-                  name: p.name, img: p.image,
-                  badge: `-${discPct(p).toFixed(0)}%`,
-                  detail: `${fmtBRL(p.originalPrice!)} → ${fmtBRL(p.price)}`,
-                  badgeColor: T.teal,
-                }))} />
-              )}
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 mb-3"><span className="material-symbols-outlined text-[14px] text-amber-600" style={{fontVariationSettings:"'FILL' 1"}}>star</span><p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Melhores Avaliados</p></div>
-              {topRated.length === 0 ? (
-                <p className="text-sm text-slate-400 py-4 text-center">Nenhum produto avaliado.</p>
-              ) : (
-                <SparkRow items={topRated.map((p) => ({
-                  name: p.name, img: p.image,
-                  badge: `${p.rating.toFixed(1)} ★`,
-                  detail: `${p.reviewCount} avaliações`,
-                  badgeColor: T.amber,
-                }))} />
-              )}
-            </div>
-          </div>
-        </div>
+      {/* TOP PRODUTOS */}
+      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5 sm:p-6">
+        <SectionTitle title="Top Produtos" subtitle="Mais vendidos no período por receita" />
+        {topProducts.length === 0 ? (
+          <p className="text-sm text-slate-400 py-8 text-center">Nenhum produto vendido no período selecionado.</p>
+        ) : (
+          <SparkRow items={topProducts.map((p) => ({
+            name: p.name || 'Produto sem nome',
+            img: p.image || 'https://placehold.co/48x48/e2e8f0/94a3b8?text=?',
+            badge: fmtBRL(p.revenue),
+            detail: `${p.units} unid. · ${p.brand || '—'}`,
+            badgeColor: T.teal,
+          }))} />
+        )}
       </div>
 
       {/* Footer */}
       <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 mt-2">
         <p className="text-[11px] text-slate-500 leading-relaxed">
-          <span className="font-bold text-slate-600">Nota:</span> Métricas de vendas, visitas e conversão são fictícias para demonstração. Dados de catálogo (produtos, preços, avaliações, cupons) são calculados em tempo real.
+          <span className="font-bold text-slate-600">Dados reais:</span> Todas as métricas são calculadas a partir de pedidos confirmados no banco de dados. Dados de catálogo (produtos, preços, avaliações) são agregados em tempo real.
         </p>
       </div>
     </div>

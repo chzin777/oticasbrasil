@@ -969,6 +969,109 @@ export const registerAdminRoutes = (app, deps) => {
     }
   });
 
+  /* ---------- Dashboard Stats (Dados Reais) ---------- */
+
+  app.get('/api/admin/dashboard/stats', requireAdmin('catalog'), async (req, res, next) => {
+    const period = req.query.period === '7d' ? 7 : req.query.period === '90d' ? 90 : 30;
+    try {
+      const [ordersResult, catalogResult, couponsResult] = await Promise.all([
+        pool.query(
+          `SELECT
+            COUNT(*)::int AS total_orders,
+            COALESCE(SUM(total) FILTER (WHERE status <> 'canceled'), 0)::float AS total_revenue,
+            COALESCE(AVG(total) FILTER (WHERE status <> 'canceled'), 0)::float AS avg_ticket,
+            COUNT(*) FILTER (WHERE created_at >= NOW() - ($1 || ' days')::interval)::int AS period_orders,
+            COALESCE(SUM(total) FILTER (WHERE status <> 'canceled' AND created_at >= NOW() - ($1 || ' days')::interval), 0)::float AS period_revenue
+           FROM orders`,
+          [period],
+        ),
+        pool.query(
+          `SELECT
+            COUNT(DISTINCT oi.product_id)::int AS active_products,
+            COUNT(DISTINCT oi.product_snapshot->>'brand')::int AS brands_count,
+            COALESCE(AVG((oi.product_snapshot->>'price')::numeric), 0)::float AS avg_price,
+            json_agg(DISTINCT json_build_object(
+              'category', oi.product_snapshot->>'category',
+              'count', COUNT(*) OVER (PARTITION BY oi.product_snapshot->>'category')
+            )) FILTER (WHERE oi.product_snapshot->>'category' IS NOT NULL) AS category_mix
+           FROM order_items oi
+           INNER JOIN orders o ON o.id = oi.order_id AND o.status <> 'canceled'`,
+        ),
+        pool.query(
+          `SELECT COUNT(*)::int AS total_coupons,
+                  COUNT(*) FILTER (WHERE active = TRUE)::int AS active_coupons
+           FROM discount_policies`,
+        ),
+      ]);
+
+      const orders = ordersResult.rows[0];
+      const catalog = catalogResult.rows[0];
+      const coupons = couponsResult.rows[0];
+
+      // Time series: revenue/orders per day for the selected period
+      const { rows: timeSeries } = await pool.query(
+        `SELECT
+          DATE(created_at) AS date,
+          COUNT(*)::int AS orders,
+          COALESCE(SUM(total) FILTER (WHERE status <> 'canceled'), 0)::float AS revenue
+         FROM orders
+         WHERE created_at >= NOW() - ($1 || ' days')::interval
+         GROUP BY DATE(created_at)
+         ORDER BY date ASC`,
+        [period],
+      );
+
+      // Top products by revenue
+      const { rows: topProducts } = await pool.query(
+        `SELECT
+          oi.product_snapshot->>'name' AS name,
+          oi.product_snapshot->>'image' AS image,
+          oi.product_snapshot->>'brand' AS brand,
+          SUM(oi.quantity * oi.unit_price)::float AS revenue,
+          SUM(oi.quantity)::int AS units
+         FROM order_items oi
+         INNER JOIN orders o ON o.id = oi.order_id AND o.status <> 'canceled'
+         WHERE o.created_at >= NOW() - ($1 || ' days')::interval
+         GROUP BY oi.product_snapshot->>'name', oi.product_snapshot->>'image', oi.product_snapshot->>'brand'
+         ORDER BY revenue DESC
+         LIMIT 5`,
+        [period],
+      );
+
+      // Category distribution from real orders
+      const categoryMix = {};
+      if (catalog.category_mix) {
+        for (const item of catalog.category_mix) {
+          if (item?.category) categoryMix[item.category] = (categoryMix[item.category] || 0) + 1;
+        }
+      }
+
+      res.json({
+        kpis: {
+          totalRevenue: orders.total_revenue,
+          periodRevenue: orders.period_revenue,
+          totalOrders: orders.total_orders,
+          periodOrders: orders.period_orders,
+          avgTicket: orders.avg_ticket,
+          activeProducts: catalog.active_products,
+          brandsCount: catalog.brands_count,
+          avgPrice: catalog.avg_price,
+          activeCoupons: coupons.active_coupons,
+          totalCoupons: coupons.total_coupons,
+        },
+        timeSeries: timeSeries.map((r) => ({
+          date: r.date,
+          orders: r.orders,
+          revenue: r.revenue,
+        })),
+        categoryMix,
+        topProducts,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   /* ---------- Atividades ---------- */
 
   app.get('/api/admin/audit', requireAdmin('audit'), async (_req, res, next) => {

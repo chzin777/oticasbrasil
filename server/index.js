@@ -648,6 +648,138 @@ app.get('/api/auth/session', async (req, res, next) => {
   }
 });
 
+/* ---------- Google OAuth ---------- */
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || '';
+
+app.get('/api/auth/google/url', (_req, res) => {
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_REDIRECT_URI) {
+    return jsonError(res, 501, 'Google OAuth não configurado no servidor.');
+  }
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    response_type: 'code',
+    scope: 'openid email profile',
+    access_type: 'offline',
+    prompt: 'consent',
+  });
+  res.json({ url: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}` });
+});
+
+app.post('/api/auth/google/callback', requireSameOrigin, limitAttempts, async (req, res, next) => {
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URI) {
+    return jsonError(res, 501, 'Google OAuth não configurado no servidor.');
+  }
+  try {
+    const code = typeof req.body?.code === 'string' ? req.body.code.trim() : '';
+    if (!code) return jsonError(res, 400, 'Código de autorização ausente.');
+
+    // Exchange code for tokens
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: GOOGLE_CLIENT_ID,
+        client_secret: GOOGLE_CLIENT_SECRET,
+        redirect_uri: GOOGLE_REDIRECT_URI,
+        grant_type: 'authorization_code',
+      }),
+    });
+    if (!tokenResponse.ok) {
+      const errText = await tokenResponse.text();
+      console.error('[google-oauth] Token exchange failed:', errText);
+      return jsonError(res, 401, 'Falha na autenticação com Google.');
+    }
+    const tokens = await tokenResponse.json();
+
+    // Get user info
+    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
+    if (!userInfoResponse.ok) return jsonError(res, 401, 'Não foi possível obter dados do Google.');
+    const googleUser = await userInfoResponse.json();
+
+    if (!googleUser.sub || !googleUser.email || !googleUser.email_verified) {
+      return jsonError(res, 400, 'Conta Google não verificada ou sem e-mail.');
+    }
+
+    const email = googleUser.email.toLowerCase().slice(0, 254);
+    const name = (googleUser.name || googleUser.email.split('@')[0]).slice(0, 160);
+    const googleSub = googleUser.sub;
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Try to find existing user by google_sub or email
+      let { rows } = await client.query(
+        'SELECT id, email, name, cpf, phone, address, blocked FROM customers WHERE google_sub = $1 OR email = $2 LIMIT 1',
+        [googleSub, email],
+      );
+
+      let userRow = rows[0];
+
+      if (!userRow) {
+        // Create new customer with Google auth
+        ({ rows } = await client.query(
+          `INSERT INTO customers (id, email, google_sub, name)
+           VALUES ($1, $2, $3, $4)
+           RETURNING id, email, name, cpf, phone, address`,
+          [randomUUID(), email, googleSub, name],
+        ));
+        userRow = rows[0];
+        await enqueueCustomer(client, userRow);
+      } else if (!userRow.google_sub && userRow.email === email) {
+        // Link existing email account to Google
+        await client.query(
+          'UPDATE customers SET google_sub = $1 WHERE id = $2',
+          [googleSub, userRow.id],
+        );
+      }
+
+      if (userRow.blocked) {
+        await client.query('ROLLBACK');
+        return jsonError(res, 403, 'Sua conta não está disponível. Entre em contato com a loja.');
+      }
+
+      await client.query('COMMIT');
+
+      const user = {
+        id: userRow.id,
+        email: userRow.email,
+        name: userRow.name,
+        cpf: userRow.cpf,
+        phone: userRow.phone,
+        address: userRow.address,
+        role: 'customer',
+      };
+      await req.resetLoginAttempts();
+      await createSession(res, user);
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          cpf: user.cpf,
+          phone: user.phone,
+          address: user.address,
+        },
+      });
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post('/api/auth/logout', requireSameOrigin, async (req, res, next) => {
   try {
     await destroySession(req, res);
