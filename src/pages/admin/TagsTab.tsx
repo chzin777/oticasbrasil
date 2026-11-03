@@ -58,7 +58,18 @@ const TagsTab: React.FC = () => {
   const brands = [...new Set(CATALOG_PRODUCTS.map((product) => product.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   const materials = [...new Set(CATALOG_PRODUCTS.map((product) => product.material).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   const shapes = [...new Set(CATALOG_PRODUCTS.map((product) => product.shape).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const subcategories = [...new Set(CATALOG_PRODUCTS.map((product) => product.subcategory).filter(Boolean))].sort((a, b) => a!.localeCompare(b!, 'pt-BR')) as string[];
   const hasProductFilters = productCategory !== 'all' || productBrand !== 'all' || productMaterial !== 'all' || productShape !== 'all' || Boolean(productQuery);
+
+  const ruleAttributeOptions: Record<ProductTagRule['attribute'], { label: string; value: string }[]> = {
+    brand: brands.map((b) => ({ label: b, value: b })),
+    category: categories.map((c) => ({ label: categoryLabels[c] ?? c, value: c })),
+    subcategory: subcategories.map((s) => ({ label: s, value: s })),
+    material: materials.map((m) => ({ label: m, value: m })),
+    shape: shapes.map((s) => ({ label: s, value: s })),
+  };
+
+  const currentRuleOptions = ruleAttributeOptions[ruleAttr] ?? [];
 
   const addRule = () => {
     const val = ruleValue.trim();
@@ -478,7 +489,10 @@ const TagsTab: React.FC = () => {
                   <select
                     className={inputCls}
                     value={ruleAttr}
-                    onChange={(e) => setRuleAttr(e.target.value as ProductTagRule['attribute'])}
+                    onChange={(e) => {
+                      setRuleAttr(e.target.value as ProductTagRule['attribute']);
+                      setRuleValue('');
+                    }}
                   >
                     {TAG_RULE_ATTRIBUTES.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -487,13 +501,17 @@ const TagsTab: React.FC = () => {
                 </div>
                 <div className="min-w-[180px] flex-1">
                   <label className="mb-1 block text-[11px] font-semibold text-[#45464f]">Valor</label>
-                  <input
+                  <select
                     className={inputCls}
-                    placeholder="Ex.: Ray-Ban"
                     value={ruleValue}
                     onChange={(e) => setRuleValue(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addRule(); } }}
-                  />
+                    disabled={currentRuleOptions.length === 0}
+                  >
+                    <option value="">Selecione...</option>
+                    {currentRuleOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
                 </div>
                 <button
                   type="button"
