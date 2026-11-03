@@ -1104,11 +1104,24 @@ const hydrateCatalogFromApi = async (): Promise<void> => {
 
 void hydrateCatalogFromApi();
 
-const getCatalogSnapshot = () => ({
-  products: (catalogCache ?? []).filter((p) => p.active !== false),
-  loading: catalogLoading,
-  error: catalogError,
-});
+let lastCatalogSnapshot: { products: EyewearProduct[]; loading: boolean; error: boolean } = {
+  products: [],
+  loading: false,
+  error: false,
+};
+
+const getCatalogSnapshot = () => {
+  const products = (catalogCache ?? []).filter((p) => p.active !== false);
+  if (
+    lastCatalogSnapshot.loading === catalogLoading &&
+    lastCatalogSnapshot.error === catalogError &&
+    lastCatalogSnapshot.products === products
+  ) {
+    return lastCatalogSnapshot;
+  }
+  lastCatalogSnapshot = { products, loading: catalogLoading, error: catalogError };
+  return lastCatalogSnapshot;
+};
 
 export const useCatalogProducts = (): { products: EyewearProduct[]; loading: boolean; error: boolean } => {
   const state = useSyncExternalStore(subscribe, getCatalogSnapshot, getCatalogSnapshot);
@@ -1117,7 +1130,7 @@ export const useCatalogProducts = (): { products: EyewearProduct[]; loading: boo
     if (!catalogCache && !catalogLoading) {
       void hydrateCatalogFromApi();
     }
-  }, [state.loading, state.products.length]);
+  }, []);
 
   return state;
 };
