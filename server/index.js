@@ -590,11 +590,19 @@ app.post('/api/auth/register', requireSameOrigin, limitAttempts, async (req, res
     const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 160) : '';
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase().slice(0, 254) : '';
     const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    const cpf = typeof req.body?.cpf === 'string' ? req.body.cpf.replace(/\D/g, '').slice(0, 11) : '';
+    const phone = typeof req.body?.phone === 'string' ? req.body.phone.replace(/\D/g, '').slice(0, 11) : '';
     if (name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return jsonError(res, 400, 'Informe seu nome e um e-mail válido.');
     }
     if (password.length < 10 || password.length > 256) {
       return jsonError(res, 400, 'A senha deve ter pelo menos 10 caracteres.');
+    }
+    if (cpf.length !== 11) {
+      return jsonError(res, 400, 'CPF inválido. Informe os 11 dígitos.');
+    }
+    if (phone.length < 10 || phone.length > 11) {
+      return jsonError(res, 400, 'Telefone inválido. Informe DDD + número.');
     }
 
     const passwordHash = await hashPassword(password);
@@ -603,11 +611,11 @@ app.post('/api/auth/register', requireSameOrigin, limitAttempts, async (req, res
     try {
       await client.query('BEGIN');
       ({ rows } = await client.query(
-      `INSERT INTO customers (id, email, password_hash, name)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO customers (id, email, password_hash, name, cpf, phone)
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (email) DO NOTHING
        RETURNING id, email, name, cpf, phone, address, updated_at`,
-      [randomUUID(), email, passwordHash, name],
+      [randomUUID(), email, passwordHash, name, cpf, phone],
       ));
       if (rows[0]) await enqueueCustomer(client, rows[0]);
       await client.query('COMMIT');

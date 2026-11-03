@@ -46,6 +46,8 @@ export const LoginPage: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
@@ -126,12 +128,28 @@ export const LoginPage: React.FC = () => {
       if (remember) localStorage.setItem(REMEMBER_KEY, email.trim());
       else localStorage.removeItem(REMEMBER_KEY);
 
+      if (mode === 'register') {
+        const cleanCpf = cpf.replace(/\D/g, '');
+        const cleanPhone = phone.replace(/\D/g, '');
+        if (cleanCpf.length !== 11) {
+          setError('CPF inválido. Informe os 11 dígitos.');
+          return;
+        }
+        if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+          setError('Telefone inválido. Informe DDD + número.');
+          return;
+        }
+      }
+
       const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const payload = mode === 'register'
+        ? { name, email: email.trim(), password, cpf: cpf.replace(/\D/g, ''), phone: phone.replace(/\D/g, '') }
+        : { email: email.trim(), password };
       const response = await fetch(endpoint, {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email: email.trim(), password }),
+        body: JSON.stringify(payload),
       });
       const result = await response.json() as { user?: AccountUser; error?: string };
       if (!response.ok || !result.user) {
@@ -222,23 +240,74 @@ export const LoginPage: React.FC = () => {
 
           <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
             {mode === 'register' && (
-              <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
-                Nome completo
-                <span className="relative block">
-                  <span aria-hidden="true" className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#051647]/40">person</span>
-                  <input
-                    type="text"
-                    required
-                    autoComplete="name"
-                    minLength={2}
-                    maxLength={160}
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="Seu nome completo"
-                    className={`${inputCls} pr-4`}
-                  />
-                </span>
-              </label>
+              <>
+                <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
+                  Nome completo
+                  <span className="relative block">
+                    <span aria-hidden="true" className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#051647]/40">person</span>
+                    <input
+                      type="text"
+                      required
+                      autoComplete="name"
+                      minLength={2}
+                      maxLength={160}
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      placeholder="Seu nome completo"
+                      className={`${inputCls} pr-4`}
+                    />
+                  </span>
+                </label>
+
+                <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
+                  CPF
+                  <span className="relative block">
+                    <span aria-hidden="true" className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#051647]/40">badge</span>
+                    <input
+                      type="text"
+                      required
+                      inputMode="numeric"
+                      autoComplete="off"
+                      maxLength={14}
+                      value={cpf}
+                      onChange={(event) => {
+                        const digits = event.target.value.replace(/\D/g, '').slice(0, 11);
+                        const formatted = digits
+                          .replace(/(\d{3})(\d)/, '$1.$2')
+                          .replace(/(\d{3})(\d)/, '$1.$2')
+                          .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                        setCpf(formatted);
+                      }}
+                      placeholder="000.000.000-00"
+                      className={`${inputCls} pr-4`}
+                    />
+                  </span>
+                </label>
+
+                <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
+                  Telefone / WhatsApp
+                  <span className="relative block">
+                    <span aria-hidden="true" className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#051647]/40">phone</span>
+                    <input
+                      type="tel"
+                      required
+                      inputMode="tel"
+                      autoComplete="tel"
+                      maxLength={15}
+                      value={phone}
+                      onChange={(event) => {
+                        const digits = event.target.value.replace(/\D/g, '').slice(0, 11);
+                        const formatted = digits
+                          .replace(/^(\d{2})(\d)/g, '($1) $2')
+                          .replace(/(\d{5})(\d)/, '$1-$2');
+                        setPhone(formatted);
+                      }}
+                      placeholder="(00) 00000-0000"
+                      className={`${inputCls} pr-4`}
+                    />
+                  </span>
+                </label>
+              </>
             )}
 
             <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
