@@ -296,7 +296,6 @@ const TagsTab: React.FC = () => {
     <div className="space-y-5">
       {message && <Notice kind={message.kind}>{message.text}</Notice>}
       <Card
-        title="Tags"
         subtitle={`${tags.length} ${tags.length === 1 ? 'tag cadastrada' : 'tags cadastradas'}`}
         action={
           <button onClick={() => setCreateModalOpen(true)} className={primaryBtn}>
