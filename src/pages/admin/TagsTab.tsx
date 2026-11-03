@@ -21,6 +21,7 @@ const TagsTab: React.FC = () => {
   const [color, setColor] = useState('#4156b8');
   const [linkMode, setLinkMode] = useState<'products' | 'attribute'>('products');
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [createProductSearch, setCreateProductSearch] = useState('');
   const [ruleAttr, setRuleAttr] = useState<ProductTagRule['attribute']>('brand');
   const [ruleValue, setRuleValue] = useState('');
   const [page, setPage] = useState(1);
@@ -496,40 +497,65 @@ const TagsTab: React.FC = () => {
               </div>
 
               {linkMode === 'products' ? (
-                <div className="max-h-[400px] overflow-y-auto rounded-lg border border-[#e8ebf1] bg-white">
-                  {CATALOG_PRODUCTS.length === 0 ? (
-                    <p className="py-8 text-center text-sm text-[#8992a4]">Nenhum produto disponível.</p>
-                  ) : (
-                    <ul className="divide-y divide-[#eceef0]">
-                      {CATALOG_PRODUCTS.map((product) => {
-                        const checked = selectedProductIds.includes(product.id);
-                        return (
-                          <li key={product.id}>
-                            <label className="flex cursor-pointer items-center gap-3 px-4 py-3 transition hover:bg-[#f7f8fa]">
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={(e) => {
-                                  setSelectedProductIds((prev) =>
-                                    e.target.checked ? [...prev, product.id] : prev.filter((id) => id !== product.id),
-                                  );
-                                }}
-                                className="h-5 w-5 accent-[#4156b8]"
-                              />
-                              <img src={product.image} alt="" className="h-10 w-12 rounded border border-[#eceef0] bg-white object-cover" />
-                              <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#34415e]">{product.name}</span>
-                              <span className="shrink-0 text-xs text-[#8992a4]">{product.brand}</span>
-                            </label>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                  {selectedProductIds.length > 0 && (
-                    <p className="border-t border-[#eceef0] px-4 py-3 text-sm font-semibold text-[#4156b8]">
-                      {selectedProductIds.length} {selectedProductIds.length === 1 ? 'produto selecionado' : 'produtos selecionados'}
-                    </p>
-                  )}
+                <div className="space-y-3">
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#8a8d96] text-[18px]">search</span>
+                    <input
+                      className={`${inputCls} pl-9 text-sm`}
+                      placeholder="Buscar por nome, SKU ou marca..."
+                      value={createProductSearch}
+                      onChange={(e) => setCreateProductSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="max-h-[360px] overflow-y-auto rounded-lg border border-[#e8ebf1] bg-white">
+                    {(() => {
+                      const term = createProductSearch.trim().toLocaleLowerCase('pt-BR');
+                      const filtered = term
+                        ? CATALOG_PRODUCTS.filter((p) =>
+                            p.name.toLocaleLowerCase('pt-BR').includes(term) ||
+                            (p.sku && p.sku.toLocaleLowerCase('pt-BR').includes(term)) ||
+                            p.brand.toLocaleLowerCase('pt-BR').includes(term),
+                          )
+                        : CATALOG_PRODUCTS;
+                      if (CATALOG_PRODUCTS.length === 0) {
+                        return <p className="py-8 text-center text-sm text-[#8992a4]">Nenhum produto disponível.</p>;
+                      }
+                      if (filtered.length === 0) {
+                        return <p className="py-8 text-center text-sm text-[#8992a4]">Nenhum produto encontrado para "{createProductSearch}".</p>;
+                      }
+                      return (
+                        <ul className="divide-y divide-[#eceef0]">
+                          {filtered.map((product) => {
+                            const checked = selectedProductIds.includes(product.id);
+                            return (
+                              <li key={product.id}>
+                                <label className="flex cursor-pointer items-center gap-3 px-4 py-3 transition hover:bg-[#f7f8fa]">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      setSelectedProductIds((prev) =>
+                                        e.target.checked ? [...prev, product.id] : prev.filter((id) => id !== product.id),
+                                      );
+                                    }}
+                                    className="h-5 w-5 accent-[#4156b8]"
+                                  />
+                                  <img src={product.image} alt="" className="h-10 w-12 rounded border border-[#eceef0] bg-white object-cover" />
+                                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#34415e]">{product.name}</span>
+                                  <span className="shrink-0 text-xs text-[#8992a4]">{product.brand}</span>
+                                </label>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      );
+                    })()}
+                    {selectedProductIds.length > 0 && (
+                      <p className="border-t border-[#eceef0] px-4 py-3 text-sm font-semibold text-[#4156b8]">
+                        {selectedProductIds.length} {selectedProductIds.length === 1 ? 'produto selecionado' : 'produtos selecionados'}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
