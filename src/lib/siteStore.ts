@@ -1104,32 +1104,33 @@ const hydrateCatalogFromApi = async (): Promise<void> => {
 
 void hydrateCatalogFromApi();
 
-let lastCatalogSnapshot: { products: EyewearProduct[]; loading: boolean; error: boolean } = {
-  products: [],
-  loading: false,
-  error: false,
-};
-
-const getCatalogSnapshot = () => {
-  const products = (catalogCache ?? []).filter((p) => p.active !== false);
-  if (
-    lastCatalogSnapshot.loading === catalogLoading &&
-    lastCatalogSnapshot.error === catalogError &&
-    lastCatalogSnapshot.products === products
-  ) {
-    return lastCatalogSnapshot;
-  }
-  lastCatalogSnapshot = { products, loading: catalogLoading, error: catalogError };
-  return lastCatalogSnapshot;
-};
-
 export const useCatalogProducts = (): { products: EyewearProduct[]; loading: boolean; error: boolean } => {
-  const state = useSyncExternalStore(subscribe, getCatalogSnapshot, getCatalogSnapshot);
+  useSiteData();
+  const [state, setState] = useState<{ products: EyewearProduct[]; loading: boolean; error: boolean }>({
+    products: (catalogCache ?? []).filter((p) => p.active !== false),
+    loading: catalogLoading,
+    error: catalogError,
+  });
 
   useEffect(() => {
+    const syncState = () => {
+      setState({
+        products: (catalogCache ?? []).filter((p) => p.active !== false),
+        loading: catalogLoading,
+        error: catalogError,
+      });
+    };
+
+    syncState();
+
     if (!catalogCache && !catalogLoading) {
-      void hydrateCatalogFromApi();
+      void hydrateCatalogFromApi().then(syncState);
     }
+
+    listeners.add(syncState);
+    return () => {
+      listeners.delete(syncState);
+    };
   }, []);
 
   return state;
