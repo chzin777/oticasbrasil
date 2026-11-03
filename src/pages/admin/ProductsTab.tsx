@@ -878,8 +878,8 @@ export const ProductsTab: React.FC = () => {
         </div>
 
         {catalogLoading ? (
-          <div className="rounded-2xl border border-[#e7ebf1] bg-white p-8 flex items-center justify-center">
-            <LoadingSpinner label="Carregando produtos..." size={40} />
+          <div className="rounded-2xl border border-[#e7ebf1] bg-white p-12 flex flex-col items-center justify-center gap-4 min-h-[320px]">
+            <LoadingSpinner label="Carregando produtos..." size={56} fullScreen className="bg-transparent text-[#051647]" />
           </div>
         ) : (
         <div className="overflow-x-auto -mx-2">
