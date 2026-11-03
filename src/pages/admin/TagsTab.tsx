@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CustomSelect } from '../../components/CustomSelect';
 import { useToast } from '../../components/ToastContext';
 import { CATALOG_PRODUCTS } from '../../data/mockData';
-import { assignProductsToTag, createProductTag, deleteProductTag, getProductTags, ProductTagRule, useSiteData } from '../../lib/siteStore';
+import { assignProductsToTag, createProductTag, deleteProductTag, getProductTags, ProductTagRule, ProductTagWithRules, useSiteData } from '../../lib/siteStore';
 import { Card, Field, inputCls, Modal, Notice, Pagination, primaryBtn } from './ui';
 
 const TAG_RULE_ATTRIBUTES: { value: ProductTagRule['attribute']; label: string }[] = [
@@ -195,71 +195,103 @@ const TagsTab: React.FC = () => {
   return (
     <div className="space-y-5">
       {message && <Notice kind={message.kind}>{message.text}</Notice>}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold text-[#061748]">Tags</h2>
-          <p className="text-xs text-[#767680]">Gerencie etiquetas e regras automáticas para seus produtos.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setCreateModalOpen(true)}
-          className={`${primaryBtn} h-[42px]`}
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          Criar tag
-        </button>
-      </div>
-
-      <Card title="Tags cadastradas" subtitle={`${tags.length} ${tags.length === 1 ? 'tag cadastrada' : 'tags cadastradas'}`}>
+      <Card
+        title="Tags"
+        subtitle={`${tags.length} ${tags.length === 1 ? 'tag cadastrada' : 'tags cadastradas'}`}
+        action={
+          <button onClick={() => setCreateModalOpen(true)} className={primaryBtn}>
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            Criar tag
+          </button>
+        }
+      >
         {tags.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#d9deea] px-5 py-10 text-center">
             <span className="material-symbols-outlined text-3xl text-[#9aa4b8]">sell</span>
             <p className="mt-2 text-sm font-semibold text-[#34415e]">Nenhuma tag criada ainda</p>
-            <p className="mt-1 text-xs text-[#8992a4]">As tags criadas aparecerão aqui para você gerenciar.</p>
+            <p className="mt-1 text-xs text-[#8992a4]">Clique em "Criar tag" para começar.</p>
           </div>
         ) : (
           <>
-            <ul className="divide-y divide-[#eceef0]">
-              {visibleTags.map((tag) => {
-                const assignedIds = tag.assignedProductIds ?? [];
-                return (
-                  <li key={tag.id} className="py-3 first:pt-0 last:pb-0">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <span
-                          className="inline-flex max-w-full items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
-                          style={{ backgroundColor: `${tag.color}1A`, color: tag.color }}
-                        >
-                          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: tag.color }} />
-                          <span className="truncate">{tag.name}</span>
-                        </span>
-                        <span className="hidden text-xs text-[#8992a4] sm:inline">
-                          {assignedIds.length} {assignedIds.length === 1 ? 'produto' : 'produtos'}
-                        </span>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => openLinkModal(tag.id)}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-[#566176] transition hover:cursor-pointer hover:bg-[#f1f3f8]"
-                        >
-                          <span className="material-symbols-outlined text-[17px]">sell</span>
-                          <span className="hidden sm:inline">Vincular produtos</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => remove(tag.id)}
-                          aria-label={`Remover tag ${tag.name}`}
-                          className="flex h-9 w-9 items-center justify-center rounded-lg text-[#8992a4] transition hover:cursor-pointer hover:bg-red-50 hover:text-red-600"
-                        >
-                          <span className="material-symbols-outlined text-[19px]">delete</span>
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="overflow-x-auto -mx-2">
+              <table className="w-full text-sm min-w-[640px]">
+                <thead>
+                  <tr className="text-left text-[11px] uppercase tracking-wider text-[#767680]">
+                    <th className="px-2 py-2 font-bold">Tag</th>
+                    <th className="px-2 py-2 font-bold">Cor</th>
+                    <th className="px-2 py-2 font-bold">Regras Automáticas</th>
+                    <th className="px-2 py-2 font-bold">Produtos Vinculados</th>
+                    <th className="px-2 py-2 font-bold text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleTags.map((tag) => {
+                    const assignedIds = tag.assignedProductIds ?? [];
+                    const tagRules = (tag as ProductTagWithRules).rules ?? [];
+                    return (
+                      <tr key={tag.id} className="border-t border-[#eceef0] hover:bg-[#f2f5ff] transition-colors">
+                        <td className="px-2 py-3">
+                          <span
+                            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold"
+                            style={{ backgroundColor: `${tag.color}1A`, color: tag.color }}
+                          >
+                            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: tag.color }} />
+                            {tag.name}
+                          </span>
+                        </td>
+                        <td className="px-2 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="h-5 w-5 rounded border border-[#e7ebf1]" style={{ backgroundColor: tag.color }} />
+                            <span className="text-[11px] font-mono text-[#475569] uppercase">{tag.color}</span>
+                          </div>
+                        </td>
+                        <td className="px-2 py-3">
+                          {tagRules.length === 0 ? (
+                            <span className="text-[11px] text-[#8992a4]">—</span>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {tagRules.slice(0, 3).map((r: ProductTagRule, i: number) => (
+                                <span key={`${r.attribute}-${r.value}-${i}`} className="inline-flex items-center rounded bg-[#eef1fb] px-1.5 py-0.5 text-[10px] font-semibold text-[#4156b8]">
+                                  {TAG_RULE_ATTRIBUTES.find((a) => a.value === r.attribute)?.label ?? r.attribute}: {r.value}
+                                </span>
+                              ))}
+                              {tagRules.length > 3 && (
+                                <span className="text-[10px] text-[#8992a4]">+{tagRules.length - 3}</span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 py-3">
+                          <span className={`text-[11px] font-bold ${assignedIds.length > 0 ? 'text-emerald-600' : 'text-[#767680]'}`}>
+                            {assignedIds.length} {assignedIds.length === 1 ? 'produto' : 'produtos'}
+                          </span>
+                        </td>
+                        <td className="px-2 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openLinkModal(tag.id)}
+                              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-[#566176] transition hover:cursor-pointer hover:bg-[#f1f3f8]"
+                            >
+                              <span className="material-symbols-outlined text-[17px]">sell</span>
+                              <span className="hidden sm:inline">Vincular</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => remove(tag.id)}
+                              aria-label={`Remover tag ${tag.name}`}
+                              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#8992a4] transition hover:cursor-pointer hover:bg-red-50 hover:text-red-600"
+                            >
+                              <span className="material-symbols-outlined text-[19px]">delete</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
             <Pagination
               page={currentPage}
               pageSize={pageSize}
@@ -273,7 +305,6 @@ const TagsTab: React.FC = () => {
           </>
         )}
       </Card>
-      <p className="px-1 text-xs text-[#8992a4]">Tags ficam salvas neste navegador e podem ser incluídas no backup do painel.</p>
       {linkingTag && (
         <Modal title={`Vincular produtos · ${linkingTag.name}`} onClose={closeLinkModal} wide>
           <div className="space-y-4">
