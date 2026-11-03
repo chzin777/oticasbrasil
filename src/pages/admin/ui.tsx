@@ -71,7 +71,7 @@ export const Modal: React.FC<{ title: string; onClose: () => void; children: Rea
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-        <div className={`${flush || fixedHeight ? 'flex flex-col min-h-0 flex-1' : 'p-4 sm:p-8 overflow-y-auto min-h-0'} ${fixedHeight ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : ''}`}>{children}</div>
+        <div className={`${flush ? 'flex flex-col min-h-0 flex-1' : fixedHeight ? 'flex flex-col min-h-0 flex-1 p-4 sm:p-6 overflow-y-auto' : 'p-4 sm:p-8 overflow-y-auto min-h-0'} ${fixedHeight ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : ''}`}>{children}</div>
       </div>
     </div>
   );
