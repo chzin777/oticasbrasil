@@ -108,66 +108,21 @@ function mapOracleToEyewear(item: OracleProduct): EyewearProduct {
 }
 
 export async function fetchProducts(): Promise<EyewearProduct[]> {
-  const PAGE_SIZE = 500;
-  const MAX_CONCURRENT = 4;
-
   try {
-    // Busca primeira página para determinar se há dados
-    const firstParams = new URLSearchParams({ limit: String(PAGE_SIZE), offset: '0' });
-    const firstCtrl = new AbortController();
-    const firstTimeout = setTimeout(() => firstCtrl.abort(), 15000);
-    const firstRes = await fetch(`${API_BASE}/products?${firstParams.toString()}`, {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 30000);
+    const res = await fetch(`${API_BASE}/products/all`, {
       headers: { 'Content-Type': 'application/json' },
-      signal: firstCtrl.signal,
+      signal: ctrl.signal,
     });
-    clearTimeout(firstTimeout);
+    clearTimeout(tid);
 
-    if (!firstRes.ok) throw new Error(`API error: ${firstRes.status}`);
-    const firstJson: ProductsResponse = await firstRes.json();
-    const firstItems = firstJson.data ?? [];
-    if (firstItems.length === 0) return [];
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const json: { data?: OracleProduct[]; total?: number } = await res.json();
+    const items = json.data ?? [];
+    if (items.length === 0) return [];
 
-    const allProducts = firstItems.map(mapOracleToEyewear);
-
-    // Se a primeira página já retornou menos que PAGE_SIZE, não há mais páginas
-    if (firstItems.length < PAGE_SIZE) return allProducts;
-
-    // Busca páginas restantes em paralelo (lotes de MAX_CONCURRENT)
-    const remainingPages: number[] = [];
-    for (let page = 1; page < 50; page++) {
-      remainingPages.push(page);
-    }
-
-    for (let i = 0; i < remainingPages.length; i += MAX_CONCURRENT) {
-      const batch = remainingPages.slice(i, i + MAX_CONCURRENT);
-      const results = await Promise.allSettled(
-        batch.map(async (page) => {
-          const offset = page * PAGE_SIZE;
-          const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
-          const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 15000);
-          const res = await fetch(`${API_BASE}/products?${params.toString()}`, {
-            headers: { 'Content-Type': 'application/json' },
-            signal: ctrl.signal,
-          });
-          clearTimeout(tid);
-          if (!res.ok) return [];
-          const json: ProductsResponse = await res.json();
-          return json.data ?? [];
-        })
-      );
-
-      let hasMore = false;
-      for (const result of results) {
-        if (result.status === 'fulfilled' && result.value.length > 0) {
-          allProducts.push(...result.value.map(mapOracleToEyewear));
-          if (result.value.length >= PAGE_SIZE) hasMore = true;
-        }
-      }
-      if (!hasMore) break;
-    }
-
-    return allProducts;
+    return items.map(mapOracleToEyewear);
   } catch (error) {
     console.error('[integrationApi] Falha ao buscar produtos da API:', error);
     return [];
