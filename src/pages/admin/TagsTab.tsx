@@ -33,6 +33,7 @@ const TagsTab: React.FC = () => {
   const [linkError, setLinkError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const pageCount = Math.ceil(tags.length / pageSize);
   const currentPage = Math.min(page, Math.max(pageCount, 1));
   const pageStart = (currentPage - 1) * pageSize;
@@ -101,10 +102,24 @@ const TagsTab: React.FC = () => {
       return;
     }
     setName('');
+    setColor('#4156b8');
     setRules([]);
+    setRuleAttr('brand');
+    setRuleValue('');
+    setCreateModalOpen(false);
     setPage(Math.ceil((tags.length + 1) / pageSize));
     setMessage(null);
     toast.success('Tag criada', normalizedName);
+  };
+
+  const closeCreateModal = () => {
+    if (saving) return;
+    setName('');
+    setColor('#4156b8');
+    setRules([]);
+    setRuleAttr('brand');
+    setRuleValue('');
+    setCreateModalOpen(false);
   };
 
   const remove = async (id: string) => {
@@ -180,92 +195,20 @@ const TagsTab: React.FC = () => {
   return (
     <div className="space-y-5">
       {message && <Notice kind={message.kind}>{message.text}</Notice>}
-      <Card title="Criar tag" subtitle="Crie etiquetas e defina regras automáticas por marca, categoria ou atributo.">
-        <form onSubmit={submit} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-            <Field label="Nome da tag">
-              <input
-                className={inputCls}
-                maxLength={32}
-                placeholder="Ex.: Novidade"
-                value={name}
-                onChange={(event) => {
-                  setName(event.target.value);
-                  setMessage(null);
-                }}
-              />
-            </Field>
-            <Field label="Cor">
-              <div className="flex h-[42px] items-center gap-2 rounded-xl border border-[#c6c5d0] bg-white px-3">
-                <input
-                  aria-label="Cor da tag"
-                  type="color"
-                  className="h-7 w-8 cursor-pointer border-0 bg-transparent p-0"
-                  value={color}
-                  onChange={(event) => setColor(event.target.value)}
-                />
-                <span className="text-xs font-medium uppercase text-[#737d91]">{color}</span>
-              </div>
-            </Field>
-          </div>
-
-          <div className="rounded-xl border border-[#e8ebf1] bg-[#fafbfc] p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#8992a4]">Regras automáticas (opcional)</p>
-            <p className="mt-1 text-[11px] text-[#5c6478]">Produtos com estes atributos receberão a tag automaticamente no site.</p>
-            <div className="mt-3 flex flex-wrap items-end gap-2">
-              <div className="min-w-[140px]">
-                <label className="mb-1 block text-[11px] font-semibold text-[#45464f]">Atributo</label>
-                <select
-                  className={inputCls}
-                  value={ruleAttr}
-                  onChange={(e) => setRuleAttr(e.target.value as ProductTagRule['attribute'])}
-                >
-                  {TAG_RULE_ATTRIBUTES.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="min-w-[180px] flex-1">
-                <label className="mb-1 block text-[11px] font-semibold text-[#45464f]">Valor</label>
-                <input
-                  className={inputCls}
-                  placeholder="Ex.: Ray-Ban"
-                  value={ruleValue}
-                  onChange={(e) => setRuleValue(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addRule(); } }}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={addRule}
-                className="inline-flex h-[42px] items-center gap-1.5 rounded-lg border border-[#c6c5d0] bg-white px-3 text-xs font-semibold text-[#4156b8] hover:bg-[#f0f2ff]"
-              >
-                <span className="material-symbols-outlined text-[16px]">add</span>
-                Adicionar
-              </button>
-            </div>
-            {rules.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {rules.map((r, i) => (
-                  <span key={`${r.attribute}-${r.value}-${i}`} className="inline-flex items-center gap-1 rounded-full bg-[#eef0ff] px-2.5 py-1 text-[11px] font-semibold text-[#4156b8]">
-                    {TAG_RULE_ATTRIBUTES.find((a) => a.value === r.attribute)?.label ?? r.attribute}: {r.value}
-                    <button type="button" onClick={() => removeRule(i)} className="ml-0.5 text-[#4156b8] hover:text-[#b42318]">
-                      <span className="material-symbols-outlined text-[14px]">close</span>
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end">
-            <button type="submit" disabled={saving} className={`${primaryBtn} h-[42px] disabled:opacity-60`}>
-              <span className="material-symbols-outlined text-[18px]">{saving ? 'progress_activity' : 'add'}</span>
-              {saving ? 'Salvando...' : 'Criar tag'}
-            </button>
-          </div>
-        </form>
-      </Card>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base font-bold text-[#061748]">Tags</h2>
+          <p className="text-xs text-[#767680]">Gerencie etiquetas e regras automáticas para seus produtos.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCreateModalOpen(true)}
+          className={`${primaryBtn} h-[42px]`}
+        >
+          <span className="material-symbols-outlined text-[18px]">add</span>
+          Criar tag
+        </button>
+      </div>
 
       <Card title="Tags cadastradas" subtitle={`${tags.length} ${tags.length === 1 ? 'tag cadastrada' : 'tags cadastradas'}`}>
         {tags.length === 0 ? (
@@ -462,6 +405,103 @@ const TagsTab: React.FC = () => {
               <button type="button" className={primaryBtn} onClick={closeLinkModal}>Concluir</button>
             </div>
           </div>
+        </Modal>
+      )}
+      {createModalOpen && (
+        <Modal title="Criar tag" onClose={closeCreateModal}>
+          <form onSubmit={submit} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <Field label="Nome da tag">
+                <input
+                  className={inputCls}
+                  maxLength={32}
+                  placeholder="Ex.: Novidade"
+                  value={name}
+                  onChange={(event) => {
+                    setName(event.target.value);
+                    setMessage(null);
+                  }}
+                  autoFocus
+                />
+              </Field>
+              <Field label="Cor">
+                <div className="flex h-[42px] items-center gap-2 rounded-xl border border-[#c6c5d0] bg-white px-3">
+                  <input
+                    aria-label="Cor da tag"
+                    type="color"
+                    className="h-7 w-8 cursor-pointer border-0 bg-transparent p-0"
+                    value={color}
+                    onChange={(event) => setColor(event.target.value)}
+                  />
+                  <span className="text-xs font-medium uppercase text-[#737d91]">{color}</span>
+                </div>
+              </Field>
+            </div>
+
+            <div className="rounded-xl border border-[#e8ebf1] bg-[#fafbfc] p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#8992a4]">Regras automáticas (opcional)</p>
+              <p className="mt-1 text-[11px] text-[#5c6478]">Produtos com estes atributos receberão a tag automaticamente no site.</p>
+              <div className="mt-3 flex flex-wrap items-end gap-2">
+                <div className="min-w-[140px]">
+                  <label className="mb-1 block text-[11px] font-semibold text-[#45464f]">Atributo</label>
+                  <select
+                    className={inputCls}
+                    value={ruleAttr}
+                    onChange={(e) => setRuleAttr(e.target.value as ProductTagRule['attribute'])}
+                  >
+                    {TAG_RULE_ATTRIBUTES.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="min-w-[180px] flex-1">
+                  <label className="mb-1 block text-[11px] font-semibold text-[#45464f]">Valor</label>
+                  <input
+                    className={inputCls}
+                    placeholder="Ex.: Ray-Ban"
+                    value={ruleValue}
+                    onChange={(e) => setRuleValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addRule(); } }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={addRule}
+                  className="inline-flex h-[42px] items-center gap-1.5 rounded-lg border border-[#c6c5d0] bg-white px-3 text-xs font-semibold text-[#4156b8] hover:bg-[#f0f2ff]"
+                >
+                  <span className="material-symbols-outlined text-[16px]">add</span>
+                  Adicionar
+                </button>
+              </div>
+              {rules.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {rules.map((r, i) => (
+                    <span key={`${r.attribute}-${r.value}-${i}`} className="inline-flex items-center gap-1 rounded-full bg-[#eef0ff] px-2.5 py-1 text-[11px] font-semibold text-[#4156b8]">
+                      {TAG_RULE_ATTRIBUTES.find((a) => a.value === r.attribute)?.label ?? r.attribute}: {r.value}
+                      <button type="button" onClick={() => removeRule(i)} className="ml-0.5 text-[#4156b8] hover:text-[#b42318]">
+                        <span className="material-symbols-outlined text-[14px]">close</span>
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-[#eceef0] pt-3">
+              <button
+                type="button"
+                onClick={closeCreateModal}
+                disabled={saving}
+                className="inline-flex h-[42px] items-center gap-1.5 rounded-lg border border-[#dfe5f4] px-4 text-xs font-semibold text-[#566176] transition hover:bg-[#f4f6ff] disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button type="submit" disabled={saving} className={`${primaryBtn} h-[42px] disabled:opacity-60`}>
+                <span className="material-symbols-outlined text-[18px]">{saving ? 'progress_activity' : 'add'}</span>
+                {saving ? 'Salvando...' : 'Criar tag'}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>
