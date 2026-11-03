@@ -396,7 +396,7 @@ app.get('/api/integration/products', async (req, res, next) => {
 });
 
 /* Rota otimizada: retorna TODOS os produtos de uma vez, com cache Redis do catálogo completo */
-const ALL_PRODUCTS_CACHE_KEY = 'integration:products:all:v3';
+const ALL_PRODUCTS_CACHE_KEY = 'integration:products:all:v4';
 const ALL_PRODUCTS_CACHE_TTL = 600; // 10 minutos
 const INTERNAL_PAGE_SIZE = 500;
 
@@ -412,49 +412,37 @@ app.get('/api/integration/products/all', async (req, res, next) => {
       console.warn('[products-all-cache] Falha ao ler cache Redis:', cacheErr.message);
     }
 
-    if (cached && Array.isArray(cached.data)) {
+    if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
       return res.json(cached);
     }
 
-    // Cache miss: busca todas as páginas em paralelo
+    // Cache miss: busca todas as páginas sequencialmente (API externa limita concorrência)
     const allItems = [];
-    // Busca primeira página para saber se há dados
-    const firstUrl = new URL('/v1/products', INTEGRATION_API_URL);
-    firstUrl.searchParams.set('limit', String(INTERNAL_PAGE_SIZE));
-    firstUrl.searchParams.set('offset', '0');
-    const firstRes = await fetch(firstUrl.toString(), {
-      headers: { 'x-api-key': INTEGRATION_API_KEY },
-      signal: AbortSignal.timeout(20000),
-    });
-    if (!firstRes.ok) throw new Error(`API respondeu HTTP ${firstRes.status}`);
-    const firstJson = await firstRes.json();
-    const firstItems = firstJson.data ?? [];
-    allItems.push(...firstItems);
+    let offset = 0;
+    const maxPages = 20; // Safety cap: 10k produtos
 
-    // Se retornou menos que PAGE_SIZE, não há mais páginas
-    if (firstItems.length >= INTERNAL_PAGE_SIZE) {
-      // Busca páginas restantes em paralelo (até 20 páginas = 10k produtos)
-      const pagePromises = [];
-      for (let page = 1; page < 20; page++) {
-        const offset = page * INTERNAL_PAGE_SIZE;
-        const url = new URL('/v1/products', INTEGRATION_API_URL);
-        url.searchParams.set('limit', String(INTERNAL_PAGE_SIZE));
-        url.searchParams.set('offset', String(offset));
-        pagePromises.push(
-          fetch(url.toString(), {
-            headers: { 'x-api-key': INTEGRATION_API_KEY },
-            signal: AbortSignal.timeout(20000),
-          })
-            .then((r) => (r.ok ? r.json() : { data: [] }))
-            .then((j) => j.data ?? [])
-            .catch(() => [])
-        );
+    for (let page = 0; page < maxPages; page++) {
+      const url = new URL('/v1/products', INTEGRATION_API_URL);
+      url.searchParams.set('limit', String(INTERNAL_PAGE_SIZE));
+      url.searchParams.set('offset', String(offset));
+
+      const response = await fetch(url.toString(), {
+        headers: { 'x-api-key': INTEGRATION_API_KEY },
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (!response.ok) {
+        console.error(`[products-all] Página ${page} falhou: HTTP ${response.status}`);
+        break;
       }
-      const pages = await Promise.all(pagePromises);
-      for (const items of pages) {
-        allItems.push(...items);
-        if (items.length < INTERNAL_PAGE_SIZE) break;
-      }
+
+      const json = await response.json();
+      const items = json.data ?? [];
+      allItems.push(...items);
+
+      // Se retornou menos que PAGE_SIZE, chegamos ao fim
+      if (items.length < INTERNAL_PAGE_SIZE) break;
+      offset += INTERNAL_PAGE_SIZE;
     }
 
     const result = { data: allItems, total: allItems.length };
