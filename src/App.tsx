@@ -865,11 +865,11 @@ function SiteApp() {
       {!isSpecialistChatOpen && (
         <button
           onClick={() => setIsSpecialistChatOpen(true)}
-          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-3 sm:right-6 z-40 flex items-center gap-2 bg-[#061748] hover:bg-[#0a2366] text-white px-3 sm:px-5 py-3 rounded-full shadow-[0_4px_20px_rgba(6,23,72,0.3)] transition-all duration-300 hover:scale-105 cursor-pointer group"
+          className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-50 flex items-center gap-1.5 bg-[#061748] hover:bg-[#0a2366] text-white px-3 sm:px-4 py-2 rounded-full shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group"
           aria-label="Falar com um especialista"
         >
-          <span className="material-symbols-outlined text-[20px] text-[#dbee2c] group-hover:animate-pulse">support_agent</span>
-          <span className="hidden sm:inline text-sm font-bold tracking-wide">Falar com Especialista</span>
+          <span className="material-symbols-outlined text-[18px] text-[#dbee2c] group-hover:animate-pulse">support_agent</span>
+          <span className="hidden sm:inline text-xs font-bold tracking-wide">Falar com Especialista</span>
         </button>
       )}
     </div>

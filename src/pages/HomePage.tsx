@@ -285,18 +285,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         )}
 
         {/* Botão de alternância de tema do Hero */}
-        {activeBannerId === null && (
-          <button
-            type="button"
-            onClick={() => setHeroTheme(heroTheme === 'default' ? 'blackfriday' : 'default')}
-            className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-50 max-w-[calc(100vw-1.5rem)] bg-[#061748] text-white px-3 sm:px-4 py-2 rounded-full shadow-lg hover:bg-[#0a2366] transition-colors text-xs sm:text-sm font-medium flex items-center gap-2"
-            aria-label={`Alternar para tema ${heroTheme === 'default' ? 'Black Friday' : 'padrão'}`}
-          >
-            <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
-            {heroTheme === 'default' ? 'Modo Black Friday' : 'Modo Padrão'}
-          </button>
-        )}
-      </div>
+              </div>
 
       {/* 2. CURADORIA DE ALTA MODA ÓPTICA */}
       <section style={{ order: sectionOrder('featured') }} hidden={sectionHidden('featured')} className="bg-white py-16 sm:py-20 relative z-0">
