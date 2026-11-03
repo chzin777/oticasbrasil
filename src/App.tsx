@@ -29,6 +29,7 @@ import { SupportModal } from './components/SupportModal';
 import { CartDrawer } from './components/CartDrawer';
 import { SpecialistChat } from './components/SpecialistChat';
 import { useStoreSettings } from './lib/storeSettings';
+import { getDiscountPolicies } from './lib/siteStore';
 import { Footer } from './components/Footer';
 import { MaintenancePage } from './components/MaintenancePage';
 import { useToast } from './components/ToastContext';
@@ -151,6 +152,10 @@ function SiteApp() {
   // Coupon state
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [couponDiscount, setCouponDiscount] = useState<number>(0);
+
+  // Automatic discounts (policies) state
+  const [policyDiscount, setPolicyDiscount] = useState<number>(0);
+  const [appliedPolicyId, setAppliedPolicyId] = useState<string | null>(null);
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -309,11 +314,83 @@ function SiteApp() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
+  // Automatic policy discount calculation
+  useEffect(() => {
+    const policies = getDiscountPolicies();
+    if (!policies.length || !items.length) {
+      setPolicyDiscount(0);
+      setAppliedPolicyId(null);
+      return;
+    }
+
+    const currentSubtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+    const productIds = new Set(items.map((i) => i.id));
+
+    // Find best applicable policy (highest discount wins)
+    let bestDiscount = 0;
+    let bestPolicyId: string | null = null;
+
+    for (const policy of policies) {
+      if (!policy.active) continue;
+
+      // Check product scope
+      if (!policy.allProducts && policy.productIds?.length) {
+        const hasMatchingProduct = policy.productIds.some((pid: string) => productIds.has(pid));
+        if (!hasMatchingProduct) continue;
+      }
+
+      let applicable = false;
+
+      switch (policy.trigger) {
+        case 'cart_value': {
+          const op = policy.valueOperator || 'minimum';
+          if (op === 'minimum' && currentSubtotal >= (policy.minCartValue || 0)) applicable = true;
+          else if (op === 'maximum' && currentSubtotal <= (policy.maxCartValue || Infinity)) applicable = true;
+          else if (op === 'between' && currentSubtotal >= (policy.minCartValue || 0) && currentSubtotal <= (policy.maxCartValue || Infinity)) applicable = true;
+          break;
+        }
+        case 'item_quantity': {
+          const op = policy.quantityOperator || 'minimum';
+          if (op === 'minimum' && totalItems >= (policy.minItems || 0)) applicable = true;
+          else if (op === 'maximum' && totalItems <= (policy.maxItems || Infinity)) applicable = true;
+          else if (op === 'between' && totalItems >= (policy.minItems || 0) && totalItems <= (policy.maxItems || Infinity)) applicable = true;
+          break;
+        }
+        case 'first_purchase':
+        case 'new_customer':
+          // These require backend validation (order history), mark as potentially applicable
+          // The backend will validate on order creation
+          applicable = true;
+          break;
+        default:
+          // Other triggers (birthday, abandoned_cart, progressive_time) need backend/session data
+          // Skip for now in frontend-only calculation
+          break;
+      }
+
+      if (applicable) {
+        const discountAmount = policy.discountType === 'percentage'
+          ? (currentSubtotal * policy.discountValue) / 100
+          : policy.discountValue;
+
+        if (discountAmount > bestDiscount) {
+          bestDiscount = discountAmount;
+          bestPolicyId = policy.id;
+        }
+      }
+    }
+
+    setPolicyDiscount(Math.min(bestDiscount, currentSubtotal));
+    setAppliedPolicyId(bestPolicyId);
+  }, [items]);
+
   // Calculations
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const baseSubtotalAfterCoupon = Math.max(0, subtotal - couponDiscount);
-  const pixDiscountAmount = paymentMethod === 'pix' ? baseSubtotalAfterCoupon * (settings.payment.pix.discountPercent / 100) : 0;
-  const totalAmount = baseSubtotalAfterCoupon - pixDiscountAmount;
+  const totalAutomaticDiscount = couponDiscount + policyDiscount;
+  const baseSubtotalAfterDiscounts = Math.max(0, subtotal - totalAutomaticDiscount);
+  const pixDiscountAmount = paymentMethod === 'pix' ? baseSubtotalAfterDiscounts * (settings.payment.pix.discountPercent / 100) : 0;
+  const totalAmount = baseSubtotalAfterDiscounts - pixDiscountAmount;
 
   // Handlers
   const handleUpdateCustomer = (updated: Partial<CustomerData>) => {
@@ -365,6 +442,11 @@ function SiteApp() {
           deliveryMethod,
           paymentMethod,
           couponCode: appliedCoupon,
+          couponDiscount,
+          policyId: appliedPolicyId,
+          policyDiscount,
+          subtotal,
+          totalAmount,
           prescription: {
             fileName: prescription.fileName || '',
             sendViaWhatsApp: prescription.sendViaWhatsApp,
@@ -377,12 +459,37 @@ function SiteApp() {
             oeAxis: prescription.oeAxis,
             dnp: prescription.dnp,
           },
+          // Asaas integration placeholder - billing data ready for gateway
+          billing: {
+            customer: {
+              name: customer.name,
+              email: customer.email,
+              cpf: customer.cpf.replace(/\D/g, ''),
+              phone: customer.phone.replace(/\D/g, ''),
+            },
+            address: deliveryMethod === 'sedex' ? {
+              street: address.street,
+              number: address.number,
+              complement: address.complement,
+              neighborhood: address.neighborhood,
+              city: address.city,
+              state: address.state,
+              cep: address.cep.replace(/\D/g, ''),
+            } : undefined,
+          },
         }),
       });
-      const orderResult = await orderResponse.json() as { order?: { id: string }; error?: string };
+      const orderResult = await orderResponse.json() as { order?: { id: string; asaasPaymentUrl?: string }; error?: string };
       if (!orderResponse.ok || !orderResult.order) {
         throw new Error(orderResult.error || 'Não foi possível registrar o pedido.');
       }
+
+      // If Asaas returns a payment URL (future integration), redirect to it
+      if (orderResult.order.asaasPaymentUrl) {
+        window.location.href = orderResult.order.asaasPaymentUrl;
+        return;
+      }
+
       setOrderId(orderResult.order.id);
       setIsSubmitting(false);
       setIsSuccessModalOpen(true);
@@ -603,6 +710,7 @@ function SiteApp() {
               appliedCoupon={appliedCoupon}
               onApplyCoupon={handleApplyCoupon}
               couponDiscount={couponDiscount}
+              policyDiscount={policyDiscount}
               onCheckout={handleCheckout}
               isSubmitting={isSubmitting}
               account={account}

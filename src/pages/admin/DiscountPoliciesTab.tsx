@@ -375,30 +375,26 @@ const DiscountPoliciesTab: React.FC = () => {
 
   const productsById = new Map(CATALOG_PRODUCTS.map((product) => [product.id, product]));
 
-  const save = (policy: DiscountPolicy) => {
-    const next = {
-      ...policy,
-      id: policy.id || `policy-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      createdAt: policy.id ? policy.createdAt : new Date().toISOString(),
-    };
-    if (!saveDiscountPolicy(next)) {
-      setMessage({ kind: 'error', text: STORAGE_FULL_MSG });
-      toast.error('Não foi possível salvar a política', STORAGE_FULL_MSG);
+  const save = async (policy: DiscountPolicy) => {
+    const ok = await saveDiscountPolicy(policy);
+    if (!ok) {
+      setMessage({ kind: 'error', text: 'Não foi possível salvar a política. Verifique sua conexão ou tente novamente.' });
+      toast.error('Não foi possível salvar a política', 'Verifique sua conexão.');
       return;
     }
     setEditing(null);
-    setExpandedId(next.id);
-    setMessage({ kind: 'ok', text: 'Política salva. Regras e canais estão configurados como demonstração e ainda não são executados pelo checkout/CRM.' });
-    toast.success(policy.id ? 'Política atualizada' : 'Política criada', next.name);
+    setMessage({ kind: 'ok', text: 'Política salva e sincronizada com o banco de dados.' });
+    toast.success(policy.id ? 'Política atualizada' : 'Política criada', policy.name);
     if (!policy.id) setPage(Math.ceil((policies.length + 1) / pageSize));
   };
 
-  const remove = () => {
+  const remove = async () => {
     if (!confirmDelete) return;
     const policy = confirmDelete;
-    if (!deleteDiscountPolicy(policy.id)) {
-      setMessage({ kind: 'error', text: STORAGE_FULL_MSG });
-      toast.error('Não foi possível excluir a política', STORAGE_FULL_MSG);
+    const ok = await deleteDiscountPolicy(policy.id);
+    if (!ok) {
+      setMessage({ kind: 'error', text: 'Não foi possível excluir a política. Verifique sua conexão.' });
+      toast.error('Não foi possível excluir a política', 'Verifique sua conexão.');
       return;
     }
     setConfirmDelete(null);

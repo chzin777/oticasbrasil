@@ -590,6 +590,385 @@ export const registerAdminRoutes = (app, deps) => {
     }
   });
 
+  /* ---------- Tags de Produtos (Relacional) ---------- */
+
+  const TAG_RULE_ATTRIBUTES = ['brand', 'category', 'subcategory', 'material', 'shape'];
+
+  const normalizeTagRules = (rules) => {
+    if (!Array.isArray(rules)) return [];
+    return rules
+      .filter((r) => r && TAG_RULE_ATTRIBUTES.includes(r.attribute) && typeof r.value === 'string' && r.value.trim())
+      .map((r) => ({ attribute: r.attribute, value: r.value.trim().slice(0, 120) }));
+  };
+
+  const loadTagsWithDetails = async (queryable) => {
+    const { rows: tags } = await queryable.query(
+      'SELECT id::text, name, color, created_at, updated_at FROM product_tags ORDER BY created_at DESC',
+    );
+    if (tags.length === 0) return [];
+
+    const tagIds = tags.map((t) => t.id);
+    const [{ rows: assignments }, { rows: rules }] = await Promise.all([
+      queryable.query(
+        'SELECT tag_id::text AS tag_id, product_id FROM product_tag_assignments WHERE tag_id = ANY($1::uuid[])',
+        [tagIds],
+      ),
+      queryable.query(
+        'SELECT id::text, tag_id::text AS tag_id, attribute, value FROM product_tag_rules WHERE tag_id = ANY($1::uuid[]) ORDER BY attribute, value',
+        [tagIds],
+      ),
+    ]);
+
+    const assignmentMap = new Map();
+    for (const a of assignments) {
+      if (!assignmentMap.has(a.tag_id)) assignmentMap.set(a.tag_id, []);
+      assignmentMap.get(a.tag_id).push(a.product_id);
+    }
+
+    const ruleMap = new Map();
+    for (const r of rules) {
+      if (!ruleMap.has(r.tag_id)) ruleMap.set(r.tag_id, []);
+      ruleMap.get(r.tag_id).push({ id: r.id, attribute: r.attribute, value: r.value });
+    }
+
+    return tags.map((tag) => ({
+      ...tag,
+      assignedProductIds: assignmentMap.get(tag.id) || [],
+      rules: ruleMap.get(tag.id) || [],
+    }));
+  };
+
+  app.get('/api/admin/tags', requireAdmin('catalog'), async (_req, res, next) => {
+    try {
+      res.json({ tags: await loadTagsWithDetails(pool) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/admin/tags', requireSameOrigin, requireAdmin('catalog'), async (req, res, next) => {
+    const client = await pool.connect().catch(next);
+    if (!client) return;
+    try {
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 32) : '';
+      const color = typeof req.body?.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(req.body.color) ? req.body.color : '#4156b8';
+      const rules = normalizeTagRules(req.body?.rules);
+      const productIds = Array.isArray(req.body?.assignedProductIds)
+        ? [...new Set(req.body.assignedProductIds.filter((id) => typeof id === 'string').map((id) => id.slice(0, 120)))]
+        : [];
+
+      if (!name) return jsonError(res, 400, 'Nome da tag é obrigatório.');
+
+      await client.query('BEGIN');
+      const { rows } = await client.query(
+        'INSERT INTO product_tags (name, color) VALUES ($1, $2) RETURNING id::text, name, color, created_at, updated_at',
+        [name, color],
+      );
+      const tag = rows[0];
+
+      if (productIds.length > 0) {
+        await client.query(
+          'INSERT INTO product_tag_assignments (tag_id, product_id) SELECT $1::uuid, unnest($2::text[]) ON CONFLICT DO NOTHING',
+          [tag.id, productIds],
+        );
+      }
+
+      if (rules.length > 0) {
+        for (const rule of rules) {
+          await client.query(
+            'INSERT INTO product_tag_rules (tag_id, attribute, value) VALUES ($1::uuid, $2, $3)',
+            [tag.id, rule.attribute, rule.value],
+          );
+        }
+      }
+
+      await audit(req.admin, 'tag.create', 'product_tag', tag.id, { name, color, rules: rules.length, products: productIds.length });
+      await client.query('COMMIT');
+
+      const full = await loadTagsWithDetails(client);
+      res.status(201).json({ tag: full.find((t) => t.id === tag.id) || tag });
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      if (error?.code === '23505') return jsonError(res, 409, 'Já existe uma tag com este nome.');
+      next(error);
+    } finally {
+      client.release();
+    }
+  });
+
+  app.put('/api/admin/tags/:id', requireSameOrigin, requireAdmin('catalog'), async (req, res, next) => {
+    if (!UUID.test(req.params.id)) return jsonError(res, 400, 'ID da tag inválido.');
+    const client = await pool.connect().catch(next);
+    if (!client) return;
+    try {
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 32) : '';
+      const color = typeof req.body?.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(req.body.color) ? req.body.color : undefined;
+      const rules = normalizeTagRules(req.body?.rules);
+      const productIds = Array.isArray(req.body?.assignedProductIds)
+        ? [...new Set(req.body.assignedProductIds.filter((id) => typeof id === 'string').map((id) => id.slice(0, 120)))]
+        : null;
+
+      if (!name) return jsonError(res, 400, 'Nome da tag é obrigatório.');
+
+      await client.query('BEGIN');
+      const { rows } = await client.query(
+        'UPDATE product_tags SET name = $1, color = COALESCE($2, color), updated_at = NOW() WHERE id = $3::uuid RETURNING id::text, name, color',
+        [name, color || null, req.params.id],
+      );
+      if (!rows[0]) {
+        await client.query('ROLLBACK');
+        return jsonError(res, 404, 'Tag não encontrada.');
+      }
+
+      if (productIds !== null) {
+        await client.query('DELETE FROM product_tag_assignments WHERE tag_id = $1::uuid', [req.params.id]);
+        if (productIds.length > 0) {
+          await client.query(
+            'INSERT INTO product_tag_assignments (tag_id, product_id) SELECT $1::uuid, unnest($2::text[]) ON CONFLICT DO NOTHING',
+            [req.params.id, productIds],
+          );
+        }
+      }
+
+      await client.query('DELETE FROM product_tag_rules WHERE tag_id = $1::uuid', [req.params.id]);
+      for (const rule of rules) {
+        await client.query(
+          'INSERT INTO product_tag_rules (tag_id, attribute, value) VALUES ($1::uuid, $2, $3)',
+          [req.params.id, rule.attribute, rule.value],
+        );
+      }
+
+      await audit(req.admin, 'tag.update', 'product_tag', req.params.id, { name, rules: rules.length });
+      await client.query('COMMIT');
+
+      const full = await loadTagsWithDetails(client);
+      res.json({ tag: full.find((t) => t.id === req.params.id) || rows[0] });
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      if (error?.code === '23505') return jsonError(res, 409, 'Já existe uma tag com este nome.');
+      next(error);
+    } finally {
+      client.release();
+    }
+  });
+
+  app.delete('/api/admin/tags/:id', requireSameOrigin, requireAdmin('catalog'), async (req, res, next) => {
+    if (!UUID.test(req.params.id)) return jsonError(res, 400, 'ID da tag inválido.');
+    try {
+      const { rowCount } = await pool.query('DELETE FROM product_tags WHERE id = $1::uuid', [req.params.id]);
+      if (!rowCount) return jsonError(res, 404, 'Tag não encontrada.');
+      await audit(req.admin, 'tag.delete', 'product_tag', req.params.id);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  /* ---------- Políticas de Desconto (Relacional) ---------- */
+
+  const VALID_TRIGGERS = ['first_purchase', 'new_customer', 'returning_customer', 'birthday', 'cart_value', 'item_quantity', 'abandoned_cart', 'progressive_time'];
+  const VALID_DISCOUNT_TYPES = ['percentage', 'fixed'];
+  const VALID_OPERATORS = ['minimum', 'maximum', 'between'];
+  const VALID_TIME_UNITS = ['hours', 'days'];
+
+  const normalizePolicyPayload = (body) => {
+    const trigger = VALID_TRIGGERS.includes(body?.trigger) ? body.trigger : null;
+    const discountType = VALID_DISCOUNT_TYPES.includes(body?.discountType) ? body.discountType : null;
+    const discountValue = Number(body?.discountValue);
+    if (!trigger || !discountType || !Number.isFinite(discountValue) || discountValue <= 0) return null;
+    if (discountType === 'percentage' && discountValue > 100) return null;
+
+    const progressionSteps = Array.isArray(body?.progressionSteps)
+      ? body.progressionSteps
+          .filter((s) => s && Number.isFinite(s.after) && s.after > 0 && Number.isFinite(s.discountValue) && s.discountValue > 0 && VALID_TIME_UNITS.includes(s.unit))
+          .map((s) => ({ after: Math.round(s.after), unit: s.unit, discountValue: Math.round(Number(s.discountValue) * 100) / 100 }))
+      : [];
+
+    return {
+      name: typeof body?.name === 'string' ? body.name.trim().slice(0, 80) : '',
+      trigger,
+      discountType,
+      discountValue: Math.round(discountValue * 100) / 100,
+      active: body?.active !== false,
+      allProducts: body?.allProducts !== false,
+      durationValue: body?.duration?.value && Number.isFinite(body.duration.value) && body.duration.value > 0 ? Math.round(body.duration.value) : null,
+      durationUnit: VALID_TIME_UNITS.includes(body?.duration?.unit) ? body.duration.unit : null,
+      valueOperator: VALID_OPERATORS.includes(body?.valueOperator) ? body.valueOperator : null,
+      minCartValue: Number.isFinite(body?.minCartValue) && body.minCartValue >= 0 ? Math.round(body.minCartValue * 100) / 100 : null,
+      maxCartValue: Number.isFinite(body?.maxCartValue) && body.maxCartValue >= 0 ? Math.round(body.maxCartValue * 100) / 100 : null,
+      quantityOperator: VALID_OPERATORS.includes(body?.quantityOperator) ? body.quantityOperator : null,
+      minItems: Number.isInteger(body?.minItems) && body.minItems > 0 ? body.minItems : null,
+      maxItems: Number.isInteger(body?.maxItems) && body.maxItems > 0 ? body.maxItems : null,
+      idleDurationValue: body?.idleDuration?.value && Number.isFinite(body.idleDuration.value) && body.idleDuration.value > 0 ? Math.round(body.idleDuration.value) : null,
+      idleDurationUnit: VALID_TIME_UNITS.includes(body?.idleDuration?.unit) ? body.idleDuration.unit : null,
+      channels: Array.isArray(body?.channels) ? body.channels.filter((c) => c === 'email' || c === 'whatsapp') : [],
+      progressionSteps,
+      productIds: Array.isArray(body?.productIds)
+        ? [...new Set(body.productIds.filter((id) => typeof id === 'string').map((id) => id.slice(0, 120)))]
+        : [],
+    };
+  };
+
+  const loadPoliciesWithProducts = async (queryable) => {
+    const { rows: policies } = await queryable.query(
+      `SELECT id::text, name, trigger_type, discount_type, discount_value, active, all_products,
+              duration_value, duration_unit, value_operator, min_cart_value, max_cart_value,
+              quantity_operator, min_items, max_items, idle_duration_value, idle_duration_unit,
+              channels, progression_steps, created_at, updated_at
+       FROM discount_policies ORDER BY created_at DESC`,
+    );
+    if (policies.length === 0) return [];
+
+    const policyIds = policies.map((p) => p.id);
+    const { rows: products } = await queryable.query(
+      'SELECT policy_id::text AS policy_id, product_id FROM discount_policy_products WHERE policy_id = ANY($1::uuid[])',
+      [policyIds],
+    );
+
+    const productMap = new Map();
+    for (const p of products) {
+      if (!productMap.has(p.policy_id)) productMap.set(p.policy_id, []);
+      productMap.get(p.policy_id).push(p.product_id);
+    }
+
+    return policies.map((p) => ({
+      id: p.id,
+      name: p.name,
+      trigger: p.trigger_type,
+      discountType: p.discount_type,
+      discountValue: Number(p.discount_value),
+      active: p.active,
+      allProducts: p.all_products,
+      duration: p.duration_value ? { value: p.duration_value, unit: p.duration_unit } : null,
+      valueOperator: p.value_operator,
+      minCartValue: p.min_cart_value ? Number(p.min_cart_value) : null,
+      maxCartValue: p.max_cart_value ? Number(p.max_cart_value) : null,
+      quantityOperator: p.quantity_operator,
+      minItems: p.min_items,
+      maxItems: p.max_items,
+      idleDuration: p.idle_duration_value ? { value: p.idle_duration_value, unit: p.idle_duration_unit } : null,
+      channels: p.channels || [],
+      progressionSteps: p.progression_steps || [],
+      productIds: productMap.get(p.id) || [],
+      createdAt: p.created_at,
+      updatedAt: p.updated_at,
+    }));
+  };
+
+  app.get('/api/admin/discount-policies', requireAdmin('catalog'), async (_req, res, next) => {
+    try {
+      res.json({ policies: await loadPoliciesWithProducts(pool) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/admin/discount-policies', requireSameOrigin, requireAdmin('catalog'), async (req, res, next) => {
+    const payload = normalizePolicyPayload(req.body);
+    if (!payload || !payload.name) return jsonError(res, 400, 'Dados da política inválidos.');
+
+    const client = await pool.connect().catch(next);
+    if (!client) return;
+    try {
+      await client.query('BEGIN');
+      const { rows } = await client.query(
+        `INSERT INTO discount_policies
+          (name, trigger_type, discount_type, discount_value, active, all_products,
+           duration_value, duration_unit, value_operator, min_cart_value, max_cart_value,
+           quantity_operator, min_items, max_items, idle_duration_value, idle_duration_unit,
+           channels, progression_steps)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+         RETURNING id::text`,
+        [
+          payload.name, payload.trigger, payload.discountType, payload.discountValue, payload.active, payload.allProducts,
+          payload.durationValue, payload.durationUnit, payload.valueOperator, payload.minCartValue, payload.maxCartValue,
+          payload.quantityOperator, payload.minItems, payload.maxItems, payload.idleDurationValue, payload.idleDurationUnit,
+          payload.channels, JSON.stringify(payload.progressionSteps),
+        ],
+      );
+      const policyId = rows[0].id;
+
+      if (!payload.allProducts && payload.productIds.length > 0) {
+        await client.query(
+          'INSERT INTO discount_policy_products (policy_id, product_id) SELECT $1::uuid, unnest($2::text[]) ON CONFLICT DO NOTHING',
+          [policyId, payload.productIds],
+        );
+      }
+
+      await audit(req.admin, 'discount_policy.create', 'discount_policy', policyId, { name: payload.name, trigger: payload.trigger });
+      await client.query('COMMIT');
+
+      const full = await loadPoliciesWithProducts(client);
+      res.status(201).json({ policy: full.find((p) => p.id === policyId) });
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      next(error);
+    } finally {
+      client.release();
+    }
+  });
+
+  app.put('/api/admin/discount-policies/:id', requireSameOrigin, requireAdmin('catalog'), async (req, res, next) => {
+    if (!UUID.test(req.params.id)) return jsonError(res, 400, 'ID da política inválido.');
+    const payload = normalizePolicyPayload(req.body);
+    if (!payload || !payload.name) return jsonError(res, 400, 'Dados da política inválidos.');
+
+    const client = await pool.connect().catch(next);
+    if (!client) return;
+    try {
+      await client.query('BEGIN');
+      const { rowCount } = await client.query(
+        `UPDATE discount_policies SET
+          name=$1, trigger_type=$2, discount_type=$3, discount_value=$4, active=$5, all_products=$6,
+          duration_value=$7, duration_unit=$8, value_operator=$9, min_cart_value=$10, max_cart_value=$11,
+          quantity_operator=$12, min_items=$13, max_items=$14, idle_duration_value=$15, idle_duration_unit=$16,
+          channels=$17, progression_steps=$18, updated_at=NOW()
+         WHERE id=$19::uuid`,
+        [
+          payload.name, payload.trigger, payload.discountType, payload.discountValue, payload.active, payload.allProducts,
+          payload.durationValue, payload.durationUnit, payload.valueOperator, payload.minCartValue, payload.maxCartValue,
+          payload.quantityOperator, payload.minItems, payload.maxItems, payload.idleDurationValue, payload.idleDurationUnit,
+          payload.channels, JSON.stringify(payload.progressionSteps), req.params.id,
+        ],
+      );
+      if (!rowCount) {
+        await client.query('ROLLBACK');
+        return jsonError(res, 404, 'Política não encontrada.');
+      }
+
+      await client.query('DELETE FROM discount_policy_products WHERE policy_id = $1::uuid', [req.params.id]);
+      if (!payload.allProducts && payload.productIds.length > 0) {
+        await client.query(
+          'INSERT INTO discount_policy_products (policy_id, product_id) SELECT $1::uuid, unnest($2::text[]) ON CONFLICT DO NOTHING',
+          [req.params.id, payload.productIds],
+        );
+      }
+
+      await audit(req.admin, 'discount_policy.update', 'discount_policy', req.params.id, { name: payload.name });
+      await client.query('COMMIT');
+
+      const full = await loadPoliciesWithProducts(client);
+      res.json({ policy: full.find((p) => p.id === req.params.id) });
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      next(error);
+    } finally {
+      client.release();
+    }
+  });
+
+  app.delete('/api/admin/discount-policies/:id', requireSameOrigin, requireAdmin('catalog'), async (req, res, next) => {
+    if (!UUID.test(req.params.id)) return jsonError(res, 400, 'ID da política inválido.');
+    try {
+      const { rowCount } = await pool.query('DELETE FROM discount_policies WHERE id = $1::uuid', [req.params.id]);
+      if (!rowCount) return jsonError(res, 404, 'Política não encontrada.');
+      await audit(req.admin, 'discount_policy.delete', 'discount_policy', req.params.id);
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+
   /* ---------- Atividades ---------- */
 
   app.get('/api/admin/audit', requireAdmin('audit'), async (_req, res, next) => {

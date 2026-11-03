@@ -753,42 +753,166 @@ export const saveEditableFilterOptions = (
   return commit();
 };
 
-/* ---------- Políticas de desconto ---------- */
+/* ---------- Políticas de desconto (API Relacional) ---------- */
 
-export const getDiscountPolicies = (): DiscountPolicy[] => data.discountPolicies;
+let remotePolicies: DiscountPolicy[] = [];
+let remoteTags: ProductTag[] = [];
+let promotionsLoading = false;
+let promotionsError = false;
 
-export const saveDiscountPolicy = (policy: DiscountPolicy): boolean => {
-  const exists = data.discountPolicies.some((item) => item.id === policy.id);
-  data.discountPolicies = exists
-    ? data.discountPolicies.map((item) => (item.id === policy.id ? clone(policy) : item))
-    : [...data.discountPolicies, clone(policy)];
-  return commit();
+const hydratePromotionsFromApi = async (): Promise<void> => {
+  if (promotionsLoading) return;
+  promotionsLoading = true;
+  notifyStoreChanged();
+  try {
+    const response = await fetch('/api/store/promotions');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json() as { tags?: unknown[]; policies?: unknown[] };
+
+    if (Array.isArray(result.tags)) {
+      remoteTags = result.tags.filter((t): t is ProductTag =>
+        typeof t === 'object' && t !== null &&
+        typeof (t as ProductTag).id === 'string' &&
+        typeof (t as ProductTag).name === 'string',
+      ).map((t) => {
+        const raw = t as unknown as Record<string, unknown>;
+        return {
+          ...t,
+          assignedProductIds: Array.isArray(raw.assignedProductIds) ? (raw.assignedProductIds as unknown[]).filter((id): id is string => typeof id === 'string') : [],
+          rules: Array.isArray(raw.rules) ? (raw.rules as { attribute: string; value: string }[]) : [],
+        };
+      });
+    }
+
+    if (Array.isArray(result.policies)) {
+      remotePolicies = result.policies.filter((p): p is DiscountPolicy =>
+        typeof p === 'object' && p !== null &&
+        typeof (p as DiscountPolicy).id === 'string' &&
+        typeof (p as DiscountPolicy).trigger === 'string',
+      ).map((p) => ({
+        ...p,
+        productIds: Array.isArray(p.productIds) ? p.productIds.filter((id): id is string => typeof id === 'string') : [],
+        channels: Array.isArray(p.channels) ? p.channels.filter((c): c is 'email' | 'whatsapp' => c === 'email' || c === 'whatsapp') : [],
+        progressionSteps: Array.isArray(p.progressionSteps) ? p.progressionSteps : [],
+      }));
+    }
+
+    promotionsError = false;
+  } catch (err) {
+    console.error('[siteStore] Falha ao carregar promoções:', err);
+    promotionsError = true;
+  } finally {
+    promotionsLoading = false;
+    notifyStoreChanged();
+  }
 };
 
-export const deleteDiscountPolicy = (id: string): boolean => {
-  data.discountPolicies = data.discountPolicies.filter((policy) => policy.id !== id);
-  return commit();
+void hydratePromotionsFromApi();
+
+export const getDiscountPolicies = (): DiscountPolicy[] => remotePolicies.length > 0 ? remotePolicies : data.discountPolicies;
+
+export const saveDiscountPolicy = async (policy: DiscountPolicy): Promise<boolean> => {
+  try {
+    const isUpdate = Boolean(policy.id);
+    const url = isUpdate ? `/api/admin/discount-policies/${policy.id}` : '/api/admin/discount-policies';
+    const method = isUpdate ? 'PUT' : 'POST';
+    const response = await fetch(url, {
+      method,
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(policy),
+    });
+    if (!response.ok) return false;
+    await hydratePromotionsFromApi();
+    return true;
+  } catch {
+    return false;
+  }
 };
 
-/* ---------- Tags ---------- */
-
-export const getProductTags = (): ProductTag[] => data.tags;
-
-export const createProductTag = (tag: ProductTag): boolean => {
-  data.tags = [...data.tags, { ...tag, assignedProductIds: tag.assignedProductIds ?? [] }];
-  return commit();
+export const deleteDiscountPolicy = async (id: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`/api/admin/discount-policies/${id}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    });
+    if (!response.ok) return false;
+    await hydratePromotionsFromApi();
+    return true;
+  } catch {
+    return false;
+  }
 };
 
-export const assignProductsToTag = (tagId: string, productIds: string[]): boolean => {
-  data.tags = data.tags.map((tag) => (
-    tag.id === tagId ? { ...tag, assignedProductIds: [...new Set(productIds)] } : tag
-  ));
-  return commit();
+/* ---------- Tags (API Relacional) ---------- */
+
+export interface ProductTagRule {
+  attribute: 'brand' | 'category' | 'subcategory' | 'material' | 'shape';
+  value: string;
+}
+
+export interface ProductTagWithRules extends ProductTag {
+  rules?: ProductTagRule[];
+}
+
+export const getProductTags = (): ProductTagWithRules[] => remoteTags.length > 0 ? remoteTags as ProductTagWithRules[] : data.tags;
+
+export const createProductTag = async (tag: ProductTag & { rules?: ProductTagRule[] }): Promise<boolean> => {
+  try {
+    const response = await fetch('/api/admin/tags', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tag),
+    });
+    if (!response.ok) return false;
+    await hydratePromotionsFromApi();
+    return true;
+  } catch {
+    return false;
+  }
 };
 
-export const deleteProductTag = (id: string): boolean => {
-  data.tags = data.tags.filter((tag) => tag.id !== id);
-  return commit();
+export const assignProductsToTag = async (tagId: string, productIds: string[]): Promise<boolean> => {
+  const tag = getProductTags().find((t) => t.id === tagId);
+  if (!tag) return false;
+  try {
+    const response = await fetch(`/api/admin/tags/${tagId}`, {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: tag.name,
+        color: tag.color,
+        assignedProductIds: productIds,
+        rules: (tag as ProductTagWithRules).rules ?? [],
+      }),
+    });
+    if (!response.ok) return false;
+    await hydratePromotionsFromApi();
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const deleteProductTag = async (id: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`/api/admin/tags/${id}`, {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    });
+    if (!response.ok) return false;
+    await hydratePromotionsFromApi();
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const usePromotionsData = () => {
+  useSiteData();
+  return { tags: getProductTags(), policies: getDiscountPolicies(), loading: promotionsLoading, error: promotionsError };
 };
 
 /* ---------- Produtos ---------- */

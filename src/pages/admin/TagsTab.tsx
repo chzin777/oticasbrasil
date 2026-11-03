@@ -2,8 +2,16 @@ import React, { useState } from 'react';
 import { CustomSelect } from '../../components/CustomSelect';
 import { useToast } from '../../components/ToastContext';
 import { CATALOG_PRODUCTS } from '../../data/mockData';
-import { assignProductsToTag, createProductTag, deleteProductTag, getProductTags, useSiteData } from '../../lib/siteStore';
-import { Card, Field, inputCls, Modal, Notice, Pagination, primaryBtn, STORAGE_FULL_MSG } from './ui';
+import { assignProductsToTag, createProductTag, deleteProductTag, getProductTags, ProductTagRule, useSiteData } from '../../lib/siteStore';
+import { Card, Field, inputCls, Modal, Notice, Pagination, primaryBtn } from './ui';
+
+const TAG_RULE_ATTRIBUTES: { value: ProductTagRule['attribute']; label: string }[] = [
+  { value: 'brand', label: 'Marca' },
+  { value: 'category', label: 'Categoria' },
+  { value: 'subcategory', label: 'Subcategoria' },
+  { value: 'material', label: 'Material' },
+  { value: 'shape', label: 'Formato' },
+];
 
 const TagsTab: React.FC = () => {
   useSiteData();
@@ -11,6 +19,9 @@ const TagsTab: React.FC = () => {
   const tags = getProductTags();
   const [name, setName] = useState('');
   const [color, setColor] = useState('#4156b8');
+  const [rules, setRules] = useState<ProductTagRule[]>([]);
+  const [ruleAttr, setRuleAttr] = useState<ProductTagRule['attribute']>('brand');
+  const [ruleValue, setRuleValue] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
   const [linkingTagId, setLinkingTagId] = useState<string | null>(null);
@@ -21,6 +32,7 @@ const TagsTab: React.FC = () => {
   const [productShape, setProductShape] = useState('all');
   const [linkError, setLinkError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [saving, setSaving] = useState(false);
   const pageCount = Math.ceil(tags.length / pageSize);
   const currentPage = Math.min(page, Math.max(pageCount, 1));
   const pageStart = (currentPage - 1) * pageSize;
@@ -47,7 +59,20 @@ const TagsTab: React.FC = () => {
   const shapes = [...new Set(CATALOG_PRODUCTS.map((product) => product.shape).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   const hasProductFilters = productCategory !== 'all' || productBrand !== 'all' || productMaterial !== 'all' || productShape !== 'all' || Boolean(productQuery);
 
-  const submit = (event: React.FormEvent) => {
+  const addRule = () => {
+    const val = ruleValue.trim();
+    if (!val) return;
+    if (rules.some((r) => r.attribute === ruleAttr && r.value.toLocaleLowerCase('pt-BR') === val.toLocaleLowerCase('pt-BR'))) {
+      toast.error('Regra duplicada', 'Esta combinação já foi adicionada.');
+      return;
+    }
+    setRules([...rules, { attribute: ruleAttr, value: val }]);
+    setRuleValue('');
+  };
+
+  const removeRule = (index: number) => setRules(rules.filter((_, i) => i !== index));
+
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const normalizedName = name.trim();
     if (!normalizedName) {
@@ -61,45 +86,51 @@ const TagsTab: React.FC = () => {
       return;
     }
 
-    const saved = createProductTag({
-      id: `tag-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    setSaving(true);
+    const saved = await createProductTag({
+      id: '',
       name: normalizedName,
       color,
+      rules,
     });
+    setSaving(false);
+
     if (!saved) {
       setMessage(null);
-      toast.error('Não foi possível criar a tag', STORAGE_FULL_MSG);
+      toast.error('Não foi possível criar a tag', 'Verifique sua conexão ou tente novamente.');
       return;
     }
     setName('');
+    setRules([]);
     setPage(Math.ceil((tags.length + 1) / pageSize));
     setMessage(null);
     toast.success('Tag criada', normalizedName);
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     const tag = tags.find((item) => item.id === id);
-    if (!deleteProductTag(id)) {
+    const ok = await deleteProductTag(id);
+    if (!ok) {
       setMessage(null);
-      toast.error('Não foi possível remover a tag', STORAGE_FULL_MSG);
-    }
-    else {
+      toast.error('Não foi possível remover a tag', 'Verifique sua conexão ou tente novamente.');
+    } else {
       setPage((current) => Math.min(current, Math.max(Math.ceil((tags.length - 1) / pageSize), 1)));
       setMessage(null);
       toast.success('Tag removida', tag?.name);
     }
   };
 
-  const toggleProductAssignment = (tagId: string, productId: string, checked: boolean) => {
+  const toggleProductAssignment = async (tagId: string, productId: string, checked: boolean) => {
     const tag = tags.find((item) => item.id === tagId);
     if (!tag) return;
     const assignedIds = tag.assignedProductIds ?? [];
     const nextIds = checked
       ? [...assignedIds, productId]
       : assignedIds.filter((id) => id !== productId);
-    if (!assignProductsToTag(tagId, nextIds)) {
-      setLinkError(STORAGE_FULL_MSG);
-      toast.error('Não foi possível atualizar os produtos vinculados', STORAGE_FULL_MSG);
+    const ok = await assignProductsToTag(tagId, nextIds);
+    if (!ok) {
+      setLinkError('Falha ao salvar vínculo.');
+      toast.error('Não foi possível atualizar os produtos vinculados', 'Verifique sua conexão.');
     } else {
       setLinkError(null);
       toast.success(checked ? 'Produto vinculado à tag' : 'Vínculo removido', tag.name);
@@ -110,15 +141,16 @@ const TagsTab: React.FC = () => {
   const linkingAssignedIds = linkingTag?.assignedProductIds ?? [];
   const allMatchingProductsAssigned = matchingProducts.length > 0 && matchingProducts.every((product) => linkingAssignedIds.includes(product.id));
 
-  const toggleAllMatchingProducts = () => {
+  const toggleAllMatchingProducts = async () => {
     if (!linkingTag) return;
     const matchingIds = new Set(matchingProducts.map((product) => product.id));
     const nextIds = allMatchingProductsAssigned
       ? linkingAssignedIds.filter((id) => !matchingIds.has(id))
       : [...new Set([...linkingAssignedIds, ...matchingIds])];
-    if (!assignProductsToTag(linkingTag.id, nextIds)) {
-      setLinkError(STORAGE_FULL_MSG);
-      toast.error('Não foi possível atualizar os produtos vinculados', STORAGE_FULL_MSG);
+    const ok = await assignProductsToTag(linkingTag.id, nextIds);
+    if (!ok) {
+      setLinkError('Falha ao salvar vínculo em lote.');
+      toast.error('Não foi possível atualizar os produtos vinculados', 'Verifique sua conexão.');
     } else {
       setLinkError(null);
       toast.success(allMatchingProductsAssigned ? 'Vínculos removidos' : 'Produtos vinculados', `${matchingIds.size} produtos atualizados na tag ${linkingTag.name}.`);
@@ -148,36 +180,90 @@ const TagsTab: React.FC = () => {
   return (
     <div className="space-y-5">
       {message && <Notice kind={message.kind}>{message.text}</Notice>}
-      <Card title="Criar tag" subtitle="Crie etiquetas para organizar e identificar seus produtos.">
-        <form onSubmit={submit} className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end">
-          <Field label="Nome da tag">
-            <input
-              className={inputCls}
-              maxLength={32}
-              placeholder="Ex.: Novidade"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                setMessage(null);
-              }}
-            />
-          </Field>
-          <Field label="Cor">
-            <div className="flex h-[42px] items-center gap-2 rounded-xl border border-[#c6c5d0] bg-white px-3">
+      <Card title="Criar tag" subtitle="Crie etiquetas e defina regras automáticas por marca, categoria ou atributo.">
+        <form onSubmit={submit} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <Field label="Nome da tag">
               <input
-                aria-label="Cor da tag"
-                type="color"
-                className="h-7 w-8 cursor-pointer border-0 bg-transparent p-0"
-                value={color}
-                onChange={(event) => setColor(event.target.value)}
+                className={inputCls}
+                maxLength={32}
+                placeholder="Ex.: Novidade"
+                value={name}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  setMessage(null);
+                }}
               />
-              <span className="text-xs font-medium uppercase text-[#737d91]">{color}</span>
+            </Field>
+            <Field label="Cor">
+              <div className="flex h-[42px] items-center gap-2 rounded-xl border border-[#c6c5d0] bg-white px-3">
+                <input
+                  aria-label="Cor da tag"
+                  type="color"
+                  className="h-7 w-8 cursor-pointer border-0 bg-transparent p-0"
+                  value={color}
+                  onChange={(event) => setColor(event.target.value)}
+                />
+                <span className="text-xs font-medium uppercase text-[#737d91]">{color}</span>
+              </div>
+            </Field>
+          </div>
+
+          <div className="rounded-xl border border-[#e8ebf1] bg-[#fafbfc] p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#8992a4]">Regras automáticas (opcional)</p>
+            <p className="mt-1 text-[11px] text-[#5c6478]">Produtos com estes atributos receberão a tag automaticamente no site.</p>
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <div className="min-w-[140px]">
+                <label className="mb-1 block text-[11px] font-semibold text-[#45464f]">Atributo</label>
+                <select
+                  className={inputCls}
+                  value={ruleAttr}
+                  onChange={(e) => setRuleAttr(e.target.value as ProductTagRule['attribute'])}
+                >
+                  {TAG_RULE_ATTRIBUTES.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="min-w-[180px] flex-1">
+                <label className="mb-1 block text-[11px] font-semibold text-[#45464f]">Valor</label>
+                <input
+                  className={inputCls}
+                  placeholder="Ex.: Ray-Ban"
+                  value={ruleValue}
+                  onChange={(e) => setRuleValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addRule(); } }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={addRule}
+                className="inline-flex h-[42px] items-center gap-1.5 rounded-lg border border-[#c6c5d0] bg-white px-3 text-xs font-semibold text-[#4156b8] hover:bg-[#f0f2ff]"
+              >
+                <span className="material-symbols-outlined text-[16px]">add</span>
+                Adicionar
+              </button>
             </div>
-          </Field>
-          <button type="submit" className={`${primaryBtn} h-[42px]`}>
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Criar tag
-          </button>
+            {rules.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {rules.map((r, i) => (
+                  <span key={`${r.attribute}-${r.value}-${i}`} className="inline-flex items-center gap-1 rounded-full bg-[#eef0ff] px-2.5 py-1 text-[11px] font-semibold text-[#4156b8]">
+                    {TAG_RULE_ATTRIBUTES.find((a) => a.value === r.attribute)?.label ?? r.attribute}: {r.value}
+                    <button type="button" onClick={() => removeRule(i)} className="ml-0.5 text-[#4156b8] hover:text-[#b42318]">
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end">
+            <button type="submit" disabled={saving} className={`${primaryBtn} h-[42px] disabled:opacity-60`}>
+              <span className="material-symbols-outlined text-[18px]">{saving ? 'progress_activity' : 'add'}</span>
+              {saving ? 'Salvando...' : 'Criar tag'}
+            </button>
+          </div>
         </form>
       </Card>
 

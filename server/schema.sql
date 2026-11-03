@@ -122,3 +122,78 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 
 CREATE INDEX IF NOT EXISTS audit_log_created_idx ON audit_log (created_at DESC);
+
+/* ---------- Tags de Produtos (Relacional) ---------- */
+
+CREATE TABLE IF NOT EXISTS product_tags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  color TEXT NOT NULL DEFAULT '#4156b8',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS product_tags_name_lower_idx ON product_tags (LOWER(name));
+
+/* Vínculos de Tags com Produtos (suporta produtos da API/Oracle que não existem na tabela products) */
+CREATE TABLE IF NOT EXISTS product_tag_assignments (
+  tag_id UUID NOT NULL REFERENCES product_tags(id) ON DELETE CASCADE,
+  product_id TEXT NOT NULL,
+  assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (tag_id, product_id)
+);
+
+CREATE INDEX IF NOT EXISTS product_tag_assignments_product_idx ON product_tag_assignments (product_id);
+
+/* Regras automáticas de tags por atributo (marca, categoria, subcategoria, material, formato) */
+CREATE TABLE IF NOT EXISTS product_tag_rules (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  tag_id UUID NOT NULL REFERENCES product_tags(id) ON DELETE CASCADE,
+  attribute TEXT NOT NULL CHECK (attribute IN ('brand', 'category', 'subcategory', 'material', 'shape')),
+  value TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS product_tag_rules_tag_idx ON product_tag_rules (tag_id);
+CREATE UNIQUE INDEX IF NOT EXISTS product_tag_rules_unique_idx ON product_tag_rules (tag_id, attribute, LOWER(value));
+
+/* ---------- Políticas de Desconto (Relacional) ---------- */
+
+CREATE TABLE IF NOT EXISTS discount_policies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  trigger_type TEXT NOT NULL CHECK (trigger_type IN (
+    'first_purchase', 'new_customer', 'returning_customer', 'birthday',
+    'cart_value', 'item_quantity', 'abandoned_cart', 'progressive_time'
+  )),
+  discount_type TEXT NOT NULL CHECK (discount_type IN ('percentage', 'fixed')),
+  discount_value NUMERIC(12, 2) NOT NULL CHECK (discount_value > 0),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  all_products BOOLEAN NOT NULL DEFAULT TRUE,
+  duration_value INTEGER,
+  duration_unit TEXT CHECK (duration_unit IN ('hours', 'days')),
+  value_operator TEXT CHECK (value_operator IN ('minimum', 'maximum', 'between')),
+  min_cart_value NUMERIC(12, 2),
+  max_cart_value NUMERIC(12, 2),
+  quantity_operator TEXT CHECK (quantity_operator IN ('minimum', 'maximum', 'between')),
+  min_items INTEGER,
+  max_items INTEGER,
+  idle_duration_value INTEGER,
+  idle_duration_unit TEXT CHECK (idle_duration_unit IN ('hours', 'days')),
+  channels TEXT[] NOT NULL DEFAULT '{}',
+  progression_steps JSONB NOT NULL DEFAULT '[]'::JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS discount_policies_active_idx ON discount_policies (active) WHERE active;
+
+/* Vínculos de Políticas com Produtos */
+CREATE TABLE IF NOT EXISTS discount_policy_products (
+  policy_id UUID NOT NULL REFERENCES discount_policies(id) ON DELETE CASCADE,
+  product_id TEXT NOT NULL,
+  assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (policy_id, product_id)
+);
+
+CREATE INDEX IF NOT EXISTS discount_policy_products_product_idx ON discount_policy_products (product_id);

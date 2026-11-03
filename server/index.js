@@ -290,6 +290,67 @@ app.get('/api/store/products', async (_req, res, next) => {
   }
 });
 
+/* ---------- Dados Promocionais Públicos (Tags + Políticas Ativas) ---------- */
+
+app.get('/api/store/promotions', async (_req, res, next) => {
+  try {
+    const [tagsResult, policiesResult] = await Promise.all([
+      pool.query(
+        `SELECT t.id::text, t.name, t.color,
+                COALESCE(json_agg(DISTINCT a.product_id) FILTER (WHERE a.product_id IS NOT NULL), '[]'::json) AS assigned_product_ids,
+                COALESCE(json_agg(DISTINCT json_build_object('attribute', r.attribute, 'value', r.value)) FILTER (WHERE r.id IS NOT NULL), '[]'::json) AS rules
+         FROM product_tags t
+         LEFT JOIN product_tag_assignments a ON a.tag_id = t.id
+         LEFT JOIN product_tag_rules r ON r.tag_id = t.id
+         GROUP BY t.id
+         ORDER BY t.created_at DESC`,
+      ),
+      pool.query(
+        `SELECT p.id::text, p.name, p.trigger_type, p.discount_type, p.discount_value, p.all_products,
+                p.value_operator, p.min_cart_value, p.max_cart_value,
+                p.quantity_operator, p.min_items, p.max_items,
+                p.progression_steps,
+                COALESCE(json_agg(DISTINCT dp.product_id) FILTER (WHERE dp.product_id IS NOT NULL), '[]'::json) AS product_ids
+         FROM discount_policies p
+         LEFT JOIN discount_policy_products dp ON dp.policy_id = p.id
+         WHERE p.active = TRUE
+           AND (p.duration_value IS NULL OR p.created_at + (p.duration_value || ' ' || p.duration_unit)::interval > NOW())
+         GROUP BY p.id
+         ORDER BY p.created_at DESC`,
+      ),
+    ]);
+
+    const tags = tagsResult.rows.map((t) => ({
+      id: t.id,
+      name: t.name,
+      color: t.color,
+      assignedProductIds: t.assigned_product_ids || [],
+      rules: (t.rules || []).map((r) => ({ attribute: r.attribute, value: r.value })),
+    }));
+
+    const policies = policiesResult.rows.map((p) => ({
+      id: p.id,
+      name: p.name,
+      trigger: p.trigger_type,
+      discountType: p.discount_type,
+      discountValue: Number(p.discount_value),
+      allProducts: p.all_products,
+      valueOperator: p.value_operator,
+      minCartValue: p.min_cart_value ? Number(p.min_cart_value) : null,
+      maxCartValue: p.max_cart_value ? Number(p.max_cart_value) : null,
+      quantityOperator: p.quantity_operator,
+      minItems: p.min_items,
+      maxItems: p.max_items,
+      progressionSteps: p.progression_steps || [],
+      productIds: p.product_ids || [],
+    }));
+
+    res.json({ tags, policies });
+  } catch (error) {
+    next(error);
+  }
+});
+
 const INTEGRATION_API_URL = process.env.INTEGRATION_API_URL || 'http://oticas-integration-api:4000';
 const INTEGRATION_API_KEY = process.env.INTEGRATION_API_KEY || '';
 

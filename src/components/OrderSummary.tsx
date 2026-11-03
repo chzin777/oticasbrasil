@@ -10,6 +10,7 @@ interface OrderSummaryProps {
   appliedCoupon: string | null;
   onApplyCoupon: (code: string | null, discountAmount: number) => void;
   couponDiscount: number;
+  policyDiscount?: number;
   onCheckout: () => void;
   isSubmitting: boolean;
   onOpenLensCustomizer?: (item: OrderItem) => void;
@@ -22,6 +23,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   appliedCoupon,
   onApplyCoupon,
   couponDiscount,
+  policyDiscount = 0,
   onCheckout,
   isSubmitting,
   onOpenLensCustomizer
@@ -30,13 +32,14 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   const [couponError, setCouponError] = useState<string | null>(null);
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const baseSubtotalAfterCoupon = Math.max(0, subtotal - couponDiscount);
+  const totalAutomaticDiscount = couponDiscount + policyDiscount;
+  const baseSubtotalAfterDiscounts = Math.max(0, subtotal - totalAutomaticDiscount);
   const { payment } = useStoreSettings();
   const installmentsMax = payment.card.maxInstallments;
-  
-  const pixDiscount = paymentMethod === 'pix' ? baseSubtotalAfterCoupon * (payment.pix.discountPercent / 100) : 0;
-  const finalTotal = baseSubtotalAfterCoupon - pixDiscount;
-  const totalRegular = baseSubtotalAfterCoupon;
+
+  const pixDiscount = paymentMethod === 'pix' ? baseSubtotalAfterDiscounts * (payment.pix.discountPercent / 100) : 0;
+  const finalTotal = baseSubtotalAfterDiscounts - pixDiscount;
+  const totalRegular = baseSubtotalAfterDiscounts;
 
   const handleApplyCoupon = (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,10 +188,20 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             </span>
           </div>
 
-          {appliedCoupon && (
+          {appliedCoupon && couponDiscount > 0 && (
             <div className="flex justify-between text-emerald-700 font-medium">
               <span>Desconto de Cupom ({appliedCoupon})</span>
               <span>- R$ {couponDiscount.toFixed(2).replace('.', ',')}</span>
+            </div>
+          )}
+
+          {policyDiscount > 0 && (
+            <div className="flex justify-between text-emerald-700 font-medium">
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]">local_activity</span>
+                Desconto Automático
+              </span>
+              <span>- R$ {policyDiscount.toFixed(2).replace('.', ',')}</span>
             </div>
           )}
 

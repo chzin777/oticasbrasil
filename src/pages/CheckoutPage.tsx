@@ -38,6 +38,7 @@ interface CheckoutPageProps {
   appliedCoupon: string | null;
   onApplyCoupon: (code: string | null, discountAmount: number) => void;
   couponDiscount: number;
+  policyDiscount?: number;
   onCheckout: () => void;
   isSubmitting: boolean;
   onOpenCepModal: () => void;
@@ -64,6 +65,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   appliedCoupon,
   onApplyCoupon,
   couponDiscount,
+  policyDiscount,
   onCheckout,
   isSubmitting,
   onOpenCepModal,
@@ -261,6 +263,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             appliedCoupon={appliedCoupon}
             onApplyCoupon={onApplyCoupon}
             couponDiscount={couponDiscount}
+            policyDiscount={policyDiscount}
             onCheckout={onCheckout}
             isSubmitting={isSubmitting}
             onOpenLensCustomizer={onOpenLensCustomizer}
