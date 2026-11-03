@@ -428,7 +428,7 @@ app.get('/api/integration/products/all', async (req, res, next) => {
 
       const response = await fetch(url.toString(), {
         headers: { 'x-api-key': INTEGRATION_API_KEY },
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!response.ok) {
