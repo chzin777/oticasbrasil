@@ -318,7 +318,7 @@ app.get('/api/integration/products', async (req, res, next) => {
     if (req.query.offset) url.searchParams.set('offset', String(req.query.offset));
     const response = await fetch(url.toString(), {
       headers: { 'x-api-key': INTEGRATION_API_KEY },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(25000),
     });
     if (!response.ok) throw new Error(`API respondeu HTTP ${response.status}`);
     const data = await response.json();
