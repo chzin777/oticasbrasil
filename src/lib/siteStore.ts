@@ -1305,9 +1305,28 @@ export const useCatalogProducts = (): { products: EyewearProduct[]; loading: boo
       void hydrateCatalogFromApi().then(syncState);
     }
 
+    // Retry automático com backoff quando catálogo está vazio e não está carregando
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let retryAttempt = 0;
+    const MAX_RETRIES = 3;
+    const BACKOFF_MS = [5000, 15000, 30000];
+
+    const checkAndRetry = () => {
+      if ((!catalogCache || catalogCache.length === 0) && !catalogLoading && retryAttempt < MAX_RETRIES) {
+        retryTimer = setTimeout(() => {
+          retryAttempt++;
+          void hydrateCatalogFromApi().then(syncState);
+        }, BACKOFF_MS[retryAttempt] ?? BACKOFF_MS[BACKOFF_MS.length - 1]);
+      }
+    };
+
+    const retryInterval = setInterval(checkAndRetry, 5000);
+
     listeners.add(syncState);
     return () => {
       listeners.delete(syncState);
+      clearInterval(retryInterval);
+      if (retryTimer) clearTimeout(retryTimer);
     };
   }, []);
 
