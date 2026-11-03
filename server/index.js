@@ -7,7 +7,7 @@ import path from 'node:path';
 import express from 'express';
 import pg from 'pg';
 import { createClient } from 'redis';
-import { registerAdminRoutes } from './admin.js';
+import { registerAdminRoutes, loadPoliciesWithProducts } from './admin.js';
 import { loadSettings } from './settings.js';
 import {
   enqueueIntegrationEvent,
@@ -1026,6 +1026,68 @@ app.post('/api/orders', requireSameOrigin, requireCustomer, async (req, res, nex
 
     const subtotal = orderItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
     let discount = 0;
+
+    // Validate and apply policy discount server-side
+    const { policyId, policyDiscount: clientPolicyDiscount } = req.body || {};
+    let appliedPolicyDiscount = 0;
+    if (policyId && typeof policyId === 'string') {
+      const policies = await loadPoliciesWithProducts(pool);
+      const policy = policies.find((p) => p.id === policyId && p.active);
+      if (policy) {
+        // Check expiration
+        let expired = false;
+        if (policy.duration && policy.createdAt) {
+          const durationMs = policy.duration.value * (policy.duration.unit === 'hours' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000);
+          if (Date.now() > new Date(policy.createdAt).getTime() + durationMs) expired = true;
+        }
+        // Check product scope
+        let inScope = true;
+        if (!policy.allProducts && policy.productIds?.length) {
+          const orderProductIds = orderItems.map((i) => i.product.id);
+          inScope = policy.productIds.some((pid) => orderProductIds.includes(pid));
+        }
+        // Check trigger conditions
+        let triggerMet = false;
+        const totalItems = orderItems.reduce((sum, i) => sum + i.quantity, 0);
+        switch (policy.trigger) {
+          case 'cart_value': {
+            const op = policy.valueOperator || 'minimum';
+            if (op === 'minimum' && subtotal >= (policy.minCartValue || 0)) triggerMet = true;
+            else if (op === 'maximum' && subtotal <= (policy.maxCartValue || Infinity)) triggerMet = true;
+            else if (op === 'between' && subtotal >= (policy.minCartValue || 0) && subtotal <= (policy.maxCartValue || Infinity)) triggerMet = true;
+            break;
+          }
+          case 'item_quantity': {
+            const op = policy.quantityOperator || 'minimum';
+            if (op === 'minimum' && totalItems >= (policy.minItems || 0)) triggerMet = true;
+            else if (op === 'maximum' && totalItems <= (policy.maxItems || Infinity)) triggerMet = true;
+            else if (op === 'between' && totalItems >= (policy.minItems || 0) && totalItems <= (policy.maxItems || Infinity)) triggerMet = true;
+            break;
+          }
+          case 'first_purchase':
+          case 'new_customer': {
+            const { rows: orderCountRows } = await pool.query('SELECT COUNT(*)::int AS cnt FROM orders WHERE customer_id = $1', [req.session.id]);
+            triggerMet = (orderCountRows[0]?.cnt || 0) === 0;
+            break;
+          }
+          case 'returning_customer': {
+            const { rows: orderCountRows } = await pool.query('SELECT COUNT(*)::int AS cnt FROM orders WHERE customer_id = $1', [req.session.id]);
+            triggerMet = (orderCountRows[0]?.cnt || 0) > 1;
+            break;
+          }
+          default:
+            break;
+        }
+        if (!expired && inScope && triggerMet) {
+          appliedPolicyDiscount = policy.discountType === 'percentage'
+            ? (subtotal * policy.discountValue) / 100
+            : policy.discountValue;
+          appliedPolicyDiscount = Math.min(subtotal, Math.max(0, appliedPolicyDiscount));
+        }
+      }
+    }
+    discount += appliedPolicyDiscount;
+
     const normalizedCode = normalizeCouponCode(couponCode);
     if (normalizedCode) {
       const coupons = state?.coupons || seedCoupons;
@@ -1037,10 +1099,10 @@ app.post('/api/orders', requireSameOrigin, requireCustomer, async (req, res, nex
       const hasExpired = expiration !== null && expiration < Date.now();
       const meetsMinimum = !coupon?.minSubtotal || subtotal >= Number(coupon.minSubtotal);
       if (isActive && !hasExpired && meetsMinimum) {
-        discount = coupon.discountPercent
+        const couponDiscount = coupon.discountPercent
           ? subtotal * Number(coupon.discountPercent) / 100
           : Number(coupon.discountAmount || 0);
-        discount = Math.min(subtotal, Math.max(0, discount));
+        discount += Math.min(subtotal - appliedPolicyDiscount, Math.max(0, couponDiscount));
       } else {
         return jsonError(res, 400, 'O cupom informado não é válido para este pedido.');
       }

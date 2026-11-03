@@ -32,6 +32,52 @@ const publicUser = (user) => ({
   permissions: ROLES[user.role]?.permissions ?? [],
 });
 
+export const loadPoliciesWithProducts = async (queryable) => {
+  const { rows: policies } = await queryable.query(
+    `SELECT id::text, name, trigger_type, discount_type, discount_value, active, all_products,
+            duration_value, duration_unit, value_operator, min_cart_value, max_cart_value,
+            quantity_operator, min_items, max_items, idle_duration_value, idle_duration_unit,
+            channels, progression_steps, created_at, updated_at
+     FROM discount_policies ORDER BY created_at DESC`,
+  );
+  if (policies.length === 0) return [];
+
+  const policyIds = policies.map((p) => p.id);
+  const { rows: products } = await queryable.query(
+    'SELECT policy_id::text AS policy_id, product_id FROM discount_policy_products WHERE policy_id = ANY($1::uuid[])',
+    [policyIds],
+  );
+
+  const productMap = new Map();
+  for (const p of products) {
+    if (!productMap.has(p.policy_id)) productMap.set(p.policy_id, []);
+    productMap.get(p.policy_id).push(p.product_id);
+  }
+
+  return policies.map((p) => ({
+    id: p.id,
+    name: p.name,
+    trigger: p.trigger_type,
+    discountType: p.discount_type,
+    discountValue: Number(p.discount_value),
+    active: p.active,
+    allProducts: p.all_products,
+    duration: p.duration_value ? { value: p.duration_value, unit: p.duration_unit } : null,
+    valueOperator: p.value_operator,
+    minCartValue: p.min_cart_value ? Number(p.min_cart_value) : null,
+    maxCartValue: p.max_cart_value ? Number(p.max_cart_value) : null,
+    quantityOperator: p.quantity_operator,
+    minItems: p.min_items,
+    maxItems: p.max_items,
+    idleDuration: p.idle_duration_value ? { value: p.idle_duration_value, unit: p.idle_duration_unit } : null,
+    channels: p.channels || [],
+    progressionSteps: p.progression_steps || [],
+    productIds: productMap.get(p.id) || [],
+    createdAt: p.created_at,
+    updatedAt: p.updated_at,
+  }));
+};
+
 export const registerAdminRoutes = (app, deps) => {
   const {
     pool,
@@ -807,52 +853,6 @@ export const registerAdminRoutes = (app, deps) => {
         ? [...new Set(body.productIds.filter((id) => typeof id === 'string').map((id) => id.slice(0, 120)))]
         : [],
     };
-  };
-
-  const loadPoliciesWithProducts = async (queryable) => {
-    const { rows: policies } = await queryable.query(
-      `SELECT id::text, name, trigger_type, discount_type, discount_value, active, all_products,
-              duration_value, duration_unit, value_operator, min_cart_value, max_cart_value,
-              quantity_operator, min_items, max_items, idle_duration_value, idle_duration_unit,
-              channels, progression_steps, created_at, updated_at
-       FROM discount_policies ORDER BY created_at DESC`,
-    );
-    if (policies.length === 0) return [];
-
-    const policyIds = policies.map((p) => p.id);
-    const { rows: products } = await queryable.query(
-      'SELECT policy_id::text AS policy_id, product_id FROM discount_policy_products WHERE policy_id = ANY($1::uuid[])',
-      [policyIds],
-    );
-
-    const productMap = new Map();
-    for (const p of products) {
-      if (!productMap.has(p.policy_id)) productMap.set(p.policy_id, []);
-      productMap.get(p.policy_id).push(p.product_id);
-    }
-
-    return policies.map((p) => ({
-      id: p.id,
-      name: p.name,
-      trigger: p.trigger_type,
-      discountType: p.discount_type,
-      discountValue: Number(p.discount_value),
-      active: p.active,
-      allProducts: p.all_products,
-      duration: p.duration_value ? { value: p.duration_value, unit: p.duration_unit } : null,
-      valueOperator: p.value_operator,
-      minCartValue: p.min_cart_value ? Number(p.min_cart_value) : null,
-      maxCartValue: p.max_cart_value ? Number(p.max_cart_value) : null,
-      quantityOperator: p.quantity_operator,
-      minItems: p.min_items,
-      maxItems: p.max_items,
-      idleDuration: p.idle_duration_value ? { value: p.idle_duration_value, unit: p.idle_duration_unit } : null,
-      channels: p.channels || [],
-      progressionSteps: p.progression_steps || [],
-      productIds: productMap.get(p.id) || [],
-      createdAt: p.created_at,
-      updatedAt: p.updated_at,
-    }));
   };
 
   app.get('/api/admin/discount-policies', requireAdmin('catalog'), async (_req, res, next) => {

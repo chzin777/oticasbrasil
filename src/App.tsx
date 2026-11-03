@@ -161,6 +161,7 @@ function SiteApp() {
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [loginTransition, setLoginTransition] = useState(false);
 
   // Modals
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
