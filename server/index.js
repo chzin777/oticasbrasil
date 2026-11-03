@@ -416,33 +416,58 @@ app.get('/api/integration/products/all', async (req, res, next) => {
       return res.json(cached);
     }
 
-    // Cache miss: busca todas as páginas sequencialmente (API externa limita concorrência)
+    // Cache miss: busca primeira página para validar conectividade, depois lotes paralelos controlados
     const allItems = [];
-    let offset = 0;
-    const maxPages = 20; // Safety cap: 10k produtos
+    const BATCH_SIZE = 3; // 3 páginas paralelas por lote (API externa degrada sob alta concorrência)
+    const MAX_PAGES = 20; // Safety cap: 10k produtos
 
-    for (let page = 0; page < maxPages; page++) {
-      const url = new URL('/v1/products', INTEGRATION_API_URL);
-      url.searchParams.set('limit', String(INTERNAL_PAGE_SIZE));
-      url.searchParams.set('offset', String(offset));
+    // Primeira página obrigatória (valida auth e conectividade)
+    const firstUrl = new URL('/v1/products', INTEGRATION_API_URL);
+    firstUrl.searchParams.set('limit', String(INTERNAL_PAGE_SIZE));
+    firstUrl.searchParams.set('offset', '0');
+    const firstRes = await fetch(firstUrl.toString(), {
+      headers: { 'x-api-key': INTEGRATION_API_KEY },
+      signal: AbortSignal.timeout(45000),
+    });
+    if (!firstRes.ok) throw new Error(`API respondeu HTTP ${firstRes.status} na primeira página`);
+    const firstJson = await firstRes.json();
+    const firstItems = firstJson.data ?? [];
+    allItems.push(...firstItems);
 
-      const response = await fetch(url.toString(), {
-        headers: { 'x-api-key': INTEGRATION_API_KEY },
-        signal: AbortSignal.timeout(30000),
-      });
-
-      if (!response.ok) {
-        console.error(`[products-all] Página ${page} falhou: HTTP ${response.status}`);
-        break;
+    // Páginas restantes em lotes paralelos controlados
+    if (firstItems.length >= INTERNAL_PAGE_SIZE) {
+      for (let batchStart = 1; batchStart < MAX_PAGES; batchStart += BATCH_SIZE) {
+        const batchEnd = Math.min(batchStart + BATCH_SIZE, MAX_PAGES);
+        const batchPromises = [];
+        for (let page = batchStart; page < batchEnd; page++) {
+          const offset = page * INTERNAL_PAGE_SIZE;
+          const url = new URL('/v1/products', INTEGRATION_API_URL);
+          url.searchParams.set('limit', String(INTERNAL_PAGE_SIZE));
+          url.searchParams.set('offset', String(offset));
+          batchPromises.push(
+            fetch(url.toString(), {
+              headers: { 'x-api-key': INTEGRATION_API_KEY },
+              signal: AbortSignal.timeout(45000),
+            })
+              .then((r) => (r.ok ? r.json() : null))
+              .then((j) => j?.data ?? [])
+              .catch((err) => {
+                console.error(`[products-all] Página ${page} falhou:`, err.message);
+                return [];
+              })
+          );
+        }
+        const batchResults = await Promise.all(batchPromises);
+        let batchComplete = true;
+        for (const items of batchResults) {
+          allItems.push(...items);
+          if (items.length < INTERNAL_PAGE_SIZE) {
+            batchComplete = false;
+            break;
+          }
+        }
+        if (!batchComplete) break;
       }
-
-      const json = await response.json();
-      const items = json.data ?? [];
-      allItems.push(...items);
-
-      // Se retornou menos que PAGE_SIZE, chegamos ao fim
-      if (items.length < INTERNAL_PAGE_SIZE) break;
-      offset += INTERNAL_PAGE_SIZE;
     }
 
     const result = { data: allItems, total: allItems.length };
@@ -625,7 +650,15 @@ app.post('/api/auth/register', requireSameOrigin, limitAttempts, async (req, res
     } finally {
       client.release();
     }
-    if (!rows[0]) return jsonError(res, 409, 'Já existe uma conta com este e-mail. Entre na sua conta.');
+    if (!rows[0]) {
+      const { rows: dup } = await client.query(
+        'SELECT email, cpf, phone FROM customers WHERE email = $1 OR cpf = $2 OR phone = $3 LIMIT 1',
+        [email, cpf, phone],
+      );
+      if (dup[0]?.cpf === cpf) return jsonError(res, 409, 'Já existe uma conta cadastrada com este CPF.');
+      if (dup[0]?.phone === phone) return jsonError(res, 409, 'Já existe uma conta cadastrada com este telefone.');
+      return jsonError(res, 409, 'Já existe uma conta com este e-mail. Entre na sua conta.');
+    }
     const user = {
       id: rows[0].id,
       email: rows[0].email,
