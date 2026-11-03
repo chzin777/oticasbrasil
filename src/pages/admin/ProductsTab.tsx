@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { CustomSelect } from '../../components/CustomSelect';
+import { LoadingSpinner } from '../../components/LoadingSpinner';
 import { useToast } from '../../components/ToastContext';
 import { EyewearProduct } from '../../types';
 import {
@@ -877,9 +878,8 @@ export const ProductsTab: React.FC = () => {
         </div>
 
         {catalogLoading ? (
-          <div className="rounded-2xl border border-[#e7ebf1] bg-white p-8 text-center text-sm text-[#7b8495]">
-            <span className="material-symbols-outlined animate-spin text-3xl text-[#4156b8] mb-2 block">progress_activity</span>
-            Carregando produtos...
+          <div className="rounded-2xl border border-[#e7ebf1] bg-white p-8 flex items-center justify-center">
+            <LoadingSpinner label="Carregando produtos..." size={40} />
           </div>
         ) : (
         <div className="overflow-x-auto -mx-2">
