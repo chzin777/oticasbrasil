@@ -34,6 +34,7 @@ import { Footer } from './components/Footer';
 import { MaintenancePage } from './components/MaintenancePage';
 import { useToast } from './components/ToastContext';
 import { CheckoutAccount, type AccountUser } from './components/CheckoutAccount';
+import { LoginPage } from './pages/LoginPage';
 
 import {
   INITIAL_PRESCRIPTION,
@@ -531,6 +532,11 @@ function SiteApp() {
   };
 
   const handleGoToCheckoutWithProduct = (product: EyewearProduct, lensType = 'Lentes HD Antirreflexo + Blue Light') => {
+    if (!account) {
+      navigate('/login', { state: { from: location.pathname } });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
     const newItem: OrderItem = {
       id: product.id,
       name: product.name,
@@ -547,6 +553,11 @@ function SiteApp() {
   };
 
   const handleGoToCheckoutFromProductPage = (orderItem: OrderItem) => {
+    if (!account) {
+      navigate('/login', { state: { from: location.pathname } });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
     setItems([orderItem]);
     navigateTo('checkout');
   };
@@ -715,6 +726,7 @@ function SiteApp() {
           } />
 
           <Route path="/taxas" element={<TaxasAsaasPage />} />
+          <Route path="/login" element={<LoginPage />} />
 
           <Route path="*" element={<NotFoundPage />} />
           <Route path="/checkout" element={

@@ -284,29 +284,44 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="material-symbols-outlined text-[22px]">search</span>
             </button>
 
-            <button
-              aria-label="Lista de Desejos"
-              onClick={onOpenWishlist}
-              className="relative hidden min-[380px]:flex w-9 h-9 sm:w-10 sm:h-10 rounded-full items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[22px]">favorite</span>
-              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#061748] text-white text-[10px] leading-none flex items-center justify-center font-bold">
-                {wishlistCount}
-              </span>
-            </button>
+            {userName ? (
+              <>
+                <button
+                  aria-label="Lista de Desejos"
+                  onClick={onOpenWishlist}
+                  className="relative hidden min-[380px]:flex w-9 h-9 sm:w-10 sm:h-10 rounded-full items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[22px]">favorite</span>
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#061748] text-white text-[10px] leading-none flex items-center justify-center font-bold">
+                    {wishlistCount}
+                  </span>
+                </button>
 
-            <button
-              onClick={onOpenCart}
-              aria-label="Sacola de Compras"
-              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[22px]">shopping_bag</span>
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#dbee2c] text-[#061748] text-[11px] font-bold leading-none flex items-center justify-center shadow-sm">
-                {cartCount}
-              </span>
-            </button>
+                <button
+                  onClick={onOpenCart}
+                  aria-label="Sacola de Compras"
+                  className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[#45464f] hover:text-[#191c1e] hover:bg-[#eceef0] transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[22px]">shopping_bag</span>
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#dbee2c] text-[#061748] text-[11px] font-bold leading-none flex items-center justify-center shadow-sm">
+                    {cartCount}
+                  </span>
+                </button>
+              </>
+            ) : null}
 
-            <div ref={userMenuRef} className="relative hidden sm:flex items-center ml-1">
+            {!userName ? (
+              <button
+                type="button"
+                onClick={() => window.location.href = '/login'}
+                className="hidden sm:inline-flex h-9 items-center gap-2 rounded-full bg-[#061748] px-4 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#0a2060] active:scale-95 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">login</span>
+                Entrar / Cadastrar
+              </button>
+            ) : null}
+
+            <div ref={userMenuRef} className={`relative ${userName ? 'hidden sm:flex' : 'hidden'} items-center ml-1`}>
               <button
                 type="button"
                 onClick={() => setUserMenuOpen((open) => !open)}
