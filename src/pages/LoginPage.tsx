@@ -218,8 +218,8 @@ export const LoginPage: React.FC = () => {
         </div>
       </div>
 
-      <section className="relative z-10 mx-auto my-auto flex max-w-[440px] items-center rounded-[28px] border border-[#051647]/10 bg-white/85 p-7 shadow-2xl shadow-[#051647]/10 backdrop-blur-[26px] backdrop-saturate-[1.4] sm:p-8 lg:absolute lg:right-0 lg:top-1/2 lg:mx-0 lg:h-[138dvh] lg:w-[min(63vw,1020px)] lg:max-w-none lg:-translate-y-1/2 lg:rounded-none lg:rounded-bl-[69dvh] lg:rounded-tl-[69dvh] lg:border-y-0 lg:border-r-0 lg:border-l lg:p-0 lg:shadow-[-8px_0_40px_-12px_rgba(5,22,71,0.18)]">
-        <div className="mx-auto flex w-full max-w-[310px] flex-col gap-6 lg:ml-[clamp(48px,8vw,140px)]">
+      <section className="relative z-10 mx-auto my-auto flex max-h-[92dvh] max-w-[440px] items-center overflow-y-auto rounded-[28px] border border-[#051647]/10 bg-white/85 p-7 shadow-2xl shadow-[#051647]/10 backdrop-blur-[26px] backdrop-saturate-[1.4] sm:p-8 lg:absolute lg:right-0 lg:top-1/2 lg:mx-0 lg:h-auto lg:min-h-[138dvh] lg:w-[min(63vw,1020px)] lg:max-w-none lg:-translate-y-1/2 lg:rounded-none lg:rounded-bl-[69dvh] lg:rounded-tl-[69dvh] lg:border-y-0 lg:border-r-0 lg:border-l lg:p-0 lg:shadow-[-8px_0_40px_-12px_rgba(5,22,71,0.18)]">
+        <div className={`mx-auto flex w-full max-w-[310px] flex-col lg:ml-[clamp(48px,8vw,140px)] ${mode === 'register' ? 'gap-4 py-6' : 'gap-6'}`}>
           <div className="flex flex-col items-start gap-2">
             <img
               src="/logos/logo-blue.png"
@@ -238,7 +238,7 @@ export const LoginPage: React.FC = () => {
             </p>
           </div>
 
-          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+          <form className={`flex flex-col ${mode === 'register' ? 'gap-3.5' : 'gap-5'}`} onSubmit={handleSubmit}>
             {mode === 'register' && (
               <>
                 <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
