@@ -293,16 +293,19 @@ app.get('/api/store/products', async (_req, res, next) => {
 const INTEGRATION_API_URL = process.env.INTEGRATION_API_URL || 'http://oticas-integration-api:4000';
 const INTEGRATION_API_KEY = process.env.INTEGRATION_API_KEY || '';
 
-const PRODUCTS_CACHE_KEY = 'integration:products:v1';
 const PRODUCTS_CACHE_TTL_SECONDS = 300; // 5 minutos
 
 app.get('/api/integration/products', async (req, res, next) => {
   if (!INTEGRATION_API_KEY) return jsonError(res, 503, 'Chave da API de integração não configurada.');
   try {
+    const limit = String(req.query.limit || '1000');
+    const offset = String(req.query.offset || '0');
+    const cacheKey = `integration:products:v2:${limit}:${offset}`;
+
     // Tenta servir do cache Redis primeiro
     let cached = null;
     try {
-      const raw = await redis.get(PRODUCTS_CACHE_KEY);
+      const raw = await redis.get(cacheKey);
       if (raw) cached = JSON.parse(raw);
     } catch (cacheErr) {
       console.warn('[products-cache] Falha ao ler cache Redis:', cacheErr.message);
@@ -314,8 +317,8 @@ app.get('/api/integration/products', async (req, res, next) => {
 
     // Cache miss: busca na API externa
     const url = new URL('/v1/products', INTEGRATION_API_URL);
-    if (req.query.limit) url.searchParams.set('limit', String(req.query.limit));
-    if (req.query.offset) url.searchParams.set('offset', String(req.query.offset));
+    url.searchParams.set('limit', limit);
+    url.searchParams.set('offset', offset);
     const response = await fetch(url.toString(), {
       headers: { 'x-api-key': INTEGRATION_API_KEY },
       signal: AbortSignal.timeout(25000),
@@ -325,7 +328,7 @@ app.get('/api/integration/products', async (req, res, next) => {
 
     // Popula cache para próximas requisições
     try {
-      await redis.set(PRODUCTS_CACHE_KEY, JSON.stringify(data), { EX: PRODUCTS_CACHE_TTL_SECONDS });
+      await redis.set(cacheKey, JSON.stringify(data), { EX: PRODUCTS_CACHE_TTL_SECONDS });
     } catch (cacheErr) {
       console.warn('[products-cache] Falha ao escrever cache Redis:', cacheErr.message);
     }

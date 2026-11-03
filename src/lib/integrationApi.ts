@@ -108,25 +108,39 @@ function mapOracleToEyewear(item: OracleProduct): EyewearProduct {
 }
 
 export async function fetchProducts(): Promise<EyewearProduct[]> {
+  const PAGE_SIZE = 1000;
+  const MAX_PAGES = 50; // Safety cap: 50k products max
+  const allProducts: EyewearProduct[] = [];
+
   try {
-    const params = new URLSearchParams({ limit: '1000', offset: '0' });
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-    const response = await fetch(`${API_BASE}/products?${params.toString()}`, {
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const offset = page * PAGE_SIZE;
+      const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const response = await fetch(`${API_BASE}/products?${params.toString()}`, {
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const json: ProductsResponse = await response.json();
+      const items = json.data ?? [];
+      if (items.length === 0) break;
+
+      allProducts.push(...items.map(mapOracleToEyewear));
+
+      // If fewer items than PAGE_SIZE, we've reached the last page
+      if (items.length < PAGE_SIZE) break;
     }
-
-    const json: ProductsResponse = await response.json();
-    return (json.data ?? []).map(mapOracleToEyewear);
+    return allProducts;
   } catch (error) {
     console.error('[integrationApi] Falha ao buscar produtos da API:', error);
-    return [];
+    return allProducts; // Return whatever was fetched so far
   }
 }
 
