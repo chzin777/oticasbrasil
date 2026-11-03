@@ -109,20 +109,34 @@ function mapOracleToEyewear(item: OracleProduct): EyewearProduct {
 
 export async function fetchProducts(): Promise<EyewearProduct[]> {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    const response = await fetch(`${API_BASE}/products`, {
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    const allItems: OracleProduct[] = [];
+    let offset = 0;
+    const PAGE_SIZE = 1000; // Limite máximo da API de integração
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+    while (true) {
+      const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(offset) });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const response = await fetch(`${API_BASE}/products?${params.toString()}`, {
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const json: ProductsResponse = await response.json();
+      const items = json.data ?? [];
+      allItems.push(...items);
+
+      // Se retornou menos que PAGE_SIZE, não há mais páginas
+      if (items.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
     }
 
-    const json: ProductsResponse = await response.json();
-    return json.data.map(mapOracleToEyewear);
+    return allItems.map(mapOracleToEyewear);
   } catch (error) {
     console.error('[integrationApi] Falha ao buscar produtos da API:', error);
     return [];
