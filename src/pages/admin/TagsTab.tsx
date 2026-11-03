@@ -19,7 +19,8 @@ const TagsTab: React.FC = () => {
   const tags = getProductTags();
   const [name, setName] = useState('');
   const [color, setColor] = useState('#4156b8');
-  const [rules, setRules] = useState<ProductTagRule[]>([]);
+  const [linkMode, setLinkMode] = useState<'products' | 'attribute'>('products');
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [ruleAttr, setRuleAttr] = useState<ProductTagRule['attribute']>('brand');
   const [ruleValue, setRuleValue] = useState('');
   const [page, setPage] = useState(1);
@@ -71,19 +72,6 @@ const TagsTab: React.FC = () => {
 
   const currentRuleOptions = ruleAttributeOptions[ruleAttr] ?? [];
 
-  const addRule = () => {
-    const val = ruleValue.trim();
-    if (!val) return;
-    if (rules.some((r) => r.attribute === ruleAttr && r.value.toLocaleLowerCase('pt-BR') === val.toLocaleLowerCase('pt-BR'))) {
-      toast.error('Regra duplicada', 'Esta combinação já foi adicionada.');
-      return;
-    }
-    setRules([...rules, { attribute: ruleAttr, value: val }]);
-    setRuleValue('');
-  };
-
-  const removeRule = (index: number) => setRules(rules.filter((_, i) => i !== index));
-
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const normalizedName = name.trim();
@@ -98,12 +86,18 @@ const TagsTab: React.FC = () => {
       return;
     }
 
+    const payloadRules: ProductTagRule[] = linkMode === 'attribute' && ruleValue.trim()
+      ? [{ attribute: ruleAttr, value: ruleValue.trim() }]
+      : [];
+    const payloadProducts = linkMode === 'products' ? selectedProductIds : [];
+
     setSaving(true);
     const saved = await createProductTag({
       id: '',
       name: normalizedName,
       color,
-      rules,
+      rules: payloadRules,
+      assignedProductIds: payloadProducts,
     });
     setSaving(false);
 
@@ -114,7 +108,8 @@ const TagsTab: React.FC = () => {
     }
     setName('');
     setColor('#4156b8');
-    setRules([]);
+    setLinkMode('products');
+    setSelectedProductIds([]);
     setRuleAttr('brand');
     setRuleValue('');
     setCreateModalOpen(false);
@@ -127,7 +122,8 @@ const TagsTab: React.FC = () => {
     if (saving) return;
     setName('');
     setColor('#4156b8');
-    setRules([]);
+    setLinkMode('products');
+    setSelectedProductIds([]);
     setRuleAttr('brand');
     setRuleValue('');
     setCreateModalOpen(false);
@@ -480,58 +476,90 @@ const TagsTab: React.FC = () => {
               </Field>
             </div>
 
-            <div className="rounded-xl border border-[#e8ebf1] bg-[#fafbfc] p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#8992a4]">Regras automáticas (opcional)</p>
-              <p className="mt-1 text-[11px] text-[#5c6478]">Produtos com estes atributos receberão a tag automaticamente no site.</p>
-              <div className="mt-3 flex flex-wrap items-end gap-2">
-                <div className="min-w-[140px]">
-                  <label className="mb-1 block text-[11px] font-semibold text-[#45464f]">Atributo</label>
-                  <select
-                    className={inputCls}
-                    value={ruleAttr}
-                    onChange={(e) => {
-                      setRuleAttr(e.target.value as ProductTagRule['attribute']);
-                      setRuleValue('');
-                    }}
-                  >
-                    {TAG_RULE_ATTRIBUTES.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="min-w-[180px] flex-1">
-                  <label className="mb-1 block text-[11px] font-semibold text-[#45464f]">Valor</label>
-                  <select
-                    className={inputCls}
-                    value={ruleValue}
-                    onChange={(e) => setRuleValue(e.target.value)}
-                    disabled={currentRuleOptions.length === 0}
-                  >
-                    <option value="">Selecione...</option>
-                    {currentRuleOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
+            <div className="rounded-xl border border-[#e8ebf1] bg-[#fafbfc] p-4 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#8992a4]">Vínculo</p>
+              <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={addRule}
-                  className="inline-flex h-[42px] items-center gap-1.5 rounded-lg border border-[#c6c5d0] bg-white px-3 text-xs font-semibold text-[#4156b8] hover:bg-[#f0f2ff]"
+                  onClick={() => { setLinkMode('products'); setRuleValue(''); }}
+                  className={`flex-1 rounded-lg border px-3 py-2 text-xs font-bold transition ${linkMode === 'products' ? 'border-[#4156b8] bg-[#eef0ff] text-[#4156b8]' : 'border-[#dfe5f4] bg-white text-[#566176] hover:bg-[#f8f9fc]'}`}
                 >
-                  <span className="material-symbols-outlined text-[16px]">add</span>
-                  Adicionar
+                  Produtos individuais
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLinkMode('attribute'); setSelectedProductIds([]); }}
+                  className={`flex-1 rounded-lg border px-3 py-2 text-xs font-bold transition ${linkMode === 'attribute' ? 'border-[#4156b8] bg-[#eef0ff] text-[#4156b8]' : 'border-[#dfe5f4] bg-white text-[#566176] hover:bg-[#f8f9fc]'}`}
+                >
+                  Por atributo
                 </button>
               </div>
-              {rules.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {rules.map((r, i) => (
-                    <span key={`${r.attribute}-${r.value}-${i}`} className="inline-flex items-center gap-1 rounded-full bg-[#eef0ff] px-2.5 py-1 text-[11px] font-semibold text-[#4156b8]">
-                      {TAG_RULE_ATTRIBUTES.find((a) => a.value === r.attribute)?.label ?? r.attribute}: {r.value}
-                      <button type="button" onClick={() => removeRule(i)} className="ml-0.5 text-[#4156b8] hover:text-[#b42318]">
-                        <span className="material-symbols-outlined text-[14px]">close</span>
-                      </button>
-                    </span>
-                  ))}
+
+              {linkMode === 'products' ? (
+                <div className="max-h-[240px] overflow-y-auto rounded-lg border border-[#e8ebf1] bg-white">
+                  {CATALOG_PRODUCTS.length === 0 ? (
+                    <p className="py-6 text-center text-xs text-[#8992a4]">Nenhum produto disponível.</p>
+                  ) : (
+                    <ul className="divide-y divide-[#eceef0]">
+                      {CATALOG_PRODUCTS.map((product) => {
+                        const checked = selectedProductIds.includes(product.id);
+                        return (
+                          <li key={product.id}>
+                            <label className="flex cursor-pointer items-center gap-3 px-3 py-2 transition hover:bg-[#f7f8fa]">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  setSelectedProductIds((prev) =>
+                                    e.target.checked ? [...prev, product.id] : prev.filter((id) => id !== product.id),
+                                  );
+                                }}
+                                className="h-4 w-4 accent-[#4156b8]"
+                              />
+                              <img src={product.image} alt="" className="h-8 w-10 rounded border border-[#eceef0] bg-white object-cover" />
+                              <span className="min-w-0 flex-1 truncate text-xs font-medium text-[#34415e]">{product.name}</span>
+                              <span className="shrink-0 text-[10px] text-[#8992a4]">{product.brand}</span>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  {selectedProductIds.length > 0 && (
+                    <p className="border-t border-[#eceef0] px-3 py-2 text-[11px] font-semibold text-[#4156b8]">
+                      {selectedProductIds.length} {selectedProductIds.length === 1 ? 'produto selecionado' : 'produtos selecionados'}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                  <Field label="Atributo">
+                    <select
+                      className={inputCls}
+                      value={ruleAttr}
+                      onChange={(e) => {
+                        setRuleAttr(e.target.value as ProductTagRule['attribute']);
+                        setRuleValue('');
+                      }}
+                    >
+                      {TAG_RULE_ATTRIBUTES.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Valor">
+                    <select
+                      className={inputCls}
+                      value={ruleValue}
+                      onChange={(e) => setRuleValue(e.target.value)}
+                      disabled={currentRuleOptions.length === 0}
+                    >
+                      <option value="">Selecione...</option>
+                      {currentRuleOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </Field>
                 </div>
               )}
             </div>
