@@ -7,6 +7,7 @@ import path from 'node:path';
 import express from 'express';
 import pg from 'pg';
 import { createClient } from 'redis';
+import { Resend } from 'resend';
 import { registerAdminRoutes, loadPoliciesWithProducts } from './admin.js';
 import { loadSettings } from './settings.js';
 import {
@@ -43,6 +44,8 @@ if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD || process.env.ADMIN
   throw new Error('Configure ADMIN_EMAIL e uma ADMIN_PASSWORD com pelo menos 12 caracteres.');
 }
 validateIntegrationConfig();
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 20 });
 const migrationPool = new Pool({ connectionString: process.env.MIGRATION_DATABASE_URL, max: 2 });
