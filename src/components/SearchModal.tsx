@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CATALOG_PRODUCTS } from '../data/mockData';
+import { CATALOG_PRODUCTS } from '../lib/siteStore';
 import { EyewearProduct } from '../types';
 
 interface SearchModalProps {

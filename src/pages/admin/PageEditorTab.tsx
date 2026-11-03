@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Puck } from '@puckeditor/core';
 import '@puckeditor/core/puck.css';
-import { CATALOG_PRODUCTS } from '../../data/mockData';
+import { CATALOG_PRODUCTS } from '../../lib/siteStore';
 import {
   EDITABLE_FILTERS,
   EditableFilterKey,

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { CATALOG_PRODUCTS, LENS_OPTIONS } from '../data/mockData';
+import { LENS_OPTIONS } from '../data/mockData';
+import { CATALOG_PRODUCTS } from '../lib/siteStore';
 import { EyewearProduct, OrderItem } from '../types';
 
 interface CatalogModalProps {

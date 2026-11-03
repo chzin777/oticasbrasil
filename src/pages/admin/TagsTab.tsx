@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CustomSelect } from '../../components/CustomSelect';
 import { useToast } from '../../components/ToastContext';
-import { CATALOG_PRODUCTS } from '../../data/mockData';
+import { CATALOG_PRODUCTS } from '../../lib/siteStore';
 import { assignProductsToTag, createProductTag, deleteProductTag, getProductTags, ProductTagRule, ProductTagWithRules, updateProductTag, useSiteData } from '../../lib/siteStore';
 import { Card, Field, inputCls, Modal, Notice, Pagination, primaryBtn } from './ui';
 

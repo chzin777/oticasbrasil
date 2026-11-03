@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { CATALOG_PRODUCTS } from '../data/mockData';
+import { CATALOG_PRODUCTS } from '../lib/siteStore';
 import { EyewearProduct } from '../types';
 import HeroCapa, { type HeroTheme } from '../components/HeroCapa';
 import CustomBannerHero from '../components/CustomBannerHero';

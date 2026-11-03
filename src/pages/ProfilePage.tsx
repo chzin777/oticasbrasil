@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CustomerData, AddressData } from '../types';
-import { CATALOG_PRODUCTS } from '../data/mockData';
+import { CATALOG_PRODUCTS } from '../lib/siteStore';
 import { useWishlist } from '../components/WishlistContext';
 import { useToast } from '../components/ToastContext';
 

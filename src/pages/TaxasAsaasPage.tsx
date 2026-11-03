@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CustomSelect } from '../components/CustomSelect';
-import { CATALOG_PRODUCTS } from '../data/mockData';
+import { CATALOG_PRODUCTS } from '../lib/siteStore';
 import { EyewearProduct } from '../types';
 
 /**

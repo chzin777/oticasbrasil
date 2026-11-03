@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CATALOG_PRODUCTS } from '../data/mockData';
+import { CATALOG_PRODUCTS } from '../lib/siteStore';
 import { useWishlist } from '../components/WishlistContext';
 
 const fmt = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`;

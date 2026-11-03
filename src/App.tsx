@@ -38,8 +38,8 @@ import { LoginPage } from './pages/LoginPage';
 
 import {
   INITIAL_PRESCRIPTION,
-  CATALOG_PRODUCTS
 } from './data/mockData';
+import { CATALOG_PRODUCTS } from './lib/siteStore';
 import {
   CustomerData,
   AddressData,

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { EyewearProduct, OrderItem } from '../types';
-import { LENS_OPTIONS, CATALOG_PRODUCTS } from '../data/mockData';
+import { LENS_OPTIONS } from '../data/mockData';
+import { CATALOG_PRODUCTS } from '../lib/siteStore';
 import { WishlistButton, WishlistToggle } from '../components/WishlistContext';
 import { getPageEditorConfig, useSiteData } from '../lib/siteStore';
 import { getNativeSectionLayout, PageBuilderRender } from '../lib/pageBuilder';

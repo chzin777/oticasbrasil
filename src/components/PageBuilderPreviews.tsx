@@ -1,5 +1,5 @@
 import React from 'react';
-import { CATALOG_PRODUCTS } from '../data/mockData';
+import { CATALOG_PRODUCTS } from '../lib/siteStore';
 import SectionShapes from './SectionShapes';
 
 /**

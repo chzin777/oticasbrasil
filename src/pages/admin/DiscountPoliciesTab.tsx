@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CustomSelect } from '../../components/CustomSelect';
 import { useToast } from '../../components/ToastContext';
-import { CATALOG_PRODUCTS } from '../../data/mockData';
+import { CATALOG_PRODUCTS } from '../../lib/siteStore';
 import {
   deleteDiscountPolicy,
   DiscountPolicy,
