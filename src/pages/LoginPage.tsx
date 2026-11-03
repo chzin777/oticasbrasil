@@ -44,6 +44,8 @@ export const LoginPage: React.FC = () => {
   const redirectTo = (location.state as { from?: string })?.from || '/';
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
@@ -128,39 +130,72 @@ export const LoginPage: React.FC = () => {
       if (remember) localStorage.setItem(REMEMBER_KEY, email.trim());
       else localStorage.removeItem(REMEMBER_KEY);
 
-      if (mode === 'register') {
-        const cleanCpf = cpf.replace(/\D/g, '');
-        const cleanPhone = phone.replace(/\D/g, '');
-        if (cleanCpf.length !== 11) {
-          setError('CPF inválido. Informe os 11 dígitos.');
+      if (mode === 'login') {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), password }),
+        });
+        const result = await response.json() as { user?: AccountUser; error?: string };
+        if (!response.ok || !result.user) {
+          setError(result.error || 'Confira seus dados e tente novamente.');
           return;
         }
-        if (cleanPhone.length < 10 || cleanPhone.length > 11) {
-          setError('Telefone inválido. Informe DDD + número.');
-          return;
+        if (result.user.role === 'admin') {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate(redirectTo, { replace: true });
         }
+        return;
       }
 
-      const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
-      const payload = mode === 'register'
-        ? { name, email: email.trim(), password, cpf: cpf.replace(/\D/g, ''), phone: phone.replace(/\D/g, '') }
-        : { email: email.trim(), password };
-      const response = await fetch(endpoint, {
+      // Fluxo de registro com OTP
+      const cleanCpf = cpf.replace(/\D/g, '');
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (cleanCpf.length !== 11) {
+        setError('CPF inválido. Informe os 11 dígitos.');
+        return;
+      }
+      if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+        setError('Telefone inválido. Informe DDD + número.');
+        return;
+      }
+
+      if (!otpStep) {
+        // Etapa 1: enviar OTP
+        const response = await fetch('/api/auth/register/send-otp', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email: email.trim(), password, cpf: cleanCpf, phone: cleanPhone }),
+        });
+        const result = await response.json() as { message?: string; error?: string };
+        if (!response.ok) {
+          setError(result.error || 'Não foi possível enviar o código de verificação.');
+          return;
+        }
+        setOtpStep(true);
+        return;
+      }
+
+      // Etapa 2: verificar OTP e criar conta
+      if (otpCode.length !== 6 || !/^\d{6}$/.test(otpCode)) {
+        setError('Informe o código de 6 dígitos recebido por e-mail.');
+        return;
+      }
+      const response = await fetch('/api/auth/register/verify-otp', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ name, email: email.trim(), password, cpf: cleanCpf, phone: cleanPhone, code: otpCode }),
       });
       const result = await response.json() as { user?: AccountUser; error?: string };
       if (!response.ok || !result.user) {
         setError(result.error || 'Confira seus dados e tente novamente.');
         return;
       }
-      if (result.user.role === 'admin') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate(redirectTo, { replace: true });
-      }
+      navigate(redirectTo, { replace: true });
     } catch {
       setError('Não foi possível conectar ao servidor. Tente novamente.');
     } finally {
@@ -354,6 +389,28 @@ export const LoginPage: React.FC = () => {
               </span>
             </label>
 
+            {mode === 'register' && otpStep && (
+              <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
+                Código de verificação
+                <span className="relative block">
+                  <span aria-hidden="true" className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#051647]/40">sms</span>
+                  <input
+                    type="text"
+                    required
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    autoFocus
+                    value={otpCode}
+                    onChange={(event) => setOtpCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    className={`${inputCls} pr-4 text-center tracking-[0.3em] font-bold`}
+                  />
+                </span>
+                <span className="block text-[11px] text-[#051647]/50">Digite o código de 6 dígitos enviado para {email}</span>
+              </label>
+            )}
+
             {error && (
               <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-700">
                 {error}
@@ -389,8 +446,8 @@ export const LoginPage: React.FC = () => {
             >
               {submitting && <span aria-hidden="true" className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>}
               {submitting
-                ? (mode === 'login' ? 'Entrando...' : 'Criando conta...')
-                : (mode === 'login' ? 'Entrar' : 'Criar conta')}
+                ? (mode === 'login' ? 'Entrando...' : otpStep ? 'Verificando...' : 'Enviando código...')
+                : (mode === 'login' ? 'Entrar' : otpStep ? 'Verificar código' : 'Enviar código de verificação')}
             </button>
           </form>
 
@@ -428,7 +485,7 @@ export const LoginPage: React.FC = () => {
             {mode === 'login' ? 'Ainda não tem uma conta?' : 'Já possui uma conta?'}{' '}
             <button
               type="button"
-              onClick={() => { setMode((current) => current === 'login' ? 'register' : 'login'); setError(''); }}
+              onClick={() => { setMode((current) => current === 'login' ? 'register' : 'login'); setOtpStep(false); setOtpCode(''); setError(''); }}
               className="font-bold text-[#4156b8] hover:text-[#061748] cursor-pointer"
             >
               {mode === 'login' ? 'Criar conta' : 'Fazer login'}

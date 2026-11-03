@@ -613,7 +613,34 @@ app.post('/api/integrations/crm/events', async (req, res, next) => {
   }
 });
 
-app.post('/api/auth/register', requireSameOrigin, limitAttempts, async (req, res, next) => {
+const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+const OTP_TTL_MS = 10 * 60 * 1000;
+
+const sendOtpEmail = async (email, code) => {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('RESEND_API_KEY não configurada; OTP não enviado para', email);
+    return;
+  }
+  try {
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'no-reply@oticasbrasil.com.br',
+      to: email,
+      subject: 'Seu código de verificação - Óticas Brasil',
+      html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#f9fafb;border-radius:12px;">
+        <h2 style="color:#051647;margin-bottom:8px;">Verifique seu e-mail</h2>
+        <p style="color:#374151;font-size:15px;line-height:1.5;">Use este código para concluir seu cadastro:</p>
+        <div style="margin:24px 0;padding:16px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;text-align:center;">
+          <span style="font-size:32px;font-weight:700;letter-spacing:6px;color:#051647;">${code}</span>
+        </div>
+        <p style="color:#6b7280;font-size:13px;">Este código expira em 10 minutos. Se você não solicitou, ignore este e-mail.</p>
+      </div>`,
+    });
+  } catch (error) {
+    console.error('Falha ao enviar OTP via Resend:', error.message || error);
+  }
+};
+
+app.post('/api/auth/register/send-otp', requireSameOrigin, limitAttempts, async (req, res, next) => {
   try {
     const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 160) : '';
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase().slice(0, 254) : '';
@@ -633,17 +660,74 @@ app.post('/api/auth/register', requireSameOrigin, limitAttempts, async (req, res
       return jsonError(res, 400, 'Telefone inválido. Informe DDD + número.');
     }
 
+    const { rows: existing } = await pool.query(
+      'SELECT email, cpf, phone FROM customers WHERE email = $1 OR cpf = $2 OR phone = $3 LIMIT 1',
+      [email, cpf, phone],
+    );
+    if (existing[0]?.email === email) return jsonError(res, 409, 'Já existe uma conta com este e-mail. Entre na sua conta.');
+    if (existing[0]?.cpf === cpf) return jsonError(res, 409, 'Já existe uma conta cadastrada com este CPF.');
+    if (existing[0]?.phone === phone) return jsonError(res, 409, 'Já existe uma conta cadastrada com este telefone.');
+
+    const code = generateOtp();
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+    await pool.query(
+      `INSERT INTO email_verifications (email, code, expires_at) VALUES ($1, $2, $3)`,
+      [email, code, expiresAt],
+    );
+    await sendOtpEmail(email, code);
+
+    res.json({ message: 'Código de verificação enviado para o seu e-mail.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/auth/register/verify-otp', requireSameOrigin, limitAttempts, async (req, res, next) => {
+  try {
+    const name = typeof req.body?.name === 'string' ? req.body.name.trim().slice(0, 160) : '';
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase().slice(0, 254) : '';
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    const cpf = typeof req.body?.cpf === 'string' ? req.body.cpf.replace(/\D/g, '').slice(0, 11) : '';
+    const phone = typeof req.body?.phone === 'string' ? req.body.phone.replace(/\D/g, '').slice(0, 11) : '';
+    const code = typeof req.body?.code === 'string' ? req.body.code.trim() : '';
+    if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+      return jsonError(res, 400, 'Informe o código de 6 dígitos recebido por e-mail.');
+    }
+    if (name.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return jsonError(res, 400, 'Dados inválidos. Reinicie o cadastro.');
+    }
+    if (password.length < 10 || password.length > 256) {
+      return jsonError(res, 400, 'A senha deve ter pelo menos 10 caracteres.');
+    }
+    if (cpf.length !== 11) {
+      return jsonError(res, 400, 'CPF inválido. Informe os 11 dígitos.');
+    }
+    if (phone.length < 10 || phone.length > 11) {
+      return jsonError(res, 400, 'Telefone inválido. Informe DDD + número.');
+    }
+
+    const { rows: otpRows } = await pool.query(
+      `SELECT id FROM email_verifications
+       WHERE email = $1 AND code = $2 AND used_at IS NULL AND expires_at > NOW()
+       ORDER BY created_at DESC LIMIT 1`,
+      [email, code],
+    );
+    if (!otpRows[0]) {
+      return jsonError(res, 400, 'Código inválido ou expirado. Solicite um novo.');
+    }
+
     const passwordHash = await hashPassword(password);
     const client = await pool.connect();
     let rows;
     try {
       await client.query('BEGIN');
+      await client.query('UPDATE email_verifications SET used_at = NOW() WHERE id = $1', [otpRows[0].id]);
       ({ rows } = await client.query(
-      `INSERT INTO customers (id, email, password_hash, name, cpf, phone)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (email) DO NOTHING
-       RETURNING id, email, name, cpf, phone, address, updated_at`,
-      [randomUUID(), email, passwordHash, name, cpf, phone],
+        `INSERT INTO customers (id, email, password_hash, name, cpf, phone)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (email) DO NOTHING
+         RETURNING id, email, name, cpf, phone, address, updated_at`,
+        [randomUUID(), email, passwordHash, name, cpf, phone],
       ));
       if (rows[0]) await enqueueCustomer(client, rows[0]);
       await client.query('COMMIT');
@@ -654,7 +738,7 @@ app.post('/api/auth/register', requireSameOrigin, limitAttempts, async (req, res
       client.release();
     }
     if (!rows[0]) {
-      const { rows: dup } = await client.query(
+      const { rows: dup } = await pool.query(
         'SELECT email, cpf, phone FROM customers WHERE email = $1 OR cpf = $2 OR phone = $3 LIMIT 1',
         [email, cpf, phone],
       );

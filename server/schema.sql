@@ -47,6 +47,19 @@ CREATE TABLE IF NOT EXISTS integration_inbox (
   received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS email_verifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  code TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS email_verifications_lookup_idx
+  ON email_verifications (email, code)
+  WHERE used_at IS NULL;
+
 CREATE TABLE IF NOT EXISTS carts (
   customer_id UUID PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
   items JSONB NOT NULL DEFAULT '[]'::JSONB,
