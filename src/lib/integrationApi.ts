@@ -110,9 +110,13 @@ function mapOracleToEyewear(item: OracleProduct): EyewearProduct {
 export async function fetchProducts(): Promise<EyewearProduct[]> {
   try {
     const params = new URLSearchParams({ limit: '500' });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     const response = await fetch(`${API_BASE}/products?${params.toString()}`, {
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);

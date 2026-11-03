@@ -1069,24 +1069,24 @@ let catalogError = false;
 const hydrateCatalogFromApi = async (): Promise<void> => {
   if (catalogLoading) return;
   catalogLoading = true;
+  notifyStoreChanged();
   try {
     const products = await fetchProducts();
     if (products.length > 0) {
       catalogCache = products;
+      catalogError = false;
       // Mescla produtos da API com overrides/custom locais já persistidos
       const merged = [
         ...products.filter((p) => !data.removed.includes(p.id)).map((p) => data.overrides[p.id] ?? p),
         ...data.custom,
       ];
       CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length, ...clone(merged));
-      notifyStoreChanged();
     } else {
       // API retornou vazio ou falhou silenciosamente; mantém cache anterior ou usa mock como fallback
       console.warn('[siteStore] fetchProducts retornou lista vazia; mantendo cache atual ou usando fallback.');
       if (!catalogCache) {
         catalogCache = clone(ORIGINAL_PRODUCTS);
         CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length, ...clone(catalogCache));
-        notifyStoreChanged();
       }
     }
   } catch (err) {
@@ -1095,10 +1095,10 @@ const hydrateCatalogFromApi = async (): Promise<void> => {
     if (!catalogCache) {
       catalogCache = clone(ORIGINAL_PRODUCTS);
       CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length, ...clone(catalogCache));
-      notifyStoreChanged();
     }
   } finally {
     catalogLoading = false;
+    notifyStoreChanged();
   }
 };
 
