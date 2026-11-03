@@ -532,10 +532,18 @@ function SiteApp() {
     navigateTo('product', product.id);
   };
 
-  const handleGoToCheckoutWithProduct = (product: EyewearProduct, lensType = 'Lentes HD Antirreflexo + Blue Light') => {
-    if (!account) {
+  const redirectToLoginWithTransition = () => {
+    setLoginTransition(true);
+    window.setTimeout(() => {
       navigate('/login', { state: { from: location.pathname } });
       window.scrollTo({ top: 0, behavior: 'instant' });
+      setLoginTransition(false);
+    }, 420);
+  };
+
+  const handleGoToCheckoutWithProduct = (product: EyewearProduct, lensType = 'Lentes HD Antirreflexo + Blue Light') => {
+    if (!account) {
+      redirectToLoginWithTransition();
       return;
     }
     const newItem: OrderItem = {
@@ -555,8 +563,7 @@ function SiteApp() {
 
   const handleGoToCheckoutFromProductPage = (orderItem: OrderItem) => {
     if (!account) {
-      navigate('/login', { state: { from: location.pathname } });
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      redirectToLoginWithTransition();
       return;
     }
     setItems([orderItem]);
@@ -861,6 +868,17 @@ function SiteApp() {
         isOpen={isSpecialistChatOpen}
         onClose={() => setIsSpecialistChatOpen(false)}
       />
+
+      {/* Login transition overlay */}
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none fixed inset-0 z-[120] flex items-center justify-center bg-[#061748]/95 backdrop-blur-sm transition-opacity duration-400 ease-out ${loginTransition ? 'opacity-100' : 'opacity-0'}`}
+      >
+        <div className="flex flex-col items-center gap-3 text-white">
+          <span className="material-symbols-outlined animate-spin text-[32px] text-[#dbee2c]">progress_activity</span>
+          <p className="text-sm font-bold tracking-wide">Preparando sua experiência...</p>
+        </div>
+      </div>
 
       {/* Floating Trigger Button - stacked above theme toggle */}
       {!isSpecialistChatOpen && (

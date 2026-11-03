@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useSyncExternalStore } from 'react';
 import type { Data } from '@puckeditor/core';
-import { AVAILABLE_COUPONS, CATALOG_PRODUCTS, Coupon } from '../data/mockData';
+import { AVAILABLE_COUPONS, Coupon } from '../data/mockData';
 import { EyewearProduct } from '../types';
+
+/* Catálogo global mutável — inicia vazio; preenchido exclusivamente pela API */
+export const CATALOG_PRODUCTS: EyewearProduct[] = [];
 import type { AdminUser } from './adminApi';
 import { fetchProducts } from './integrationApi';
 import { emptyPageBuilderData, hasNativeSectionLayout, NATIVE_SECTIONS, nativeSectionTypes, type PageBuilderData } from './pageBuilder';
@@ -222,7 +225,6 @@ const DEFAULT_CONFIG: SiteConfig = {
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
 
-const ORIGINAL_PRODUCTS: EyewearProduct[] = clone(CATALOG_PRODUCTS);
 const ORIGINAL_COUPONS: Record<string, Coupon> = clone(AVAILABLE_COUPONS);
 
 const emptyData = (): StoredData => ({
@@ -608,11 +610,13 @@ const load = (): StoredData => {
   }
 };
 
-/* Aplica os dados salvos sobre os objetos de mockData, mutando-os in-place */
+/* Aplica os dados salvos — sem fallback para mocks; catálogo vazio até API responder */
 const apply = () => {
+  if (!catalogCache || catalogCache.length === 0) return;
+  const apiIds = new Set(catalogCache.map((p) => p.id));
   const list = [
-    ...ORIGINAL_PRODUCTS.filter((p) => !data.removed.includes(p.id)).map((p) => data.overrides[p.id] ?? p),
-    ...data.custom,
+    ...catalogCache.filter((p) => !data.removed.includes(p.id)).map((p) => data.overrides[p.id] ?? p),
+    ...data.custom.filter((c) => !apiIds.has(c.id)),
   ];
   CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length, ...clone(list));
 
@@ -1017,11 +1021,11 @@ export const restoreProduct = (id: string): boolean => {
 };
 
 export const getRemovedProducts = (): EyewearProduct[] =>
-  ORIGINAL_PRODUCTS.filter((p) => data.removed.includes(p.id));
+  (catalogCache ?? []).filter((p) => data.removed.includes(p.id));
 
 export const applyBulkDiscount = (ids: string[], percent: number): boolean => {
   ids.forEach((id) => {
-    const current = CATALOG_PRODUCTS.find((p) => p.id === id);
+    const current = (catalogCache ?? []).find((p) => p.id === id);
     if (!current) return;
     const base = current.originalPrice && current.originalPrice > current.price ? current.originalPrice : current.price;
     const next: EyewearProduct = {
@@ -1040,7 +1044,7 @@ export const applyBulkDiscount = (ids: string[], percent: number): boolean => {
 
 export const clearBulkDiscount = (ids: string[]): boolean => {
   ids.forEach((id) => {
-    const current = CATALOG_PRODUCTS.find((p) => p.id === id);
+    const current = (catalogCache ?? []).find((p) => p.id === id);
     if (!current || !current.originalPrice || current.originalPrice <= current.price) return;
     const next: EyewearProduct = { ...clone(current), price: current.originalPrice };
     delete next.originalPrice;
@@ -1256,19 +1260,19 @@ const hydrateCatalogFromApi = async (): Promise<void> => {
       ];
       CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length, ...clone(merged));
     } else {
-      // API retornou vazio ou falhou silenciosamente; mantém cache anterior ou usa mock como fallback
-      console.warn('[siteStore] fetchProducts retornou lista vazia; mantendo cache atual ou usando fallback.');
+      // API retornou vazio; não usar mock — catálogo fica vazio até haver dados reais
+      console.warn('[siteStore] fetchProducts retornou lista vazia; nenhum produto será exibido.');
       if (!catalogCache) {
-        catalogCache = clone(ORIGINAL_PRODUCTS);
-        CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length, ...clone(catalogCache));
+        catalogCache = [];
+        CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length);
       }
     }
   } catch (err) {
     console.error('[siteStore] Erro na hidratação do catálogo:', err);
     catalogError = true;
     if (!catalogCache) {
-      catalogCache = clone(ORIGINAL_PRODUCTS);
-      CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length, ...clone(catalogCache));
+      catalogCache = [];
+      CATALOG_PRODUCTS.splice(0, CATALOG_PRODUCTS.length);
     }
   } finally {
     catalogLoading = false;
