@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CustomSelect } from '../../components/CustomSelect';
 import { useToast } from '../../components/ToastContext';
 import { CATALOG_PRODUCTS } from '../../data/mockData';
-import { assignProductsToTag, createProductTag, deleteProductTag, getProductTags, ProductTagRule, ProductTagWithRules, useSiteData } from '../../lib/siteStore';
+import { assignProductsToTag, createProductTag, deleteProductTag, getProductTags, ProductTagRule, ProductTagWithRules, updateProductTag, useSiteData } from '../../lib/siteStore';
 import { Card, Field, inputCls, Modal, Notice, Pagination, primaryBtn } from './ui';
 
 const TAG_RULE_ATTRIBUTES: { value: ProductTagRule['attribute']; label: string }[] = [
@@ -36,6 +36,15 @@ const TagsTab: React.FC = () => {
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editingTag, setEditingTag] = useState<ProductTagWithRules | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editColor, setEditColor] = useState('#4156b8');
+  const [editLinkMode, setEditLinkMode] = useState<'products' | 'attribute'>('products');
+  const [editSelectedProductIds, setEditSelectedProductIds] = useState<string[]>([]);
+  const [editProductSearch, setEditProductSearch] = useState('');
+  const [editRuleAttr, setEditRuleAttr] = useState<ProductTagRule['attribute']>('brand');
+  const [editRuleValue, setEditRuleValue] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
   const pageCount = Math.ceil(tags.length / pageSize);
   const currentPage = Math.min(page, Math.max(pageCount, 1));
   const pageStart = (currentPage - 1) * pageSize;
@@ -180,6 +189,89 @@ const TagsTab: React.FC = () => {
     }
   };
 
+  const editRuleAttributeOptions: Record<ProductTagRule['attribute'], { label: string; value: string }[]> = {
+    brand: brands.map((b) => ({ label: b, value: b })),
+    category: categories.map((c) => ({ label: categoryLabels[c] ?? c, value: c })),
+    subcategory: subcategories.map((s) => ({ label: s, value: s })),
+    material: materials.map((m) => ({ label: m, value: m })),
+    shape: shapes.map((s) => ({ label: s, value: s })),
+  };
+
+  const openEditModal = (tag: ProductTagWithRules) => {
+    const tagRules = tag.rules ?? [];
+    const firstRule = tagRules[0];
+    setEditingTag(tag);
+    setEditName(tag.name);
+    setEditColor(tag.color);
+    setEditSelectedProductIds(tag.assignedProductIds ?? []);
+    setEditProductSearch('');
+    if (firstRule) {
+      setEditLinkMode('attribute');
+      setEditRuleAttr(firstRule.attribute);
+      setEditRuleValue(firstRule.value);
+    } else {
+      setEditLinkMode('products');
+      setEditRuleAttr('brand');
+      setEditRuleValue('');
+    }
+    setMessage(null);
+  };
+
+  const closeEditModal = () => {
+    if (editSaving) return;
+    setEditingTag(null);
+    setEditName('');
+    setEditColor('#4156b8');
+    setEditLinkMode('products');
+    setEditSelectedProductIds([]);
+    setEditProductSearch('');
+    setEditRuleAttr('brand');
+    setEditRuleValue('');
+  };
+
+  const submitEdit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingTag) return;
+    const normalizedName = editName.trim();
+    if (!normalizedName) {
+      setMessage(null);
+      toast.error('Nome da tag obrigatório', 'Digite um nome para a tag.');
+      return;
+    }
+    const duplicate = tags.some(
+      (tag) => tag.id !== editingTag.id && tag.name.toLocaleLowerCase('pt-BR') === normalizedName.toLocaleLowerCase('pt-BR'),
+    );
+    if (duplicate) {
+      setMessage(null);
+      toast.error('Tag já existe', 'Já existe uma tag com esse nome.');
+      return;
+    }
+
+    const payloadRules: ProductTagRule[] =
+      editLinkMode === 'attribute' && editRuleValue.trim()
+        ? [{ attribute: editRuleAttr, value: editRuleValue.trim() }]
+        : [];
+    const payloadProducts = editLinkMode === 'products' ? editSelectedProductIds : [];
+
+    setEditSaving(true);
+    const ok = await updateProductTag({
+      id: editingTag.id,
+      name: normalizedName,
+      color: editColor,
+      rules: payloadRules,
+      assignedProductIds: payloadProducts,
+    });
+    setEditSaving(false);
+
+    if (!ok) {
+      setMessage(null);
+      toast.error('Não foi possível atualizar a tag', 'Verifique sua conexão ou tente novamente.');
+      return;
+    }
+    toast.success('Tag atualizada', normalizedName);
+    closeEditModal();
+  };
+
   const openLinkModal = (tagId: string) => {
     setLinkingTagId(tagId);
     setProductQuery('');
@@ -229,7 +321,6 @@ const TagsTab: React.FC = () => {
                     <th className="px-2 py-2 font-bold">Cor</th>
                     <th className="px-2 py-2 font-bold">Regras Automáticas</th>
                     <th className="px-2 py-2 font-bold">Produtos Vinculados</th>
-                    <th className="px-2 py-2 font-bold text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -237,7 +328,11 @@ const TagsTab: React.FC = () => {
                     const assignedIds = tag.assignedProductIds ?? [];
                     const tagRules = (tag as ProductTagWithRules).rules ?? [];
                     return (
-                      <tr key={tag.id} className="border-t border-[#eceef0] hover:bg-[#f2f5ff] transition-colors">
+                      <tr
+                        key={tag.id}
+                        onClick={() => openEditModal(tag)}
+                        className="border-t border-[#eceef0] hover:bg-[#f2f5ff] transition-colors cursor-pointer"
+                      >
                         <td className="px-2 py-3">
                           <span
                             className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold"
@@ -273,26 +368,6 @@ const TagsTab: React.FC = () => {
                           <span className={`text-[11px] font-bold ${assignedIds.length > 0 ? 'text-emerald-600' : 'text-[#767680]'}`}>
                             {assignedIds.length} {assignedIds.length === 1 ? 'produto' : 'produtos'}
                           </span>
-                        </td>
-                        <td className="px-2 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => openLinkModal(tag.id)}
-                              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-[#566176] transition hover:cursor-pointer hover:bg-[#f1f3f8]"
-                            >
-                              <span className="material-symbols-outlined text-[17px]">sell</span>
-                              <span className="hidden sm:inline">Vincular</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => remove(tag.id)}
-                              aria-label={`Remover tag ${tag.name}`}
-                              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#8992a4] transition hover:cursor-pointer hover:bg-red-50 hover:text-red-600"
-                            >
-                              <span className="material-symbols-outlined text-[19px]">delete</span>
-                            </button>
-                          </div>
                         </td>
                       </tr>
                     );
@@ -444,6 +519,177 @@ const TagsTab: React.FC = () => {
               <button type="button" className={primaryBtn} onClick={closeLinkModal}>Concluir</button>
             </div>
           </div>
+        </Modal>
+      )}
+      {editingTag && (
+        <Modal title={`Editar tag · ${editingTag.name}`} onClose={closeEditModal} wide fixedHeight>
+          <form onSubmit={submitEdit} className="space-y-5 text-sm">
+            <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <Field label="Nome da tag">
+                <input
+                  className={`${inputCls} text-sm`}
+                  maxLength={32}
+                  value={editName}
+                  onChange={(e) => {
+                    setEditName(e.target.value);
+                    setMessage(null);
+                  }}
+                  autoFocus
+                />
+              </Field>
+              <Field label="Cor">
+                <div className="flex h-[46px] items-center gap-3 rounded-xl border border-[#c6c5d0] bg-white px-4">
+                  <input
+                    aria-label="Cor da tag"
+                    type="color"
+                    className="h-8 w-10 cursor-pointer border-0 bg-transparent p-0"
+                    value={editColor}
+                    onChange={(e) => setEditColor(e.target.value)}
+                  />
+                  <span className="text-sm font-medium uppercase text-[#737d91]">{editColor}</span>
+                </div>
+              </Field>
+            </div>
+
+            <div className="rounded-xl border border-[#e8ebf1] bg-[#fafbfc] p-4 space-y-3">
+              <p className="text-sm font-bold uppercase tracking-[0.08em] text-[#8992a4]">Vínculo</p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setEditLinkMode('products'); setEditRuleValue(''); }}
+                  className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold transition ${editLinkMode === 'products' ? 'border-[#4156b8] bg-[#eef0ff] text-[#4156b8]' : 'border-[#dfe5f4] bg-white text-[#566176] hover:bg-[#f8f9fc]'}`}
+                >
+                  Produtos individuais
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEditLinkMode('attribute'); setEditSelectedProductIds([]); }}
+                  className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold transition ${editLinkMode === 'attribute' ? 'border-[#4156b8] bg-[#eef0ff] text-[#4156b8]' : 'border-[#dfe5f4] bg-white text-[#566176] hover:bg-[#f8f9fc]'}`}
+                >
+                  Por atributo
+                </button>
+              </div>
+
+              {editLinkMode === 'products' ? (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#8a8d96] text-[18px]">search</span>
+                    <input
+                      className={`${inputCls} pl-9 text-sm`}
+                      placeholder="Buscar por nome, SKU ou marca..."
+                      value={editProductSearch}
+                      onChange={(e) => setEditProductSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="max-h-[360px] overflow-y-auto rounded-lg border border-[#e8ebf1] bg-white">
+                    {(() => {
+                      const term = editProductSearch.trim().toLocaleLowerCase('pt-BR');
+                      const filtered = term
+                        ? CATALOG_PRODUCTS.filter((p) =>
+                            p.name.toLocaleLowerCase('pt-BR').includes(term) ||
+                            (p.sku && p.sku.toLocaleLowerCase('pt-BR').includes(term)) ||
+                            p.brand.toLocaleLowerCase('pt-BR').includes(term),
+                          )
+                        : CATALOG_PRODUCTS;
+                      if (CATALOG_PRODUCTS.length === 0) {
+                        return <p className="py-8 text-center text-sm text-[#8992a4]">Nenhum produto disponível.</p>;
+                      }
+                      if (filtered.length === 0) {
+                        return <p className="py-8 text-center text-sm text-[#8992a4]">Nenhum produto encontrado para "{editProductSearch}".</p>;
+                      }
+                      return (
+                        <ul className="divide-y divide-[#eceef0]">
+                          {filtered.map((product) => {
+                            const checked = editSelectedProductIds.includes(product.id);
+                            return (
+                              <li key={product.id}>
+                                <label className="flex cursor-pointer items-center gap-3 px-4 py-3 transition hover:bg-[#f7f8fa]">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      setEditSelectedProductIds((prev) =>
+                                        e.target.checked ? [...prev, product.id] : prev.filter((id) => id !== product.id),
+                                      );
+                                    }}
+                                    className="h-5 w-5 accent-[#4156b8]"
+                                  />
+                                  <img src={product.image} alt="" className="h-10 w-12 rounded border border-[#eceef0] bg-white object-cover" />
+                                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#34415e]">{product.name}</span>
+                                  <span className="shrink-0 text-xs text-[#8992a4]">{product.brand}</span>
+                                </label>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      );
+                    })()}
+                    {editSelectedProductIds.length > 0 && (
+                      <p className="border-t border-[#eceef0] px-4 py-3 text-sm font-semibold text-[#4156b8]">
+                        {editSelectedProductIds.length} {editSelectedProductIds.length === 1 ? 'produto selecionado' : 'produtos selecionados'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                  <Field label="Atributo">
+                    <select
+                      className={`${inputCls} text-sm`}
+                      value={editRuleAttr}
+                      onChange={(e) => {
+                        setEditRuleAttr(e.target.value as ProductTagRule['attribute']);
+                        setEditRuleValue('');
+                      }}
+                    >
+                      {TAG_RULE_ATTRIBUTES.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Valor">
+                    <select
+                      className={`${inputCls} text-sm`}
+                      value={editRuleValue}
+                      onChange={(e) => setEditRuleValue(e.target.value)}
+                      disabled={(editRuleAttributeOptions[editRuleAttr] ?? []).length === 0}
+                    >
+                      <option value="">Selecione...</option>
+                      {(editRuleAttributeOptions[editRuleAttr] ?? []).map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </Field>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-[#eceef0] pt-4">
+              <button
+                type="button"
+                onClick={() => remove(editingTag.id)}
+                disabled={editSaving}
+                className="inline-flex h-[46px] items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-5 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[20px]">delete</span>
+                Excluir tag
+              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={editSaving}
+                  className="inline-flex h-[46px] items-center gap-2 rounded-lg border border-[#dfe5f4] px-5 text-sm font-semibold text-[#566176] transition hover:bg-[#f4f6ff] disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button type="submit" disabled={editSaving} className={`${primaryBtn} h-[46px] px-6 text-sm disabled:opacity-60`}>
+                  <span className="material-symbols-outlined text-[20px]">{editSaving ? 'progress_activity' : 'save'}</span>
+                  {editSaving ? 'Salvando...' : 'Salvar alterações'}
+                </button>
+              </div>
+            </div>
+          </form>
         </Modal>
       )}
       {createModalOpen && (

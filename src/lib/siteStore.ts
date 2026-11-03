@@ -896,6 +896,27 @@ export const assignProductsToTag = async (tagId: string, productIds: string[]): 
   }
 };
 
+export const updateProductTag = async (tag: ProductTag & { rules?: ProductTagRule[] }): Promise<boolean> => {
+  try {
+    const response = await fetch(`/api/admin/tags/${tag.id}`, {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: tag.name,
+        color: tag.color,
+        assignedProductIds: tag.assignedProductIds ?? [],
+        rules: tag.rules ?? [],
+      }),
+    });
+    if (!response.ok) return false;
+    await hydratePromotionsFromApi();
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const deleteProductTag = async (id: string): Promise<boolean> => {
   try {
     const response = await fetch(`/api/admin/tags/${id}`, {
