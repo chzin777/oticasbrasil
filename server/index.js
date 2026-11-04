@@ -45,7 +45,7 @@ if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD || process.env.ADMIN
 }
 validateIntegrationConfig();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 20 });
 const migrationPool = new Pool({ connectionString: process.env.MIGRATION_DATABASE_URL, max: 2 });
@@ -617,7 +617,7 @@ const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 const OTP_TTL_MS = 10 * 60 * 1000;
 
 const sendOtpEmail = async (email, code) => {
-  if (!process.env.RESEND_API_KEY) {
+  if (!resend) {
     console.warn('RESEND_API_KEY não configurada; OTP não enviado para', email);
     return;
   }
