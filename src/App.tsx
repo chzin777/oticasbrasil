@@ -176,6 +176,24 @@ function SiteApp() {
   // Hero theme state (shared between HomePage and Header)
   const [heroTheme, setHeroTheme] = useState<'default' | 'blackfriday'>('default');
 
+  // Busca sessão em rotas públicas para atualizar o Header após login/registro
+  useEffect(() => {
+    if (location.pathname === '/checkout' || location.pathname === '/minha-conta') return;
+    if (account) return;
+    let active = true;
+    fetch('/api/auth/session', { credentials: 'same-origin' })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{ user: AccountUser | null }>;
+      })
+      .then((data) => {
+        if (!active || !data?.user) return;
+        setAccount(data.user);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [location.pathname, account]);
+
   useEffect(() => {
     if (location.pathname !== '/checkout' && location.pathname !== '/minha-conta') return;
     let active = true;
