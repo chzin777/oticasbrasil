@@ -46,6 +46,7 @@ export const LoginPage: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [otpStep, setOtpStep] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
@@ -64,6 +65,41 @@ export const LoginPage: React.FC = () => {
       setRemember(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = window.setInterval(() => {
+      setResendCooldown((prev) => (prev > 1 ? prev - 1 : 0));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResendOtp = async () => {
+    if (submitting || resendCooldown > 0) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const cleanCpf = cpf.replace(/\D/g, '');
+      const cleanPhone = phone.replace(/\D/g, '');
+      const response = await fetch('/api/auth/register/send-otp', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email: email.trim(), password, cpf: cleanCpf, phone: cleanPhone }),
+      });
+      const result = await response.json() as { message?: string; error?: string };
+      if (!response.ok) {
+        setError(result.error || 'Não foi possível reenviar o código.');
+        return;
+      }
+      setResendCooldown(60);
+      toast.success('Código reenviado', `Um novo código foi enviado para ${email}`);
+    } catch {
+      setError('Não foi possível conectar ao servidor.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Handle Google OAuth callback
   useEffect(() => {
@@ -266,15 +302,15 @@ export const LoginPage: React.FC = () => {
 
           <div>
             <h1 className="text-[21px] font-semibold tracking-tight text-[#051647]">
-              {mode === 'login' ? 'Acesse sua conta' : 'Crie sua conta'}
+              {mode === 'login' ? 'Acesse sua conta' : otpStep ? 'Verifique seu e-mail' : 'Crie sua conta'}
             </h1>
             <p className="mt-1 text-[13px] text-[#051647]/60">
-              {mode === 'login' ? 'Entre para continuar comprando.' : 'Cadastre-se para aproveitar todas as vantagens.'}
+              {mode === 'login' ? 'Entre para continuar comprando.' : otpStep ? 'Insira o código enviado para concluir seu cadastro.' : 'Cadastre-se para aproveitar todas as vantagens.'}
             </p>
           </div>
 
           <form className={`flex flex-col ${mode === 'register' ? 'gap-3.5' : 'gap-5'}`} onSubmit={handleSubmit}>
-            {mode === 'register' && (
+            {mode === 'register' && !otpStep && (
               <>
                 <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
                   Nome completo
@@ -345,6 +381,7 @@ export const LoginPage: React.FC = () => {
               </>
             )}
 
+            {!(mode === 'register' && otpStep) && (
             <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
               E-mail
               <span className="relative block">
@@ -354,7 +391,7 @@ export const LoginPage: React.FC = () => {
                   name="email"
                   autoComplete="username"
                   required
-                  autoFocus
+                  autoFocus={!otpStep}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="voce@email.com"
@@ -362,7 +399,9 @@ export const LoginPage: React.FC = () => {
                 />
               </span>
             </label>
+            )}
 
+            {!(mode === 'register' && otpStep) && (
             <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
               Senha
               <span className="relative block">
@@ -388,27 +427,53 @@ export const LoginPage: React.FC = () => {
                 </button>
               </span>
             </label>
+            )}
 
             {mode === 'register' && otpStep && (
-              <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
-                Código de verificação
-                <span className="relative block">
-                  <span aria-hidden="true" className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#051647]/40">sms</span>
-                  <input
-                    type="text"
-                    required
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    autoFocus
-                    value={otpCode}
-                    onChange={(event) => setOtpCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="000000"
-                    className={`${inputCls} pr-4 text-center tracking-[0.3em] font-bold`}
-                  />
-                </span>
-                <span className="block text-[11px] text-[#051647]/50">Digite o código de 6 dígitos enviado para {email}</span>
-              </label>
+              <div className="flex flex-col gap-4 rounded-xl border border-[#051647]/10 bg-[#f9fafb] p-5">
+                <div className="space-y-1 text-center">
+                  <h2 className="text-[17px] font-semibold text-[#051647]">Verifique seu e-mail</h2>
+                  <p className="text-[12.5px] leading-relaxed text-[#051647]/60">
+                    Enviamos um código de 6 dígitos para <span className="font-semibold text-[#051647]/80">{email}</span>
+                  </p>
+                </div>
+                <label className="block space-y-1.5 text-[13px] font-medium text-[#051647]/80">
+                  Código de verificação
+                  <span className="relative block">
+                    <span aria-hidden="true" className="material-symbols-outlined pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px] text-[#051647]/40">sms</span>
+                    <input
+                      type="text"
+                      required
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      autoFocus
+                      value={otpCode}
+                      onChange={(event) => setOtpCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="000000"
+                      className={`${inputCls} pr-4 text-center tracking-[0.3em] font-bold`}
+                    />
+                  </span>
+                </label>
+                <div className="flex items-center justify-between text-[12px]">
+                  <button
+                    type="button"
+                    onClick={() => { setOtpStep(false); setOtpCode(''); setError(''); }}
+                    disabled={submitting}
+                    className="font-medium text-[#051647]/60 transition-colors hover:text-[#4156b8] disabled:opacity-50 cursor-pointer"
+                  >
+                    ← Voltar / Alterar e-mail
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={submitting || resendCooldown > 0}
+                    className="font-semibold text-[#4156b8] transition-colors hover:text-[#061748] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  >
+                    {resendCooldown > 0 ? `Reenviar em ${resendCooldown}s` : 'Reenviar código'}
+                  </button>
+                </div>
+              </div>
             )}
 
             {error && (
@@ -446,8 +511,8 @@ export const LoginPage: React.FC = () => {
             >
               {submitting && <span aria-hidden="true" className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>}
               {submitting
-                ? (mode === 'login' ? 'Entrando...' : otpStep ? 'Verificando...' : 'Enviando código...')
-                : (mode === 'login' ? 'Entrar' : otpStep ? 'Verificar código' : 'Enviar código de verificação')}
+                ? (mode === 'login' ? 'Entrando...' : otpStep ? 'Confirmando...' : 'Enviando...')
+                : (mode === 'login' ? 'Entrar' : otpStep ? 'Confirmar código' : 'Continuar')}
             </button>
           </form>
 
