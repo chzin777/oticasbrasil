@@ -623,7 +623,7 @@ const sendOtpEmail = async (email, code) => {
   }
   try {
     await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'no-reply@oticasbrasil.com.br',
+      from: process.env.EMAIL_FROM || 'Óticas Brasil <no-reply@oticasbrasil.com.br>',
       to: email,
       subject: 'Seu código de verificação - Óticas Brasil',
       html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#f9fafb;border-radius:12px;">
