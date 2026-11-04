@@ -67,6 +67,28 @@ const FILTERS = [
 const date = (value: string | null) => (value ? new Date(value).toLocaleDateString('pt-BR') : '—');
 const dateTime = (value: string | null) => (value ? new Date(value).toLocaleString('pt-BR') : '—');
 
+const onlyDigits = (value: string) => value.replace(/\D/g, '');
+
+const formatPhone = (value: string) => {
+  const digits = onlyDigits(value).slice(0, 11);
+  if (!digits) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+const formatCpf = (value: string) => {
+  const digits = onlyDigits(value).slice(0, 11);
+  if (!digits) return '';
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
+
+const displayPhone = (value: string | null) => (value ? formatPhone(value) : '—');
+const displayCpf = (value: string | null) => (value ? formatCpf(value) : '—');
+
 const orderStatusLabels: Record<string, string> = {
   awaiting_payment: 'Aguardando pagamento',
   payment_confirmed: 'Pagamento confirmado',
@@ -88,6 +110,219 @@ const paymentMethodLabels: Record<string, string> = {
   boleto: 'Boleto',
 };
 
+interface EditableFields {
+  name: string;
+  email: string;
+  phone: string;
+  cpf: string;
+  street: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  cep: string;
+}
+
+const toEditable = (customer: Customer): EditableFields => ({
+  name: customer.name ?? '',
+  email: customer.email ?? '',
+  phone: customer.phone ? formatPhone(customer.phone) : '',
+  cpf: customer.cpf ? formatCpf(customer.cpf) : '',
+  street: customer.address?.street ?? '',
+  number: customer.address?.number ?? '',
+  complement: customer.address?.complement ?? '',
+  neighborhood: customer.address?.neighborhood ?? '',
+  city: customer.address?.city ?? '',
+  state: customer.address?.state ?? '',
+  cep: customer.address?.cep ?? '',
+});
+
+const CustomerEditCard: React.FC<{
+  customer: Customer;
+  onSaved: (updated: Customer) => void;
+  toastSuccess: (title: string, message?: string) => void;
+  toastError: (title: string, message?: string) => void;
+}> = ({ customer, onSaved, toastSuccess, toastError }) => {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<EditableFields>(() => toEditable(customer));
+
+  useEffect(() => {
+    setForm(toEditable(customer));
+    setEditing(false);
+  }, [customer]);
+
+  const updateField = <K extends keyof EditableFields>(key: K, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const digits = onlyDigits(value).slice(0, 11);
+    updateField('phone', formatPhone(digits));
+  };
+
+  const handleCpfChange = (value: string) => {
+    const digits = onlyDigits(value).slice(0, 11);
+    updateField('cpf', formatCpf(digits));
+  };
+
+  const handleCepChange = (value: string) => {
+    const digits = onlyDigits(value).slice(0, 8);
+    let formatted = '';
+    if (digits.length > 5) formatted = `${digits.slice(0, 5)}-${digits.slice(5)}`;
+    else formatted = digits;
+    updateField('cep', formatted);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: onlyDigits(form.phone) || null,
+        cpf: onlyDigits(form.cpf) || null,
+        address: {
+          street: form.street.trim(),
+          number: form.number.trim(),
+          complement: form.complement.trim(),
+          neighborhood: form.neighborhood.trim(),
+          city: form.city.trim(),
+          state: form.state.trim().toUpperCase().slice(0, 2),
+          cep: onlyDigits(form.cep),
+        },
+      };
+      const updated = await adminRequest<Customer>(`/api/admin/customers/${customer.id}`, {
+        method: 'PATCH',
+        body: payload,
+      });
+      toastSuccess('Dados atualizados', 'As informações do cliente foram salvas.');
+      onSaved(updated);
+      setEditing(false);
+    } catch (error) {
+      toastError('Não foi possível salvar', errorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancel = () => {
+    setForm(toEditable(customer));
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <article className="rounded-xl border border-[#e8ebf1] bg-white p-5">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-bold text-[#142344]">Cadastro e contato</h3>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-[#4156b8] transition hover:bg-[#eef1fb]"
+          >
+            <span className="material-symbols-outlined text-[16px]">edit</span>
+            Editar
+          </button>
+        </div>
+        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+          <dt className="text-[#8992a4]">Nome</dt><dd className="text-right text-[#34415a]">{customer.name}</dd>
+          <dt className="text-[#8992a4]">E-mail</dt><dd className="text-right text-[#34415a]">{customer.email}</dd>
+          <dt className="text-[#8992a4]">Telefone</dt><dd className="text-right text-[#34415a]">{displayPhone(customer.phone)}</dd>
+          <dt className="text-[#8992a4]">CPF</dt><dd className="text-right text-[#34415a]">{displayCpf(customer.cpf)}</dd>
+          <dt className="text-[#8992a4]">Endereço</dt>
+          <dd className="text-right text-[#34415a]">
+            {[
+              customer.address?.street,
+              customer.address?.number,
+              customer.address?.complement,
+              customer.address?.neighborhood,
+              [customer.address?.city, customer.address?.state].filter(Boolean).join(' - '),
+              customer.address?.cep,
+            ].filter(Boolean).join(', ') || 'Não informado'}
+          </dd>
+          <dt className="text-[#8992a4]">Situação</dt>
+          <dd className={`text-right font-semibold ${customer.blocked ? 'text-red-700' : 'text-emerald-700'}`}>
+            {customer.blocked ? 'Inativo' : 'Ativo'}
+          </dd>
+        </dl>
+      </article>
+    );
+  }
+
+  return (
+    <article className="rounded-xl border border-[#e8ebf1] bg-white p-5">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-bold text-[#142344]">Editar cadastro</h3>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={cancel}
+            disabled={saving}
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#69758a] transition hover:bg-[#f1f3f7]"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => void save()}
+            disabled={saving}
+            className="flex items-center gap-1.5 rounded-lg bg-[#4156b8] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#334599] disabled:opacity-60"
+          >
+            {saving && <span className="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>}
+            {saving ? 'Salvando...' : 'Salvar alterações'}
+          </button>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-xs font-semibold text-[#47536a]">
+          Nome completo
+          <input className={`${inputCls} !text-sm`} value={form.name} onChange={(e) => updateField('name', e.target.value)} />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-[#47536a]">
+          E-mail
+          <input className={`${inputCls} !text-sm`} type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-[#47536a]">
+          Telefone
+          <input className={`${inputCls} !text-sm`} placeholder="(00) 00000-0000" value={form.phone} onChange={(e) => handlePhoneChange(e.target.value)} maxLength={15} />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-[#47536a]">
+          CPF
+          <input className={`${inputCls} !text-sm`} placeholder="000.000.000-00" value={form.cpf} onChange={(e) => handleCpfChange(e.target.value)} maxLength={14} />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-[#47536a]">
+          CEP
+          <input className={`${inputCls} !text-sm`} placeholder="00000-000" value={form.cep} onChange={(e) => handleCepChange(e.target.value)} maxLength={9} />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-[#47536a]">
+          Cidade / UF
+          <div className="flex gap-2">
+            <input className={`${inputCls} flex-1 !text-sm`} placeholder="Cidade" value={form.city} onChange={(e) => updateField('city', e.target.value)} />
+            <input className={`${inputCls} w-20 !text-sm uppercase`} placeholder="UF" maxLength={2} value={form.state} onChange={(e) => updateField('state', e.target.value.toUpperCase())} />
+          </div>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-[#47536a]">
+          Rua
+          <input className={`${inputCls} !text-sm`} value={form.street} onChange={(e) => updateField('street', e.target.value)} />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-[#47536a]">
+          Número / Complemento
+          <div className="flex gap-2">
+            <input className={`${inputCls} w-24 !text-sm`} placeholder="Nº" value={form.number} onChange={(e) => updateField('number', e.target.value)} />
+            <input className={`${inputCls} flex-1 !text-sm`} placeholder="Complemento" value={form.complement} onChange={(e) => updateField('complement', e.target.value)} />
+          </div>
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-[#47536a]">
+          Bairro
+          <input className={`${inputCls} !text-sm`} value={form.neighborhood} onChange={(e) => updateField('neighborhood', e.target.value)} />
+        </label>
+      </div>
+    </article>
+  );
+};
+
 const CustomerDetailsModal: React.FC<{
   customer: Customer;
   details: CustomerDetails | null;
@@ -95,7 +330,15 @@ const CustomerDetailsModal: React.FC<{
   error: string | null;
   onClose: () => void;
   onToggleBlock: (customer: Customer) => void;
-}> = ({ customer, details, loading, error, onClose, onToggleBlock }) => (
+  onCustomerUpdated: (updated: Customer) => void;
+  toastSuccess: (title: string, message?: string) => void;
+  toastError: (title: string, message?: string) => void;
+}> = ({ customer, details, loading, error, onClose, onToggleBlock, onCustomerUpdated, toastSuccess, toastError }) => {
+  const handleSaved = (updated: Customer) => {
+    onCustomerUpdated(updated);
+  };
+
+  return (
   <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101a2c]/55 p-3 sm:p-6" role="presentation" onMouseDown={(event) => {
     if (event.target === event.currentTarget) onClose();
   }}>
@@ -159,28 +402,12 @@ const CustomerDetailsModal: React.FC<{
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <article className="rounded-xl border border-[#e8ebf1] bg-white p-5">
-                <h3 className="font-bold text-[#142344]">Cadastro e contato</h3>
-                <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-                  <dt className="text-[#8992a4]">Telefone</dt><dd className="text-right text-[#34415a]">{details.customer.phone || '—'}</dd>
-                  <dt className="text-[#8992a4]">CPF</dt><dd className="text-right text-[#34415a]">{details.customer.cpf || '—'}</dd>
-                  <dt className="text-[#8992a4]">Endereço</dt>
-                  <dd className="text-right text-[#34415a]">
-                    {[
-                      details.customer.address?.street,
-                      details.customer.address?.number,
-                      details.customer.address?.complement,
-                      details.customer.address?.neighborhood,
-                      [details.customer.address?.city, details.customer.address?.state].filter(Boolean).join(' - '),
-                      details.customer.address?.cep,
-                    ].filter(Boolean).join(', ') || 'Não informado'}
-                  </dd>
-                  <dt className="text-[#8992a4]">Situação</dt>
-                  <dd className={`text-right font-semibold ${details.customer.blocked ? 'text-red-700' : 'text-emerald-700'}`}>
-                    {details.customer.blocked ? 'Bloqueado' : 'Ativo'}
-                  </dd>
-                </dl>
-              </article>
+              <CustomerEditCard
+                customer={details.customer}
+                onSaved={handleSaved}
+                toastSuccess={toastSuccess}
+                toastError={toastError}
+              />
 
               <article className="rounded-xl border border-[#e8ebf1] bg-white p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -253,7 +480,8 @@ const CustomerDetailsModal: React.FC<{
       </div>
     </section>
   </div>
-);
+  );
+};
 
 const csvCell = (value: string | number) => {
   const text = String(value);
@@ -531,6 +759,13 @@ export const CustomersTab: React.FC = () => {
           error={detailsError}
           onClose={() => setDetailsCustomer(null)}
           onToggleBlock={(customer) => setTarget(customer)}
+          onCustomerUpdated={(updated) => {
+            setDetails((prev) => (prev ? { ...prev, customer: updated } : prev));
+            setDetailsCustomer(updated);
+            void load();
+          }}
+          toastSuccess={toast.success}
+          toastError={toast.error}
         />
       )}
     </div>
