@@ -596,6 +596,7 @@ function SiteApp() {
   return (
     <div className="bg-[#f7f9fb] min-h-screen font-sans text-[#191c1e] flex flex-col selection:bg-[#dbee2c] selection:text-[#061748]">
       {/* Top Announcement Bar, Navigation & Screen Switcher */}
+      {location.pathname !== '/login' && (
       <Header
         currentPage={currentPage}
         activeCategory={isCatalogOpen ? catalogCategory : currentPage === 'frames' ? 'armacoes' : currentPage === 'sunglasses' ? 'oculos-de-sol' : currentPage === 'lenses' ? 'lentes-de-grau' : null}
@@ -628,6 +629,7 @@ function SiteApp() {
             });
         }}
       />
+      )}
 
       {/* Main Content Area based on Current Page */}
       <main className={`w-full min-w-0 min-h-screen ${currentPage === 'home' ? '' : 'pt-32 sm:pt-36 bg-[#f7f9fb]'}`}>
