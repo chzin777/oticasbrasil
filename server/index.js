@@ -293,6 +293,20 @@ app.get('/api/store/products', async (_req, res, next) => {
   }
 });
 
+app.get('/api/stores', async (_req, res, next) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, address, address_number, complement, postal_code, city, state, neighborhoods, active, kind, radius_km, lat, lng, number
+       FROM stores
+       WHERE active = true
+       ORDER BY number`,
+    );
+    res.json({ stores: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
 /* ---------- Dados Promocionais Públicos (Tags + Políticas Ativas) ---------- */
 
 app.get('/api/store/promotions', async (_req, res, next) => {
