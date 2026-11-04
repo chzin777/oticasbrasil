@@ -94,7 +94,8 @@ const CustomerDetailsModal: React.FC<{
   loading: boolean;
   error: string | null;
   onClose: () => void;
-}> = ({ customer, details, loading, error, onClose }) => (
+  onToggleBlock: (customer: Customer) => void;
+}> = ({ customer, details, loading, error, onClose, onToggleBlock }) => (
   <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101a2c]/55 p-3 sm:p-6" role="presentation" onMouseDown={(event) => {
     if (event.target === event.currentTarget) onClose();
   }}>
@@ -105,14 +106,29 @@ const CustomerDetailsModal: React.FC<{
       className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-[#f7f8fb] shadow-2xl"
     >
       <header className="flex items-start justify-between gap-4 border-b border-[#e8ebf1] bg-white px-5 py-4 sm:px-7">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8992a4]">Ficha do cliente</p>
-          <h2 id="customer-details-title" className="mt-1 truncate text-xl font-black text-[#142344]">{customer.name}</h2>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <h2 id="customer-details-title" className="truncate text-xl font-black text-[#142344]">{customer.name}</h2>
+            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${customer.blocked ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+              {customer.blocked ? 'Inativo' : 'Ativo'}
+            </span>
+          </div>
           <p className="truncate text-sm text-[#7b8497]">{customer.email}</p>
         </div>
-        <button type="button" onClick={onClose} aria-label="Fechar detalhes do cliente" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#69758a] hover:bg-[#f1f3f7]">
-          <span className="material-symbols-outlined">close</span>
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onToggleBlock(customer)}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition hover:cursor-pointer ${customer.blocked ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-red-50 text-red-700 hover:bg-red-100'}`}
+          >
+            <span className="material-symbols-outlined text-[16px]">{customer.blocked ? 'check_circle' : 'block'}</span>
+            {customer.blocked ? 'Reativar' : 'Inativar'}
+          </button>
+          <button type="button" onClick={onClose} aria-label="Fechar detalhes do cliente" className="flex h-9 w-9 items-center justify-center rounded-lg text-[#69758a] hover:bg-[#f1f3f7]">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
       </header>
 
       <div className="overflow-y-auto p-4 sm:p-6">
@@ -327,9 +343,13 @@ export const CustomersTab: React.FC = () => {
     setBusy(true);
     try {
       await adminRequest(`/api/admin/customers/${target.id}`, { method: 'PATCH', body: { blocked } });
-      toast.success(blocked ? 'Cliente bloqueado' : 'Cliente desbloqueado', target.email);
+      toast.success(blocked ? 'Cliente inativado' : 'Cliente reativado', target.email);
       setTarget(null);
       await load();
+      if (detailsCustomer && detailsCustomer.id === target.id) {
+        setDetailsCustomer((prev) => (prev ? { ...prev, blocked } : prev));
+        setDetails((prev) => (prev ? { ...prev, customer: { ...prev.customer, blocked } } : prev));
+      }
     } catch (error) {
       toast.error('Não foi possível atualizar o cliente', errorMessage(error));
     } finally {
@@ -449,12 +469,15 @@ export const CustomersTab: React.FC = () => {
                     <th className="px-3 py-2 text-right">Total gasto</th>
                     <th className="px-3 py-2">Cadastro</th>
                     <th className="px-3 py-2">Situação</th>
-                    <th className="py-2 pl-3 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visible.map((customer) => (
-                    <tr key={customer.id} className="border-b border-[#f1f3f7] last:border-0">
+                    <tr
+                      key={customer.id}
+                      onClick={() => void openDetails(customer)}
+                      className="cursor-pointer border-b border-[#f1f3f7] last:border-0 transition hover:bg-[#f7f8fb]"
+                    >
                       <td className="py-3 pr-3">
                         <p className="font-semibold text-[#24324b]">{customer.name}</p>
                         <p className="text-xs text-[#7b8497]">{customer.email}</p>
@@ -471,26 +494,8 @@ export const CustomersTab: React.FC = () => {
                       <td className="px-3 py-3 text-xs text-[#7b8497]">{date(customer.created_at)}</td>
                       <td className="px-3 py-3">
                         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${customer.blocked ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
-                          {customer.blocked ? 'Bloqueado' : 'Ativo'}
+                          {customer.blocked ? 'Inativo' : 'Ativo'}
                         </span>
-                      </td>
-                      <td className="py-3 pl-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <button
-                            type="button"
-                            onClick={() => void openDetails(customer)}
-                            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#4156b8] transition hover:cursor-pointer hover:bg-[#eef1fb]"
-                          >
-                            Detalhes
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setTarget(customer)}
-                            className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition hover:cursor-pointer ${customer.blocked ? 'text-[#4156b8] hover:bg-[#eef1fb]' : 'text-red-600 hover:bg-red-50'}`}
-                          >
-                            {customer.blocked ? 'Desbloquear' : 'Bloquear'}
-                          </button>
-                        </div>
                       </td>
                     </tr>
                   ))}
@@ -504,14 +509,14 @@ export const CustomersTab: React.FC = () => {
 
       {target && (
         <ConfirmDialog
-          title={target.blocked ? 'Desbloquear cliente?' : 'Bloquear cliente?'}
+          title={target.blocked ? 'Reativar cliente?' : 'Inativar cliente?'}
           heading={target.blocked ? 'O cliente voltará a comprar' : 'O cliente perderá o acesso'}
           message={target.blocked ? 'A conta poderá entrar na loja e fazer pedidos novamente.' : 'A conta será desconectada e não poderá entrar nem fazer novos pedidos. Pedidos existentes são mantidos.'}
           subjectLabel="Cliente selecionado"
           subject={`${target.name} · ${target.email}`}
-          confirmLabel={target.blocked ? 'Desbloquear cliente' : 'Bloquear cliente'}
+          confirmLabel={target.blocked ? 'Reativar cliente' : 'Inativar cliente'}
           cancelLabel="Cancelar"
-          icon={target.blocked ? 'lock_open' : 'block'}
+          icon={target.blocked ? 'check_circle' : 'block'}
           danger={!target.blocked}
           busy={busy}
           onConfirm={() => void toggleBlock()}
@@ -525,6 +530,7 @@ export const CustomersTab: React.FC = () => {
           loading={detailsLoading}
           error={detailsError}
           onClose={() => setDetailsCustomer(null)}
+          onToggleBlock={(customer) => setTarget(customer)}
         />
       )}
     </div>
