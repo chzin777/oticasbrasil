@@ -4,7 +4,6 @@ import { EyewearProduct } from '../types';
 import { WishlistButton } from '../components/WishlistContext';
 import { FilterSection, CheckboxItem } from '../components/FilterParts';
 import { getEditableFilterOptions, useSiteData, useCatalogProducts } from '../lib/siteStore';
-import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface FramesPageProps {
   onSelectProductForCheckout: (product: EyewearProduct, lensType: string) => void;
@@ -306,7 +305,9 @@ export const FramesPage: React.FC<FramesPageProps> = ({
           {/* Product Grid */}
           <main className="flex-1 min-w-0">
             {catalogLoading ? (
-              <LoadingSpinner label="Carregando armações..." fullScreen className="min-h-[60vh]" />
+              <div className="flex min-h-[60vh] items-center justify-center">
+                <span className="material-symbols-outlined text-[32px] text-[#9ca3af] animate-spin">progress_activity</span>
+              </div>
             ) : filteredProducts.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <span className="material-symbols-outlined text-6xl text-[#c6c5d0] mb-4">search_off</span>

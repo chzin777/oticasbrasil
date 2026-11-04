@@ -63,23 +63,3 @@
   to { transform: scaleX(0); }
 }
 
-/* CRM Loader Animation */
-.crm-loader__ring {
-  stroke: currentColor;
-  transform-origin: center;
-  animation: crm-loader-spin 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-.crm-loader__ring--a { color: #061748; animation-delay: 0s; }
-.crm-loader__ring--b { color: #C4D600; animation-delay: -0.35s; }
-.crm-loader__ring--c { color: #4156b8; animation-delay: -0.7s; }
-.crm-loader__ring--d { color: #061748; animation-delay: -1.05s; }
-
-@keyframes crm-loader-spin {
-  0% { stroke-dasharray: 0 660; stroke-dashoffset: 0; transform: rotate(0deg); }
-  50% { stroke-dasharray: 330 330; stroke-dashoffset: -165; transform: rotate(180deg); }
-  100% { stroke-dasharray: 0 660; stroke-dashoffset: -660; transform: rotate(360deg); }
-}
-.dark .crm-loader__ring--a { color: #C4D600; }
-.dark .crm-loader__ring--b { color: #f8fafc; }
-.dark .crm-loader__ring--c { color: #818cf8; }
-.dark .crm-loader__ring--d { color: #C4D600; }
