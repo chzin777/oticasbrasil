@@ -1454,10 +1454,20 @@ const start = async () => {
   }
   if (!poolReady) throw new Error('Não foi possível conectar ao banco de dados pelo PgBouncer.');
   const currentState = await loadStoreState();
-  await enqueueIntegrationEvent(pool, 'promotions.snapshot', {
+  const currentPromotions = {
     coupons: currentState?.coupons || seedCoupons,
     discountPolicies: Array.isArray(currentState?.discountPolicies) ? currentState.discountPolicies : [],
-  });
+  };
+  // Primeira subida com a integração ligada: manda o histórico sozinho, sem depender do botão do painel.
+  const { rows: [synced] } = integrationConfigured
+    ? await pool.query(`SELECT EXISTS (SELECT 1 FROM integration_outbox WHERE event_type <> 'promotions.snapshot') AS done`)
+    : { rows: [{ done: true }] };
+  if (!synced.done) {
+    const queued = await enqueueHistoricalSync(pool, currentPromotions, currentProducts(currentState));
+    console.info(`Histórico enviado ao CRM: ${queued.customers} clientes, ${queued.carts} carrinhos, ${queued.orders} pedidos.`);
+  } else {
+    await enqueueIntegrationEvent(pool, 'promotions.snapshot', currentPromotions);
+  }
   startIntegrationWorker(pool);
   createServer(app).listen(port, '0.0.0.0', () => {
     console.info(`Óticas Brasil disponível na porta ${port}.`);
