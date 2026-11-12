@@ -415,6 +415,7 @@ app.get('/api/integration/products', async (req, res, next) => {
 /* Rota otimizada: retorna TODOS os produtos de uma vez, com cache Redis do catálogo completo */
 const ALL_PRODUCTS_CACHE_KEY = 'integration:products:all:v4';
 const ALL_PRODUCTS_CACHE_TTL = 600; // 10 minutos
+const ALL_PRODUCTS_BACKUP_KEY = 'integration:products:all:last-good';
 const INTERNAL_PAGE_SIZE = 500;
 
 app.get('/api/integration/products/all', async (req, res, next) => {
@@ -488,16 +489,29 @@ app.get('/api/integration/products/all', async (req, res, next) => {
     }
 
     const result = { data: allItems, total: allItems.length };
+    if (allItems.length === 0) throw new Error('API de integração retornou catálogo vazio');
 
-    // Cacheia resultado completo
+    // Cacheia resultado completo e guarda cópia sem expiração para quedas da integração
     try {
-      await redis.set(ALL_PRODUCTS_CACHE_KEY, JSON.stringify(result), { EX: ALL_PRODUCTS_CACHE_TTL });
+      const serialized = JSON.stringify(result);
+      await redis.set(ALL_PRODUCTS_CACHE_KEY, serialized, { EX: ALL_PRODUCTS_CACHE_TTL });
+      await redis.set(ALL_PRODUCTS_BACKUP_KEY, serialized);
     } catch (cacheErr) {
       console.warn('[products-all-cache] Falha ao escrever cache Redis:', cacheErr.message);
     }
 
     res.json(result);
   } catch (error) {
+    try {
+      const backupRaw = await redis.get(ALL_PRODUCTS_BACKUP_KEY);
+      const backup = backupRaw ? JSON.parse(backupRaw) : null;
+      if (backup && Array.isArray(backup.data) && backup.data.length > 0) {
+        console.error('[products-all] Integração indisponível, servindo último catálogo válido:', error.message);
+        return res.json(backup);
+      }
+    } catch (backupErr) {
+      console.warn('[products-all-cache] Falha ao ler cópia de segurança:', backupErr.message);
+    }
     next(error);
   }
 });
