@@ -418,22 +418,50 @@ const ALL_PRODUCTS_CACHE_TTL = 600; // 10 minutos
 const ALL_PRODUCTS_BACKUP_KEY = 'integration:products:all:last-good';
 const INTERNAL_PAGE_SIZE = 500;
 
+const readCachedCatalog = async (key) => {
+  try {
+    const raw = await redis.get(key);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && Array.isArray(parsed.data) && parsed.data.length > 0 ? parsed : null;
+  } catch (cacheErr) {
+    console.warn('[products-all-cache] Falha ao ler cache Redis:', cacheErr.message);
+    return null;
+  }
+};
+
+// Uma única atualização do catálogo por vez, mesmo com várias visitas simultâneas
+let allProductsRefresh = null;
+const refreshAllProducts = () => {
+  if (!allProductsRefresh) {
+    allProductsRefresh = fetchAllProductsFromIntegration().finally(() => {
+      allProductsRefresh = null;
+    });
+  }
+  return allProductsRefresh;
+};
+
 app.get('/api/integration/products/all', async (req, res, next) => {
   if (!INTEGRATION_API_KEY) return jsonError(res, 503, 'Chave da API de integração não configurada.');
   try {
-    // Tenta servir do cache Redis primeiro
-    let cached = null;
-    try {
-      const raw = await redis.get(ALL_PRODUCTS_CACHE_KEY);
-      if (raw) cached = JSON.parse(raw);
-    } catch (cacheErr) {
-      console.warn('[products-all-cache] Falha ao ler cache Redis:', cacheErr.message);
+    const cached = await readCachedCatalog(ALL_PRODUCTS_CACHE_KEY);
+    if (cached) return res.json(cached);
+
+    // Cache vencido: responde na hora com o último catálogo válido e atualiza em segundo plano
+    const backup = await readCachedCatalog(ALL_PRODUCTS_BACKUP_KEY);
+    if (backup) {
+      refreshAllProducts().catch((error) => {
+        console.error('[products-all] Falha ao atualizar catálogo em segundo plano:', error.message);
+      });
+      return res.json(backup);
     }
 
-    if (cached && Array.isArray(cached.data) && cached.data.length > 0) {
-      return res.json(cached);
-    }
+    res.json(await refreshAllProducts());
+  } catch (error) {
+    next(error);
+  }
+});
 
+async function fetchAllProductsFromIntegration() {
     // Cache miss: busca primeira página para validar conectividade, depois lotes paralelos controlados
     const allItems = [];
     const BATCH_SIZE = 3; // 3 páginas paralelas por lote (API externa degrada sob alta concorrência)
@@ -500,21 +528,8 @@ app.get('/api/integration/products/all', async (req, res, next) => {
       console.warn('[products-all-cache] Falha ao escrever cache Redis:', cacheErr.message);
     }
 
-    res.json(result);
-  } catch (error) {
-    try {
-      const backupRaw = await redis.get(ALL_PRODUCTS_BACKUP_KEY);
-      const backup = backupRaw ? JSON.parse(backupRaw) : null;
-      if (backup && Array.isArray(backup.data) && backup.data.length > 0) {
-        console.error('[products-all] Integração indisponível, servindo último catálogo válido:', error.message);
-        return res.json(backup);
-      }
-    } catch (backupErr) {
-      console.warn('[products-all-cache] Falha ao ler cópia de segurança:', backupErr.message);
-    }
-    next(error);
-  }
-});
+    return result;
+}
 
 app.post('/api/integrations/crm/events', async (req, res, next) => {
   if (!integrationSecretMatches(req.get('authorization'))) {
