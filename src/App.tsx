@@ -26,6 +26,7 @@ import { SearchModal } from './components/SearchModal';
 import { LensGuideModal } from './components/LensGuideModal';
 import { CepModal } from './components/CepModal';
 import { SupportModal } from './components/SupportModal';
+import { SpecialistChat } from './components/SpecialistChat';
 import { CartDrawer } from './components/CartDrawer';
 import { useStoreSettings } from './lib/storeSettings';
 import { getDiscountPolicies, getCustomerStatus, invalidateCustomerStatus } from './lib/siteStore';
@@ -170,6 +171,7 @@ function SiteApp() {
   const [isCepOpen, setIsCepOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isSpecialistChatOpen, setIsSpecialistChatOpen] = useState(false);
   
   // Hero theme state (shared between HomePage and Header)
   const [heroTheme, setHeroTheme] = useState<'default' | 'blackfriday'>('default');
@@ -875,6 +877,23 @@ function SiteApp() {
         onCheckout={() => navigateTo('checkout')}
       />
 
-          </div>
+      {/* Specialist Chat Widget */}
+      <SpecialistChat
+        isOpen={isSpecialistChatOpen}
+        onClose={() => setIsSpecialistChatOpen(false)}
+      />
+
+      {/* Floating Trigger Button */}
+      {!isSpecialistChatOpen && (
+        <button
+          onClick={() => setIsSpecialistChatOpen(true)}
+          className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-50 flex items-center gap-1.5 bg-[#061748] hover:bg-[#0a2366] text-white px-3 sm:px-4 py-2 rounded-full shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group"
+          aria-label="Falar com um especialista"
+        >
+          <span className="material-symbols-outlined text-[18px] text-[#dbee2c] group-hover:animate-pulse">support_agent</span>
+          <span className="hidden sm:inline text-xs font-bold tracking-wide">Falar com Especialista</span>
+        </button>
+      )}
+    </div>
   );
 }
