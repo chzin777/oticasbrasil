@@ -69,9 +69,11 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
   const navigate = useNavigate();
   const root = useRef<HTMLElement>(null);
   const tocou = useRef(false);
-  const prevTheme = useRef(theme);
+  const visualTheme = christmasEnabled ? 'christmas' : theme;
+  const prevTheme = useRef(visualTheme);
   const [discountUnlocked, setDiscountUnlocked] = useState(false);
-  const isBlackFriday = theme === 'blackfriday';
+  const isBlackFriday = !christmasEnabled && theme === 'blackfriday';
+  const backgroundImage = christmasEnabled ? '/christmas-hero-bg.png' : SITE_CONFIG.images[theme].background;
   const config = { ...THEME_CONFIG[theme], ...SITE_CONFIG.hero[theme] };
   useSiteData();
 
@@ -80,12 +82,12 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
       if (prefersReduced()) return;
 
       /* RESET AO TROCAR DE TEMA */
-      if (prevTheme.current !== theme) {
-        prevTheme.current = theme;
+      if (prevTheme.current !== visualTheme) {
+        prevTheme.current = visualTheme;
         tocou.current = false;
-        gsap.killTweensOf('.hc-brand-badge, .hc-com, .hc-percent, .hc-off, .hc-sub, .hc-acoes, .hc-trust, .hc-texto, .hc-parallax-layer');
+        gsap.killTweensOf('.hc-brand-badge, .hc-com, .hc-percent, .hc-off, .hc-sub, .hc-acoes, .hc-trust, .hc-texto, .hc-christmas-eyebrow, .hc-christmas-title, .hc-christmas-actions, .hc-parallax-layer');
         ScrollTrigger.getAll().forEach(st => st.kill());
-        root.current?.querySelectorAll('.hc-brand-badge, .hc-com, .hc-percent, .hc-off, .hc-sub, .hc-acoes, .hc-trust, .hc-texto').forEach(el => {
+        root.current?.querySelectorAll('.hc-brand-badge, .hc-com, .hc-percent, .hc-off, .hc-sub, .hc-acoes, .hc-trust, .hc-texto, .hc-christmas-eyebrow, .hc-christmas-title, .hc-christmas-actions').forEach(el => {
           gsap.set(el, { clearProps: 'transform,opacity' });
         });
       }
@@ -93,14 +95,22 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
       /* ENTRADA — timeline única por tema */
       if (!tocou.current) {
         tocou.current = true;
-        gsap
-          .timeline({ delay: 0.3, defaults: { ease: 'power4.out' } })
-          .from('.hc-brand-badge', { y: 20, opacity: 0, duration: 0.7 })
-          .from('.hc-com', { x: -20, opacity: 0, duration: 0.6 }, 0.18)
-          .from('.hc-percent', { scale: 0.85, opacity: 0, duration: 0.9, ease: 'back.out(1.7)' }, 0.28)
-          .from('.hc-off', { y: 10, opacity: 0, duration: 0.5 }, 0.42)
-          .from('.hc-sub', { y: 18, opacity: 0, duration: 0.7 }, 0.55)
-          .from('.hc-acoes', { y: 18, opacity: 0, duration: 0.7 }, 0.68);
+        const intro = gsap.timeline({ delay: 0.3, defaults: { ease: 'power4.out' } });
+        if (visualTheme === 'christmas') {
+          intro
+            .from('.hc-christmas-eyebrow', { y: 18, opacity: 0, duration: 0.6 })
+            .from('.hc-christmas-title', { y: 28, opacity: 0, duration: 0.8 }, 0.15)
+            .from('.hc-christmas-sub', { y: 18, opacity: 0, duration: 0.6 }, 0.38)
+            .from('.hc-christmas-actions', { y: 16, opacity: 0, duration: 0.6 }, 0.5);
+        } else {
+          intro
+            .from('.hc-brand-badge', { y: 20, opacity: 0, duration: 0.7 })
+            .from('.hc-com', { x: -20, opacity: 0, duration: 0.6 }, 0.18)
+            .from('.hc-percent', { scale: 0.85, opacity: 0, duration: 0.9, ease: 'back.out(1.7)' }, 0.28)
+            .from('.hc-off', { y: 10, opacity: 0, duration: 0.5 }, 0.42)
+            .from('.hc-sub', { y: 18, opacity: 0, duration: 0.7 }, 0.55)
+            .from('.hc-acoes', { y: 18, opacity: 0, duration: 0.7 }, 0.68);
+        }
       }
 
       /* PARALLAX DO SCROLL — background multicamada estilo 21st.dev (ambos os temas) */
@@ -114,12 +124,14 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
             scrub: 0,
           },
         });
-        const layers = [
-          { layer: '1', yPercent: 70 },
-          { layer: '2', yPercent: 55 },
-          { layer: '3', yPercent: 40 },
-          { layer: '4', yPercent: 10 },
-        ];
+        const layers = visualTheme === 'christmas'
+          ? [{ layer: '1', yPercent: 18 }]
+          : [
+              { layer: '1', yPercent: 70 },
+              { layer: '2', yPercent: 55 },
+              { layer: '3', yPercent: 40 },
+              { layer: '4', yPercent: 10 },
+            ];
         layers.forEach((layerObj, idx) => {
           tl.to(
             parallaxContainer.querySelectorAll(`[data-parallax-layer="${layerObj.layer}"]`),
@@ -147,11 +159,11 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
         );
       }
     },
-    { scope: root, dependencies: [theme] }
+    { scope: root, dependencies: [visualTheme] }
   );
 
   return (
-    <section className={`hc hc-theme-${theme}`} id="topo" ref={root}>
+    <section className={`hc hc-theme-${visualTheme}`} id="topo" ref={root}>
       {/* Background geométrico — apenas no tema Black Friday */}
       {isBlackFriday && <HeroBackground theme={theme} backgroundImage={SITE_CONFIG.images[theme].background} />}
       <ChristmasHeroDecorations enabled={christmasEnabled} />
@@ -159,7 +171,49 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
       {/* ============================================================
           LAYOUT BLACK FRIDAY — texto centralizado
           ============================================================ */}
-      {isBlackFriday ? (
+      {christmasEnabled ? (
+        <>
+          <div className="hc-parallax-container hc-christmas-background" data-parallax-layers aria-hidden="true">
+            <div className="hc-parallax-layer" data-parallax-layer="1" style={{ backgroundImage: `url("${backgroundImage}")` }} />
+          </div>
+          <div className="hc-texto hc-texto-christmas">
+            <p className="hc-christmas-eyebrow">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2.5 14.5 8l6 .7-4.4 4.1 1.2 6-5.3-3-5.3 3 1.2-6-4.4-4.1 6-.7L12 2.5Z" fill="currentColor" />
+              </svg>
+              NATAL 2026 <span>•</span> ÓTICAS BRASIL
+            </p>
+            <h1 className="hc-christmas-title">
+              <span>Presenteie com</span>
+              <strong>um novo<br /><em>olhar.</em></strong>
+            </h1>
+            <p className="hc-sub hc-christmas-sub">
+              Neste Natal, escolha um presente que acompanha histórias. Óculos e armações para ver de perto tudo o que importa.
+            </p>
+            <div className="hc-acoes hc-christmas-actions">
+              <button
+                type="button"
+                className="hc-btn hc-btn-primary hc-btn-christmas"
+                onClick={() => onOpenCatalog?.('armacoes')}
+              >
+                Encontrar meu presente
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </button>
+              <button
+                type="button"
+                className="hc-btn hc-btn-ghost hc-btn-christmas-ghost"
+                onClick={() => navigate('/rayban-meta')}
+              >
+                Ver Ray-Ban Meta
+              </button>
+            </div>
+            <div className="hc-christmas-proof">
+              <span className="hc-christmas-proof-mark">✦</span>
+              <span>Um presente especial para cada jeito de enxergar o mundo.</span>
+            </div>
+          </div>
+        </>
+      ) : isBlackFriday ? (
         <>
           <BFConfetti />
 
@@ -258,7 +312,7 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
 
           {/* Camadas parallax do background — controladas pelo GSAP ScrollTrigger */}
           <div className="hc-parallax-container" data-parallax-layers aria-hidden="true">
-            <div className="hc-parallax-layer" data-parallax-layer="1" style={{ backgroundImage: `url("${SITE_CONFIG.images[theme].background}")` }} />
+            <div className="hc-parallax-layer" data-parallax-layer="1" style={{ backgroundImage: `url("${backgroundImage}")` }} />
             <div className="hc-parallax-layer" data-parallax-layer="2" style={{ backgroundImage: `url("${SITE_CONFIG.images[theme].background}")` }} />
             <div className="hc-parallax-layer" data-parallax-layer="3" style={{ backgroundImage: `url("${SITE_CONFIG.images[theme].background}")` }} />
             <div className="hc-parallax-layer" data-parallax-layer="4" style={{ backgroundImage: `url("${SITE_CONFIG.images[theme].background}")` }} />

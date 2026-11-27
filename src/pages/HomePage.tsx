@@ -276,8 +276,8 @@ export const HomePage: React.FC<HomePageProps> = ({
     <div className="w-full flex flex-col bg-white">
       {/* 1. HERO SECTION — HeroCapa (estilo DAPS com parallax multicamada) */}
       <div style={{ order: sectionOrder('hero') }} hidden={sectionHidden('hero')}>
-        {activeCustomBanner ? (
-          <CustomBannerHero banner={activeCustomBanner} onOpenCatalog={onOpenCatalog} christmasEnabled={storeSettings.seasonal.christmasEnabled} />
+        {activeCustomBanner && !storeSettings.seasonal.christmasEnabled ? (
+          <CustomBannerHero banner={activeCustomBanner} onOpenCatalog={onOpenCatalog} />
         ) : (
           <HeroCapa
             onSelectProduct={onSelectProduct}

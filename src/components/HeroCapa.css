@@ -903,3 +903,227 @@
   margin-block: -2rem;
   animation: hc-logo-bf-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* ============================================================
+   CAMPANHA DE NATAL — editorial, com fotografia em destaque
+   ============================================================ */
+
+.hc-theme-christmas {
+  display: flex;
+  align-items: center;
+  min-height: max(100svh, 44rem);
+  overflow: hidden;
+  background: #071b25;
+}
+
+.hc-theme-christmas::before {
+  background:
+    linear-gradient(90deg, #071b25f5 0%, #071b25e8 34%, #071b25a8 56%, #071b2552 76%, #071b2520 100%),
+    linear-gradient(0deg, #071b25a8 0%, transparent 24%, transparent 82%, #071b2570 100%);
+}
+
+.hc-theme-christmas .hc-christmas-background .hc-parallax-layer {
+  inset: -8% 0;
+  background-position: 64% center;
+  background-size: cover;
+  transform: scale(1.02);
+}
+
+.hc-theme-christmas .hc-texto-christmas {
+  grid-column: 1 / -1;
+  width: min(780px, 68vw);
+  padding: clamp(150px, 20vh, 190px) clamp(28px, 6vw, 88px) clamp(76px, 11vh, 118px);
+}
+
+.hc-christmas-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: clamp(1.2rem, 3vh, 2rem);
+  color: #e6ca82;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.23em;
+}
+
+.hc-christmas-eyebrow svg {
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 0 8px #e6ca8266);
+}
+
+.hc-christmas-eyebrow span {
+  color: #b94a50;
+}
+
+.hc-christmas-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0 0 1.4rem;
+  color: #fffaf0;
+  text-shadow: 0 4px 30px #071b2566;
+}
+
+.hc-christmas-title > span {
+  color: #f3eadb;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.35rem, 2.7vw, 2.2rem);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.hc-christmas-title strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(4.4rem, 8.2vw, 7.8rem);
+  font-weight: 500;
+  letter-spacing: -0.075em;
+  line-height: 0.82;
+}
+
+.hc-christmas-title em {
+  color: #e6ca82;
+  font-weight: 500;
+}
+
+.hc-theme-christmas .hc-christmas-sub {
+  max-width: 35rem;
+  margin-bottom: 1.8rem;
+  color: #f1eee8;
+  font-size: clamp(1rem, 1.45vw, 1.18rem);
+  line-height: 1.65;
+  text-shadow: 0 2px 12px #071b2599;
+}
+
+.hc-theme-christmas .hc-christmas-actions {
+  gap: 0.8rem;
+  margin-bottom: 1.55rem;
+}
+
+.hc-theme-christmas .hc-btn-christmas {
+  min-height: 58px;
+  padding-inline: clamp(1.3rem, 2.5vw, 2rem);
+  border: 1px solid #f0d98f;
+  border-radius: 6px;
+  background: linear-gradient(120deg, #1d714c, #104832);
+  color: #fffdf6;
+  box-shadow: 0 10px 32px #06191070, 0 0 0 3px #d5bd6650;
+  text-shadow: none;
+}
+
+.hc-theme-christmas .hc-btn-christmas:hover {
+  background: linear-gradient(120deg, #26835a, #145d40);
+  box-shadow: 0 12px 36px #06191099, 0 0 0 4px #d5bd6670;
+  transform: translateY(-2px);
+}
+
+.hc-theme-christmas .hc-btn-christmas-ghost {
+  min-height: 58px;
+  padding-inline: clamp(1.2rem, 2.2vw, 1.8rem);
+  border: 1px solid #f3eadb77;
+  border-radius: 6px;
+  background: #071b2555;
+  color: #fffaf0;
+  backdrop-filter: blur(8px);
+}
+
+.hc-theme-christmas .hc-btn-christmas-ghost:hover {
+  border-color: #e6ca82;
+  background: #fffaf01c;
+}
+
+.hc-christmas-proof {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #f3eadbcc;
+  font-size: 0.88rem;
+  letter-spacing: 0.01em;
+}
+
+.hc-christmas-proof-mark {
+  color: #e6ca82;
+  font-size: 1.3rem;
+}
+
+@media (max-width: 760px) {
+  .hc-theme-christmas {
+    min-height: max(100svh, 48rem);
+    align-items: flex-end;
+  }
+
+  .hc-theme-christmas::before {
+    background:
+      linear-gradient(0deg, #071b25 2%, #071b25f2 26%, #071b25c9 52%, #071b2552 76%, #071b2550 100%),
+      linear-gradient(90deg, #071b2570, transparent 100%);
+  }
+
+  .hc-theme-christmas .hc-christmas-background .hc-parallax-layer {
+    inset: -2% -34% 16% -34%;
+    background-position: 67% center;
+    background-size: auto 100%;
+  }
+
+  .hc-theme-christmas .hc-texto-christmas {
+    width: 100%;
+    padding: 0 1.35rem max(2rem, env(safe-area-inset-bottom));
+  }
+
+  .hc-christmas-eyebrow {
+    margin-bottom: 1rem;
+    font-size: 0.63rem;
+    letter-spacing: 0.17em;
+  }
+
+  .hc-christmas-title {
+    gap: 0.48rem;
+    margin-bottom: 1rem;
+  }
+
+  .hc-christmas-title > span {
+    font-size: clamp(1.25rem, 6vw, 1.7rem);
+  }
+
+  .hc-christmas-title strong {
+    font-size: clamp(4.15rem, 17vw, 6.2rem);
+  }
+
+  .hc-theme-christmas .hc-christmas-sub {
+    max-width: 32rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.98rem;
+    line-height: 1.55;
+  }
+
+  .hc-theme-christmas .hc-christmas-actions {
+    display: grid;
+    gap: 0.7rem;
+    margin-bottom: 1rem;
+  }
+
+  .hc-theme-christmas .hc-btn-christmas,
+  .hc-theme-christmas .hc-btn-christmas-ghost {
+    width: 100%;
+    min-height: 54px;
+  }
+
+  .hc-christmas-proof {
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .hc-theme-christmas .hc-texto-christmas {
+    padding-inline: 1rem;
+  }
+
+  .hc-christmas-title strong {
+    font-size: 3.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hc-theme-christmas .hc-btn-christmas {
+    transition: none;
+  }
+}

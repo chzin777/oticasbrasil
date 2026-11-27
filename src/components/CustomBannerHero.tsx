@@ -1,15 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CustomBanner, HeroTexts } from '../lib/siteStore';
-import { ChristmasHeroDecorations } from './ChristmasTheme';
 
 interface CustomBannerHeroProps {
   banner: CustomBanner;
   onOpenCatalog: (category: 'armacoes' | 'oculos-de-sol' | 'lentes-de-grau') => void;
-  christmasEnabled: boolean;
 }
 
-const CustomBannerHero: React.FC<CustomBannerHeroProps> = ({ banner, onOpenCatalog, christmasEnabled }) => {
+const CustomBannerHero: React.FC<CustomBannerHeroProps> = ({ banner, onOpenCatalog }) => {
   const navigate = useNavigate();
   const isBlackFriday = banner.theme === 'blackfriday';
   const config: HeroTexts = {
@@ -46,7 +44,6 @@ const CustomBannerHero: React.FC<CustomBannerHeroProps> = ({ banner, onOpenCatal
         className="relative isolate w-full overflow-hidden aspect-[16/9] max-md:aspect-[4/3]"
         style={{ backgroundColor: banner.canvasBackgroundColor || '#061748', containerType: 'inline-size' }}
       >
-        <ChristmasHeroDecorations enabled={christmasEnabled} />
         {banner.images.background && (
           <img src={banner.images.background} alt="" className="absolute inset-0 z-0 h-full w-full object-cover" />
         )}
@@ -105,7 +102,6 @@ const CustomBannerHero: React.FC<CustomBannerHeroProps> = ({ banner, onOpenCatal
 
   return (
     <section className={`relative isolate flex min-h-[min(100svh,56.25rem)] items-center overflow-hidden text-white ${isBlackFriday ? 'justify-center text-center' : ''}`}>
-      <ChristmasHeroDecorations enabled={christmasEnabled} />
       <img src={banner.images.background} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
       <div className={`absolute inset-0 -z-10 ${isBlackFriday ? 'bg-black/55' : 'bg-gradient-to-r from-black via-black/80 to-black/20'}`} />
 

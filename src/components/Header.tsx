@@ -3,6 +3,8 @@ import { AppPage } from '../types';
 import { TextMarquee } from './TextMarquee';
 import { useWishlist } from './WishlistContext';
 import { SITE_CONFIG, useSiteData } from '../lib/siteStore';
+import { useStoreSettings } from '../lib/storeSettings';
+import { ChristmasSurprise } from './ChristmasTheme';
 
 type CatalogCategory = 'armacoes' | 'oculos-de-sol' | 'lentes-de-grau';
 
@@ -46,14 +48,16 @@ export const Header: React.FC<HeaderProps> = ({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const [bannerRotationIndex, setBannerRotationIndex] = useState(0);
+  const christmasEnabled = useStoreSettings().seasonal.christmasEnabled;
   const isBannerRotation = SITE_CONFIG.activeBannerId === '__rotation__';
   const activeCustomBanner = SITE_CONFIG.customBanners.find((banner) => banner.id === SITE_CONFIG.activeBannerId)
     ?? (isBannerRotation ? SITE_CONFIG.customBanners[bannerRotationIndex % Math.max(1, SITE_CONFIG.customBanners.length)] : undefined);
-  const isBlackFriday = activeCustomBanner
+  const isBlackFriday = !christmasEnabled && (activeCustomBanner
     ? activeCustomBanner.theme === 'blackfriday'
-    : SITE_CONFIG.activeBannerId === 'blackfriday' || (SITE_CONFIG.activeBannerId === null && heroTheme === 'blackfriday');
-  const announcements = activeCustomBanner?.announcements
-    ?? SITE_CONFIG.announcements[isBlackFriday ? 'blackfriday' : 'default'];
+    : SITE_CONFIG.activeBannerId === 'blackfriday' || (SITE_CONFIG.activeBannerId === null && heroTheme === 'blackfriday'));
+  const announcements = christmasEnabled
+    ? ['PRESENTEIE COM UM NOVO OLHAR', 'ENCONTRE UM PRESENTE COM A SUA CARA', 'EMBRULHE MOMENTOS ESPECIAIS']
+    : activeCustomBanner?.announcements ?? SITE_CONFIG.announcements[isBlackFriday ? 'blackfriday' : 'default'];
   const wishlistCount = useWishlist().ids.length;
   useSiteData();
 
@@ -139,8 +143,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   const getNavClass = (isActive: boolean) =>
     `relative text-sm font-semibold transition-colors py-1 cursor-pointer flex items-center gap-1.5 ${
-      isActive ? 'text-[#061748]' : 'text-[#45464f] hover:text-[#061748]'
-    }`;
+      isActive
+        ? christmasEnabled ? 'text-[#176143]' : 'text-[#061748]'
+        : christmasEnabled ? 'text-[#45464f] hover:text-[#176143]' : 'text-[#45464f] hover:text-[#061748]'
+    } ${christmasEnabled ? 'christmas-nav-link' : ''}`;
   return (
     <>
       {/* Zona de hover invisível no topo — revela a navbar ao passar o mouse nos primeiros 120px */}
@@ -154,7 +160,7 @@ export const Header: React.FC<HeaderProps> = ({
       )}
       <header
         className={`fixed top-0 left-0 w-full z-50 transition-none xl:transition-all duration-300 ${
-          isHome(currentPage) && !navVisible
+          isHome(currentPage) && !navVisible && !christmasEnabled
             ? 'opacity-100 translate-y-0 pointer-events-auto xl:opacity-0 xl:pointer-events-none xl:-translate-y-full'
             : 'opacity-100 translate-y-0 pointer-events-auto'
         } ${!isHome(currentPage) || scrolledPastHero ? 'bg-white' : ''}`}
@@ -162,19 +168,41 @@ export const Header: React.FC<HeaderProps> = ({
         onMouseLeave={() => setHoveringTop(false)}
       >
         {/* Top Bar Announcement */}
-      <div className={`text-[11px] font-bold tracking-wider uppercase py-2 px-4 sm:px-8 text-center select-none transition-colors duration-300 ${isBlackFriday ? 'bg-black text-[#C4D600]' : isHome(currentPage) ? 'bg-[#061748]/80 backdrop-blur-md text-white' : 'bg-[#061748] text-[#ffffff]'}`}>
-        <TextMarquee
-          items={announcements}
-          speed={30}
-          direction="left"
-          separator="|"
-          className="w-full"
-        />
+      <div className={`text-[11px] font-bold tracking-wider uppercase py-2 px-4 sm:px-8 text-center select-none transition-colors duration-300 ${christmasEnabled ? 'christmas-announcement' : isBlackFriday ? 'bg-black text-[#C4D600]' : isHome(currentPage) ? 'bg-[#061748]/80 backdrop-blur-md text-white' : 'bg-[#061748] text-[#ffffff]'}`}>
+        {christmasEnabled ? (
+          <div className="christmas-announcement-content">
+            <div className="christmas-announcement-copy">
+              <span>{announcements[0]}</span>
+              <span>{announcements[1]}</span>
+              <span>{announcements[2]}</span>
+            </div>
+            <ChristmasSurprise enabled onOpenCatalog={() => onOpenCatalog?.('armacoes')} />
+          </div>
+        ) : (
+          <TextMarquee
+            items={announcements}
+            speed={30}
+            direction="left"
+            separator="|"
+            className="w-full"
+          />
+        )}
       </div>
 
       {/* Main Header Navigation Bar */}
-      <div className={`h-22 transition-all duration-300 ${isHome(currentPage) ? 'bg-white border-b border-[#eceef0]' : 'bg-white border-b border-[#c6c5d0]/30 shadow-[0_4px_12px_rgba(5,22,71,0.06)]'}`}>
-        <div className="max-w-[1440px] h-full mx-auto px-3 sm:px-5 lg:px-8 xl:px-12 flex items-center justify-between gap-2 sm:gap-4 xl:gap-6">
+      <div className={`h-22 transition-all duration-300 ${christmasEnabled ? 'christmas-nav-shell' : isHome(currentPage) ? 'bg-white border-b border-[#eceef0]' : 'bg-white border-b border-[#c6c5d0]/30 shadow-[0_4px_12px_rgba(5,22,71,0.06)]'}`}>
+        {christmasEnabled && (
+          <svg className="christmas-nav-garland" viewBox="0 0 1000 24" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M0 4c150 32 270-20 440 4s310 25 560-2" fill="none" stroke="#1b5b3e" strokeWidth="5" />
+            <path d="M0 4c150 32 270-20 440 4s310 25 560-2" fill="none" stroke="#4b8b5e" strokeWidth="2" strokeDasharray="2 12" />
+            <circle cx="130" cy="12" r="3" fill="#c13b46" />
+            <circle cx="310" cy="1" r="3" fill="#e1c36d" />
+            <circle cx="510" cy="9" r="3" fill="#c13b46" />
+            <circle cx="710" cy="13" r="3" fill="#e1c36d" />
+            <circle cx="900" cy="5" r="3" fill="#c13b46" />
+          </svg>
+        )}
+        <div className="relative z-[1] max-w-[1440px] h-full mx-auto px-3 sm:px-5 lg:px-8 xl:px-12 flex items-center justify-between gap-2 sm:gap-4 xl:gap-6">
 
           {/* Logo Branding */}
           <div

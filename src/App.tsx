@@ -35,7 +35,6 @@ import { MaintenancePage } from './components/MaintenancePage';
 import { useToast } from './components/ToastContext';
 import { CheckoutAccount, type AccountUser } from './components/CheckoutAccount';
 import { LoginPage } from './pages/LoginPage';
-import { ChristmasSurprise } from './components/ChristmasTheme';
 
 import {
   INITIAL_PRESCRIPTION,
@@ -613,7 +612,7 @@ function SiteApp() {
   };
 
   return (
-    <div className="bg-[#f7f9fb] min-h-screen font-sans text-[#191c1e] flex flex-col selection:bg-[#dbee2c] selection:text-[#061748]">
+    <div className={`bg-[#f7f9fb] min-h-screen font-sans text-[#191c1e] flex flex-col selection:bg-[#dbee2c] selection:text-[#061748] ${settings.seasonal.christmasEnabled ? 'christmas-site' : ''}`}>
       {/* Top Announcement Bar, Navigation & Screen Switcher */}
       {location.pathname !== '/login' && (
       <Header
@@ -811,8 +810,6 @@ function SiteApp() {
         onOpenLensGuide={() => setIsLensGuideOpen(true)}
         onOpenFaq={() => setIsLensGuideOpen(true)}
       />
-
-      <ChristmasSurprise enabled={settings.seasonal.christmasEnabled} />
 
       {/* Supporting Interactive Modals */}
       <OrderSuccessModal

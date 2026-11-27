@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useNavigate } from 'react-router-dom';
 import './ChristmasTheme.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -34,82 +33,58 @@ export function ChristmasHeroDecorations({ enabled }: { enabled: boolean }) {
 
   return (
     <div ref={root} className="christmas-hero-effects" aria-hidden="true">
-      <div className="christmas-snow" />
-      <div className="christmas-ornament christmas-ornament-red" data-christmas-parallax="26">
-        <span />
-      </div>
-      <div className="christmas-ornament christmas-ornament-gold" data-christmas-parallax="44">
-        <span />
-      </div>
-      <div className="christmas-ornament christmas-ornament-green" data-christmas-parallax="62">
-        <span />
-      </div>
-      <div className="christmas-ornament christmas-ornament-pearl" data-christmas-parallax="34">
-        <span />
-      </div>
-      <svg className="christmas-garland" viewBox="0 0 900 150" preserveAspectRatio="none">
-        <path d="M-20 8 C150 115 260 25 420 75 S700 130 920 20" fill="none" stroke="#174c35" strokeWidth="18" />
-        <path d="M-20 8 C150 115 260 25 420 75 S700 130 920 20" fill="none" stroke="#2d7650" strokeWidth="8" strokeDasharray="2 18" />
+      <div className="christmas-snow-layer christmas-snow-layer-back" data-christmas-parallax="18" />
+      <div className="christmas-snow-layer christmas-snow-layer-front" data-christmas-parallax="42" />
+      <svg className="christmas-hero-bough" viewBox="0 0 640 190" preserveAspectRatio="none" data-christmas-parallax="58">
+        <path d="M642 8C508 100 380 36 228 121 152 163 73 154 0 111" fill="none" stroke="#174c35" strokeWidth="17" />
+        <path d="M600 25 576 0m-16 36 1-30m-21 45-18-29m-12 44 7-30m-39 49-20-26m-10 42 13-27m-42 45-23-23m-6 39 16-25m-46 39-24-19m-4 36 18-21m-47 32-24-15m-4 30 18-17m-45 27-22-12m-5 25 17-13m-45 20-20-8m-6 20 17-9" fill="none" stroke="#2d7650" strokeWidth="8" strokeLinecap="round" />
+        <circle cx="522" cy="68" r="5" fill="#e7c56e" />
+        <circle cx="405" cy="102" r="5" fill="#b8323c" />
+        <circle cx="278" cy="132" r="5" fill="#e7c56e" />
       </svg>
-      <div className="christmas-gifts" data-christmas-parallax="72">
-        <svg viewBox="0 0 170 120">
-          <g className="christmas-gift-small">
-            <path d="M12 55h58v48H12z" fill="#b8323c" />
-            <path d="M7 46h68v16H7z" fill="#df5260" />
-            <path d="M35 46h13v57H35z" fill="#f3c96a" />
-            <path d="M41 47c-31-1-25-30-10-25 9 3 10 25 10 25Zm0 0c31-1 25-30 10-25-9 3-10 25-10 25Z" fill="none" stroke="#f3c96a" strokeWidth="6" />
-          </g>
-          <g className="christmas-gift-large">
-            <path d="M83 43h70v64H83z" fill="#176143" />
-            <path d="M77 31h82v19H77z" fill="#26835a" />
-            <path d="M111 31h14v76h-14z" fill="#d94a55" />
-            <path d="M118 32c-36-2-29-34-12-29 10 3 12 29 12 29Zm0 0c36-2 29-34 12-29-10 3-12 29-12 29Z" fill="none" stroke="#d94a55" strokeWidth="6" />
-          </g>
-        </svg>
-      </div>
     </div>
   );
 }
 
-export function ChristmasSurprise({ enabled }: { enabled: boolean }) {
-  const navigate = useNavigate();
+export function ChristmasSurprise({
+  enabled,
+  onOpenCatalog,
+}: {
+  enabled: boolean;
+  onOpenCatalog: () => void;
+}) {
   const [open, setOpen] = useState(false);
 
   if (!enabled) return null;
 
   return (
-    <div className="christmas-surprise">
+    <div className="christmas-bar-easter-egg">
+      <button
+        type="button"
+        className="christmas-bar-easter-egg-trigger"
+        aria-label={open ? 'Fechar surpresa de Natal' : 'Descobrir surpresa de Natal'}
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 2.8 14.3 8l5.7.7-4.2 3.9 1.1 5.6-4.9-2.8-4.9 2.8 1.1-5.6L4 8.7 9.7 8 12 2.8Z" fill="currentColor" />
+          <path d="m18.7 16.8.8 1.7 1.7.2-1.3 1.2.3 1.7-1.5-.8-1.5.8.3-1.7-1.3-1.2 1.7-.2.8-1.7Z" fill="currentColor" />
+        </svg>
+      </button>
       {open && (
-        <div className="christmas-surprise-card" role="status">
-          <button type="button" className="christmas-surprise-close" aria-label="Fechar surpresa" onClick={() => setOpen(false)}>
-            ×
-          </button>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#b8323c]">Você encontrou um mimo!</p>
-          <p className="mt-1 text-sm leading-relaxed text-[#26334d]">Que seu Natal seja cheio de brilho — por dentro e por fora.</p>
+        <div className="christmas-bar-easter-egg-note" role="status">
+          <p>Você encontrou um brilho escondido. Que seu Natal venha cheio de bons olhares.</p>
           <button
             type="button"
-            className="mt-3 text-xs font-bold text-[#176143] underline underline-offset-4"
             onClick={() => {
               setOpen(false);
-              navigate('/armacoes');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              onOpenCatalog();
             }}
           >
             Descobrir armações
           </button>
         </div>
       )}
-      <button
-        type="button"
-        className="christmas-surprise-trigger"
-        aria-label={open ? 'Fechar surpresa de Natal' : 'Abrir surpresa de Natal'}
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M4 10h16v10H4zM3 7h18v4H3zM12 7v13M12 7H8.5a2.5 2.5 0 1 1 2.4-3.2L12 7Zm0 0h3.5a2.5 2.5 0 1 0-2.4-3.2L12 7Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-        </svg>
-      </button>
     </div>
   );
 }
