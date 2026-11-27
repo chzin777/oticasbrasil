@@ -8,6 +8,7 @@ import HeroBackground from './HeroBackground';
 import CountUp from './CountUp';
 import BFConfetti from './BFConfetti';
 import FoldText from './FoldText';
+import { ChristmasHeroDecorations } from './ChristmasTheme';
 import { SITE_CONFIG, useSiteData } from '../lib/siteStore';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -36,6 +37,7 @@ interface HeroCapaProps {
   onSelectProduct?: (product: EyewearProduct) => void;
   onOpenCatalog?: (category: 'armacoes' | 'oculos-de-sol' | 'lentes-de-grau') => void;
   theme?: HeroTheme;
+  christmasEnabled?: boolean;
 }
 
 export const THEME_CONFIG = {
@@ -63,7 +65,7 @@ export const THEME_CONFIG = {
   },
 };
 
-export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'default' }: HeroCapaProps) {
+export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'default', christmasEnabled = false }: HeroCapaProps) {
   const navigate = useNavigate();
   const root = useRef<HTMLElement>(null);
   const tocou = useRef(false);
@@ -152,6 +154,7 @@ export default function HeroCapa({ onSelectProduct, onOpenCatalog, theme = 'defa
     <section className={`hc hc-theme-${theme}`} id="topo" ref={root}>
       {/* Background geométrico — apenas no tema Black Friday */}
       {isBlackFriday && <HeroBackground theme={theme} backgroundImage={SITE_CONFIG.images[theme].background} />}
+      <ChristmasHeroDecorations enabled={christmasEnabled} />
 
       {/* ============================================================
           LAYOUT BLACK FRIDAY — texto centralizado

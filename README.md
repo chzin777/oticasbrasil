@@ -50,7 +50,7 @@ Para gerar um `.env` com senhas fortes no servidor: `ADMIN_EMAIL=... sh deploy/g
 | `/lista-de-desejos`, `/checkout` | Desejos e compra |
 | `/login`, `/minha-conta` | Conta do cliente |
 | `/quem-somos`, `/taxas` | Institucional e taxas de parcelamento |
-| `/admin` | Painel administrativo |
+| `/admin` | Painel administrativo, incluindo o controle do tema natalino em Configurações |
 
 ## API (`server/`)
 

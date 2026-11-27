@@ -23,6 +23,9 @@ export const defaultSettings = {
     enabled: false,
     message: 'Estamos fazendo melhorias na loja. Voltamos em breve!',
   },
+  seasonal: {
+    christmasEnabled: true,
+  },
 };
 
 const text = (value, fallback, max) =>
@@ -47,6 +50,7 @@ export const normalizeSettings = (input) => {
   const payment = object(source.payment);
   const delivery = object(source.delivery);
   const maintenance = object(source.maintenance);
+  const seasonal = object(source.seasonal);
   const base = defaultSettings;
 
   const settings = {
@@ -81,6 +85,9 @@ export const normalizeSettings = (input) => {
     maintenance: {
       enabled: flag(maintenance.enabled, base.maintenance.enabled),
       message: text(maintenance.message, base.maintenance.message, 240) || base.maintenance.message,
+    },
+    seasonal: {
+      christmasEnabled: flag(seasonal.christmasEnabled, base.seasonal.christmasEnabled),
     },
   };
   settings.payment.pix.discountPercent = Math.round(settings.payment.pix.discountPercent * 100) / 100;

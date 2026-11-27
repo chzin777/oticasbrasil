@@ -35,6 +35,7 @@ import { MaintenancePage } from './components/MaintenancePage';
 import { useToast } from './components/ToastContext';
 import { CheckoutAccount, type AccountUser } from './components/CheckoutAccount';
 import { LoginPage } from './pages/LoginPage';
+import { ChristmasSurprise } from './components/ChristmasTheme';
 
 import {
   INITIAL_PRESCRIPTION,
@@ -810,6 +811,8 @@ function SiteApp() {
         onOpenLensGuide={() => setIsLensGuideOpen(true)}
         onOpenFaq={() => setIsLensGuideOpen(true)}
       />
+
+      <ChristmasSurprise enabled={settings.seasonal.christmasEnabled} />
 
       {/* Supporting Interactive Modals */}
       <OrderSuccessModal

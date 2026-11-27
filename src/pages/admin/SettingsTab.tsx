@@ -3,16 +3,17 @@ import { AdminPermission, AdminUser } from '../../lib/adminApi';
 import { AccountSection } from './settings/AccountSection';
 import { AuditSection } from './settings/AuditSection';
 import { DataSection } from './settings/DataSection';
-import { CheckoutSection, MaintenanceSection, StoreInfoSection } from './settings/StoreSections';
+import { CheckoutSection, MaintenanceSection, SeasonalSection, StoreInfoSection } from './settings/StoreSections';
 import { TeamSection } from './settings/TeamSection';
 import { useRemoteSettings } from './settings/useRemoteSettings';
 
-type SectionId = 'store' | 'checkout' | 'maintenance' | 'team' | 'audit' | 'account' | 'data';
+type SectionId = 'store' | 'checkout' | 'maintenance' | 'seasonal' | 'team' | 'audit' | 'account' | 'data';
 
 const SECTIONS: { id: SectionId; label: string; desc: string; icon: string; permission?: AdminPermission }[] = [
   { id: 'store', label: 'Dados da loja', desc: 'Nome, contato e documentos', icon: 'storefront', permission: 'settings' },
   { id: 'checkout', label: 'Pagamento e entrega', desc: 'Formas aceitas no checkout', icon: 'payments', permission: 'settings' },
   { id: 'maintenance', label: 'Manutenção', desc: 'Tirar a loja do ar', icon: 'construction', permission: 'settings' },
+  { id: 'seasonal', label: 'Tema de Natal', desc: 'Decoração sazonal da loja', icon: 'park', permission: 'settings' },
   { id: 'team', label: 'Equipe e permissões', desc: 'Usuários do painel', icon: 'group', permission: 'team' },
   { id: 'audit', label: 'Atividades', desc: 'Histórico de ações', icon: 'history', permission: 'audit' },
   { id: 'account', label: 'Minha conta', desc: 'Perfil e senha', icon: 'manage_accounts' },
@@ -24,7 +25,7 @@ export const SettingsTab: React.FC<{ user: AdminUser; onUserChange: (user: Admin
   const [selected, setSelected] = useState<SectionId>(available[0].id);
   const { settings, saving, save } = useRemoteSettings(user.permissions.includes('settings'));
   const section = available.find((item) => item.id === selected) ?? available[0];
-  const needsSettings = section.id === 'store' || section.id === 'checkout' || section.id === 'maintenance';
+  const needsSettings = section.id === 'store' || section.id === 'checkout' || section.id === 'maintenance' || section.id === 'seasonal';
 
   const content = () => {
     if (needsSettings && !settings) {
@@ -35,6 +36,7 @@ export const SettingsTab: React.FC<{ user: AdminUser; onUserChange: (user: Admin
       case 'store': return shared && <StoreInfoSection {...shared} />;
       case 'checkout': return shared && <CheckoutSection {...shared} />;
       case 'maintenance': return shared && <MaintenanceSection {...shared} />;
+      case 'seasonal': return shared && <SeasonalSection {...shared} />;
       case 'team': return <TeamSection currentUser={user} />;
       case 'audit': return <AuditSection />;
       case 'account': return <AccountSection user={user} onUserChange={onUserChange} />;

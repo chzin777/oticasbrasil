@@ -222,3 +222,24 @@ export const MaintenanceSection: React.FC<SectionProps> = ({ settings, saving, o
     </Card>
   );
 };
+
+export const SeasonalSection: React.FC<SectionProps> = ({ settings, saving, onSave }) => {
+  const { draft, setDraft, dirty } = useDraft(settings.seasonal);
+
+  return (
+    <Card title="Tema de Natal" subtitle="Ative ou esconda os detalhes natalinos da loja sem alterar o restante do site.">
+      <Toggle
+        label="Exibir decoração natalina"
+        description="Mostra neve, enfeites parallax e a surpresa de Natal nas páginas da loja."
+        checked={draft.christmasEnabled}
+        onChange={(christmasEnabled) => setDraft({ christmasEnabled })}
+      />
+      <SaveBar
+        dirty={dirty}
+        saving={saving}
+        onSave={() => void onSave({ ...settings, seasonal: draft }, 'Tema de Natal atualizado')}
+        onReset={() => setDraft(settings.seasonal)}
+      />
+    </Card>
+  );
+};

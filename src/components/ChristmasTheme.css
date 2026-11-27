@@ -1,0 +1,239 @@
+.christmas-hero-effects {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.christmas-snow,
+.christmas-snow::before,
+.christmas-snow::after {
+  position: absolute;
+  inset: -35% 0 0;
+  background-repeat: repeat;
+  pointer-events: none;
+}
+
+.christmas-snow {
+  opacity: 0.62;
+  background-image:
+    radial-gradient(2px 2px at 32px 48px, #fff 60%, transparent 100%),
+    radial-gradient(3px 3px at 122px 108px, #fff 55%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 204px 28px, #fff 60%, transparent 100%);
+  background-size: 270px 210px;
+  animation: christmas-snowfall 15s linear infinite;
+}
+
+.christmas-snow::before,
+.christmas-snow::after {
+  content: '';
+  background-image:
+    radial-gradient(2px 2px at 68px 84px, #fff 60%, transparent 100%),
+    radial-gradient(1px 1px at 186px 22px, #fff 60%, transparent 100%);
+  background-size: 330px 260px;
+  animation: christmas-snowfall 21s linear infinite;
+}
+
+.christmas-snow::after {
+  opacity: 0.55;
+  background-size: 190px 170px;
+  animation-duration: 27s;
+}
+
+.christmas-ornament {
+  position: absolute;
+  width: clamp(24px, 3.2vw, 48px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: inset -7px -8px 13px #0005, inset 5px 5px 9px #fff8, 0 8px 24px #0005;
+  animation: christmas-sway 4.8s ease-in-out infinite;
+}
+
+.christmas-ornament::before {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: clamp(70px, 12vw, 170px);
+  left: 50%;
+  bottom: 82%;
+  background: linear-gradient(#d7bd75, #fff8);
+}
+
+.christmas-ornament span {
+  position: absolute;
+  width: 35%;
+  height: 12%;
+  top: -8%;
+  left: 32.5%;
+  border-radius: 3px 3px 1px 1px;
+  background: linear-gradient(90deg, #92743a, #f8e29e, #8f6e32);
+}
+
+.christmas-ornament-red {
+  top: 16%;
+  right: 15%;
+  background: radial-gradient(circle at 30% 24%, #ffb1a3, #c82f3f 45%, #6a1220);
+}
+
+.christmas-ornament-gold {
+  top: 30%;
+  right: 33%;
+  width: clamp(19px, 2.4vw, 35px);
+  background: radial-gradient(circle at 30% 24%, #fff2bd, #e4b74b 48%, #8c6120);
+  animation-delay: -1.4s;
+}
+
+.christmas-ornament-green {
+  top: 12%;
+  right: 48%;
+  width: clamp(28px, 3.8vw, 54px);
+  background: radial-gradient(circle at 30% 24%, #b4e7b5, #238254 48%, #0c3d2c);
+  animation-delay: -2.2s;
+}
+
+.christmas-ornament-pearl {
+  top: 44%;
+  right: 8%;
+  width: clamp(16px, 2vw, 28px);
+  background: radial-gradient(circle at 30% 24%, #fff, #d9e3d9 48%, #8c9a8b);
+  animation-delay: -0.8s;
+}
+
+.christmas-garland {
+  position: absolute;
+  width: min(58vw, 850px);
+  height: auto;
+  top: -3%;
+  right: -3%;
+  filter: drop-shadow(0 6px 6px #0005);
+  opacity: 0.9;
+}
+
+.christmas-gifts {
+  position: absolute;
+  right: clamp(1.5rem, 8vw, 8rem);
+  bottom: 14%;
+  width: clamp(110px, 16vw, 210px);
+  filter: drop-shadow(0 12px 12px #0007);
+  animation: christmas-gift-float 5.5s ease-in-out infinite;
+}
+
+.christmas-gifts svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.christmas-gift-small {
+  transform-origin: 40px 90px;
+  animation: christmas-sway 5s ease-in-out infinite;
+}
+
+.christmas-gift-large {
+  transform-origin: 118px 90px;
+  animation: christmas-sway 5s ease-in-out -1.7s infinite;
+}
+
+.christmas-surprise {
+  position: fixed;
+  z-index: 45;
+  bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 5.5rem));
+  left: max(1rem, env(safe-area-inset-left));
+}
+
+.christmas-surprise-trigger {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid #f4d88b;
+  border-radius: 50%;
+  color: #fff8df;
+  background: radial-gradient(circle at 32% 26%, #4da878, #176143 58%, #0c3d2c);
+  box-shadow: 0 5px 18px #06174840, inset 0 1px 3px #ffffff80;
+  cursor: pointer;
+}
+
+.christmas-surprise-trigger:hover,
+.christmas-surprise-trigger:focus-visible {
+  transform: scale(1.08);
+  outline: 2px solid #e6bf62;
+  outline-offset: 3px;
+}
+
+.christmas-surprise-trigger svg {
+  width: 23px;
+  height: 23px;
+}
+
+.christmas-surprise-card {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  width: min(290px, calc(100vw - 2rem));
+  padding: 18px;
+  border: 1px solid #ead8af;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #fffdf6, #fff);
+  box-shadow: 0 14px 40px #0617482b;
+  animation: christmas-card-pop 180ms ease-out both;
+}
+
+.christmas-surprise-close {
+  position: absolute;
+  top: 7px;
+  right: 9px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  color: #657087;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.christmas-surprise-close:hover {
+  background: #f0eee7;
+}
+
+@keyframes christmas-snowfall {
+  from { transform: translateY(-8%); }
+  to { transform: translateY(28%); }
+}
+
+@keyframes christmas-sway {
+  0%, 100% { rotate: -5deg; }
+  50% { rotate: 5deg; }
+}
+
+@keyframes christmas-gift-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -9px; }
+}
+
+@keyframes christmas-card-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 760px) {
+  .christmas-ornament-red { right: 8%; top: 18%; }
+  .christmas-ornament-gold { right: 27%; top: 32%; }
+  .christmas-ornament-green { right: 44%; top: 14%; }
+  .christmas-ornament-pearl { right: 5%; top: 45%; }
+  .christmas-garland { width: 90vw; right: -17%; top: -1%; }
+  .christmas-gifts { right: 1rem; bottom: 11%; width: 104px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .christmas-snow,
+  .christmas-snow::before,
+  .christmas-ornament,
+  .christmas-gifts,
+  .christmas-gift-small,
+  .christmas-gift-large {
+    animation: none;
+  }
+}

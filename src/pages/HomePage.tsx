@@ -6,6 +6,7 @@ import CustomBannerHero from '../components/CustomBannerHero';
 import SectionShapes from '../components/SectionShapes';
 import { getPageEditorConfig, SITE_CONFIG, useSiteData } from '../lib/siteStore';
 import { getNativeSectionLayout, PageBuilderRender } from '../lib/pageBuilder';
+import { useStoreSettings } from '../lib/storeSettings';
 import '../components/HeroCapa.css';
 
 interface HomePageProps {
@@ -28,6 +29,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   onOpenCatalog
 }) => {
   useSiteData();
+  const storeSettings = useStoreSettings();
   const pageEditor = getPageEditorConfig();
   const pageLayout = getNativeSectionLayout(pageEditor.puck.home, 'home');
   const sectionOrder = (id: string) => pageLayout.order[id] ?? 0;
@@ -275,12 +277,13 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* 1. HERO SECTION — HeroCapa (estilo DAPS com parallax multicamada) */}
       <div style={{ order: sectionOrder('hero') }} hidden={sectionHidden('hero')}>
         {activeCustomBanner ? (
-          <CustomBannerHero banner={activeCustomBanner} onOpenCatalog={onOpenCatalog} />
+          <CustomBannerHero banner={activeCustomBanner} onOpenCatalog={onOpenCatalog} christmasEnabled={storeSettings.seasonal.christmasEnabled} />
         ) : (
           <HeroCapa
             onSelectProduct={onSelectProduct}
             onOpenCatalog={onOpenCatalog}
             theme={heroTheme}
+            christmasEnabled={storeSettings.seasonal.christmasEnabled}
           />
         )}
 

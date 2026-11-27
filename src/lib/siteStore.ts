@@ -6,6 +6,9 @@ import { EyewearProduct } from '../types';
 
 /* Catálogo global mutável — inicia vazio; preenchido exclusivamente pela API */
 export const CATALOG_PRODUCTS: EyewearProduct[] = [];
+let catalogCache: EyewearProduct[] | null = null;
+let catalogLoading = false;
+let catalogError = false;
 import type { AdminUser } from './adminApi';
 import { fetchProducts } from './integrationApi';
 import { emptyPageBuilderData, hasNativeSectionLayout, NATIVE_SECTIONS, nativeSectionTypes, type PageBuilderData } from './pageBuilder';
@@ -1238,10 +1241,6 @@ export const fileToDataUrl = (file: File, maxSize = 1000): Promise<string> =>
   });
 
 /* ---------- Catálogo via API de Integração ---------- */
-
-let catalogCache: EyewearProduct[] | null = null;
-let catalogLoading = false;
-let catalogError = false;
 
 const hydrateCatalogFromApi = async (): Promise<void> => {
   if (catalogLoading) return;

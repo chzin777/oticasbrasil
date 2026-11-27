@@ -19,6 +19,7 @@ export interface StoreSettings {
   };
   delivery: { homeEnabled: boolean; pickupEnabled: boolean };
   maintenance: { enabled: boolean; message: string };
+  seasonal: { christmasEnabled: boolean };
 }
 
 export const DEFAULT_SETTINGS: StoreSettings = {
@@ -43,6 +44,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
     enabled: false,
     message: 'Estamos fazendo melhorias na loja. Voltamos em breve!',
   },
+  seasonal: { christmasEnabled: true },
 };
 
 let current = DEFAULT_SETTINGS;
